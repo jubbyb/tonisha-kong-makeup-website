@@ -1,0 +1,10 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities;
+@plugin "daisyui"; */
+@import "tailwindcss";
+@plugin "daisyui"
+{
+themes: cupcake --default, light , dark ;
+    /* themes: cupcake --default, light , dark --prefersdark ; */
+}
