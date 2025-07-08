@@ -10,6 +10,7 @@ import Services from './pages/Services';
 import Classes from './pages/Classes';
 import Bookings from './pages/Bookings';
 import Contact from './pages/Contact';
+import Admin from './pages/Admin';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="classes" element={<Classes />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="contact" element={<Contact />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
     </BrowserRouter>
