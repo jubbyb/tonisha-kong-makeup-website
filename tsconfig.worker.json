@@ -1,21 +1,3 @@
-// {
-//   "extends": "./tsconfig.json",
-//   "compilerOptions": {
-//     "outDir": "./dist",
-//     "lib": ["ES2022"],
-//     "module": "ESNext",
-//     "target": "ES2022",
-//     "moduleResolution": "Bundler",
-//     "isolatedModules": true,
-//     "esModuleInterop": true,
-//     "forceConsistentCasingInFileNames": true,
-//     "strict": true,
-//     "skipLibCheck": true,
-//     "types": ["@cloudflare/workers-types"]
-//   },
-//   "include": ["src/worker.ts"]
-// }
-
 {
   "extends": "./tsconfig.node.json",
   "compilerOptions": {
