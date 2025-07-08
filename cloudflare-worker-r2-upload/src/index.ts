@@ -12,32 +12,32 @@
  */
 
 interface Env {
-  MY_BUCKET: R2Bucket;
+	MY_BUCKET: R2Bucket;
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
+	async fetch(request: Request, env: Env): Promise<Response> {
+		const url = new URL(request.url);
 
-    if (request.method === 'POST' && url.pathname === '/upload') {
-      try {
-        const formData = await request.formData();
-        const file = formData.get('file') as File;
+		if (request.method === 'POST' && url.pathname === '/upload') {
+			try {
+				const formData = await request.formData();
+				const file = formData.get('file') as File;
 
-        if (!file) {
-          return new Response('No file uploaded', { status: 400 });
-        }
+				if (!file) {
+					return new Response('No file uploaded', { status: 400 });
+				}
 
-        const objectName = `uploads/${crypto.randomUUID()}-${file.name}`;
-        await env.MY_BUCKET.put(objectName, file.stream());
+				const objectName = `uploads/${crypto.randomUUID()}-${file.name}`;
+				await env.MY_BUCKET.put(objectName, file.stream());
 
-        return new Response(`File ${objectName} uploaded successfully!`, { status: 200 });
-      } catch (error) {
-        console.error('Error uploading file:', error);
-        return new Response('Error uploading file', { status: 500 });
-      }
-    }
+				return new Response(`File ${objectName} uploaded successfully!`, { status: 200 });
+			} catch (error) {
+				console.error('Error uploading file:', error);
+				return new Response('Error uploading file', { status: 500 });
+			}
+		}
 
-    return new Response('Not Found', { status: 404 });
-  },
+		return new Response('Not Found', { status: 404 });
+	},
 };

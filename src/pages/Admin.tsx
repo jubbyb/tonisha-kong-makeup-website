@@ -19,10 +19,13 @@ const Admin = () => {
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch('https://cloudflare-worker-r2-upload.jubbyb.workers.dev/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        'https://cloudflare-worker-r2-upload.jubbyb.workers.dev/upload',
+        {
+          method: 'POST',
+          body: formData,
+        },
+      );
 
       if (response.ok) {
         alert('File uploaded successfully!');
@@ -40,11 +43,7 @@ const Admin = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Admin Page</h1>
       <div className="flex items-center space-x-4">
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="border rounded-md p-2"
-        />
+        <input type="file" onChange={handleFileChange} className="border rounded-md p-2" />
         <button
           onClick={handleUpload}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"

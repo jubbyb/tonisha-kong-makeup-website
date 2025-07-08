@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build-app": "tsc -b && vite build",
+    "build-worker": "tsc -p tsconfig.worker.json",
+    "build": "npm run build-app && npm run build-worker",
     "lint": "eslint .",
     "test": "vitest",
     "preview": "vite preview",
