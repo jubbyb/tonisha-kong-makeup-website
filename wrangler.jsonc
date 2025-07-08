@@ -7,7 +7,7 @@
 // bucket = "./dist" 
 
 {
-  "name": "tonisha-kong-makeup-worker",
+  "name": "tonisha-kong-makeup-website",
   "compatibility_date": "2025-07-07",
   "assets": {
     "not_found_handling": "single-page-application"
