@@ -40,18 +40,41 @@ const Admin = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin Page</h1>
-      <div className="flex items-center space-x-4">
-        <input type="file" onChange={handleFileChange} className="border rounded-md p-2" />
-        <button
-          onClick={handleUpload}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Upload
-        </button>
-      </div>
+  
+
+
+
+// Option 3: Full-width with loading state
+<div className="w-full max-w-md mx-auto p-6 bg-base-100 rounded-lg shadow-lg">
+  <div className="space-y-4">
+    <div className="form-control">
+      <label className="label">
+        <span className="label-text font-medium">Select Image</span>
+      </label>
+      <input 
+        type="file" 
+        className="file-input file-input-bordered file-input-primary w-full" 
+        onChange={handleFileChange}
+        accept="image/*"
+      />
     </div>
+    <button 
+      type="submit" 
+      className="btn btn-primary w-full"
+      onClick={handleUpload}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      </svg>
+      Upload Image
+    </button>
+  </div>
+</div>
+
+
+
+
+
   );
 };
 
