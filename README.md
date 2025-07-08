@@ -67,3 +67,5 @@ export default tseslint.config([
   },
 ])
 ```
+for wrangler integration 
+https://developers.cloudflare.com/workers/vite-plugin/tutorial/#preview-your-application

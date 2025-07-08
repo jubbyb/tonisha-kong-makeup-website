@@ -31,4 +31,9 @@ instuctions-firebase.txt
 .DS_Store
 Thumbs.db
 node_modules
- 
+
+
+.wrangler
+.dev.vars*
+# This file is used by Cloudflare Workers to configure the project.
+# It is ignored to prevent accidental commits of sensitive information. 

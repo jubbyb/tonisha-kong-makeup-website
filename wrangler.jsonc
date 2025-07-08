@@ -1,0 +1,17 @@
+// name = "tonisha-kong-makeup-worker"
+// // main = "./src/worker.ts"
+// compatibility_date = "2024-07-07"
+// assets = { not_found_handling = "single-page-application" }
+
+// [site]
+// bucket = "./dist" 
+
+{
+  "name": "tonisha-kong-makeup-worker",
+  "compatibility_date": "2025-07-07",
+  "assets": {
+    "not_found_handling": "single-page-application"
+  },
+  "main": "./worker/index.ts"
+}
+
