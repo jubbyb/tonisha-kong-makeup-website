@@ -1,190 +1,276 @@
 import React, { useEffect, useState } from 'react';
-// import { collection, getDocs } from 'firebase/firestore';
-// import { db } from '../firebase';
 
 interface ClassItem {
-  id: string;
+  id: number;
   name: string;
   description: string;
   date: string;
   price: number;
-  certificate?: boolean;
-  mentoring?: boolean; // add flag for 1-on-1 Mentoring
+  certificate: number;
+  mentoring: number;
 }
-
-// 1. Add your dummy data here ...remove after you have your Firestore data working
-const dummyClasses: ClassItem[] = [
-  {
-    id: '1',
-    name: 'Beginner Makeup Basics',
-    description:
-      'Learn the fundamentals of makeup application, including skin prep, foundation, and natural looks.',
-    date: '2025-08-10T14:00',
-    price: 60,
-    certificate: true,
-    mentoring: false,
-  },
-  {
-    id: '2',
-    name: 'Smokey Eye Masterclass',
-    description:
-      'Master the art of the smokey eye with step-by-step guidance and hands-on practice.',
-    date: '2025-08-17T16:00',
-    price: 75,
-    certificate: false,
-    mentoring: true,
-  },
-  {
-    id: '3',
-    name: 'Bridal Makeup Workshop',
-    description:
-      'Perfect for aspiring bridal artists or brides-to-be. Covers long-lasting, flawless bridal looks.',
-    date: '2025-08-24T13:00',
-    price: 100,
-    certificate: true,
-    mentoring: true,
-  },
-  {
-    id: '4',
-    name: 'Contouring & Highlighting',
-    description: 'Learn advanced contouring and highlighting techniques for all face shapes.',
-    date: '2025-09-01T15:00',
-    price: 80,
-    certificate: false,
-    mentoring: false,
-  },
-  {
-    id: '5',
-    name: 'Makeup for Photography',
-    description:
-      'Discover tips and tricks for makeup that looks great on camera and under studio lights.',
-    date: '2025-09-08T17:00',
-    price: 90,
-    certificate: true,
-    mentoring: false,
-  },
-];
 
 const Classes: React.FC = () => {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
-  // useEffect(() => {
-  //   const fetchClasses = async () => {
-  //     const classesCollectionRef = collection(db, 'classes');
-  //     const data = await getDocs(classesCollectionRef);
-  //     setClasses(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })) as ClassItem[]);
-  //     setLoading(false);
-  //   };
-
-  //   fetchClasses();
-  // }, []);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // For local testing, load dummy data
-    setClasses(dummyClasses);
-    setLoading(false);
+    fetch('/api/classes')
+      .then((res) => res.json<ClassItem[]>())
+      .then((data) => {
+        setClasses(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load classes.');
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Loading Classes...</div>;
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          fontSize: '0.75rem',
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'oklch(55% 0.01 60)',
+        }}
+      >
+        Loading Classes...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          color: 'oklch(63% 0.20 25)',
+        }}
+      >
+        {error}
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold text-center mb-8">Our Classes</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {classes.map((classItem, idx) => (
-          <div key={classItem.id} className="card w-96 bg-base-100 shadow-sm">
-            <div className="card-body">
-              {idx === 0 && <span className="badge badge-xs badge-warning">Most Popular</span>}
-              <div className="flex justify-between">
-                <h2 className="text-3xl font-bold">{classItem.name}</h2>
-                <span className="text-xl">${classItem.price}</span>
+    <div style={{ background: 'oklch(9% 0.005 60)', minHeight: '100vh' }}>
+      {/* Header */}
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '5rem 2rem 3rem',
+        }}
+      >
+        <p
+          className="anim-slide-right"
+          style={{
+            fontSize: '0.65rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'oklch(71% 0.11 78)',
+            marginBottom: '1rem',
+          }}
+        >
+          Learn the Craft
+        </p>
+        <h1
+          className="anim-fade-up delay-1 font-display"
+          style={{
+            fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+            fontWeight: 300,
+            lineHeight: 1.05,
+            color: 'oklch(93% 0.01 75)',
+            marginBottom: '1rem',
+          }}
+        >
+          Master Classes
+        </h1>
+        <p
+          className="anim-fade-up delay-2"
+          style={{
+            fontSize: '0.9rem',
+            color: 'oklch(50% 0.01 60)',
+            maxWidth: '500px',
+            lineHeight: 1.7,
+          }}
+        >
+          Hands-on training sessions for aspiring makeup artists and beauty enthusiasts.
+        </p>
+      </div>
+
+      {/* Classes grid */}
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '2rem 2rem 6rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: '1px',
+          background: 'oklch(18% 0.005 60)',
+          border: '1px solid oklch(18% 0.005 60)',
+        }}
+      >
+        {classes.map((classItem, i) => {
+          const hasCertificate = !!classItem.certificate;
+          const hasMentoring = !!classItem.mentoring;
+
+          return (
+            <div
+              key={classItem.id}
+              className={`anim-fade-up delay-${Math.min(i + 1, 8)}`}
+              style={{
+                background: 'oklch(9% 0.005 60)',
+                padding: '2.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.25rem',
+                transition: 'background 0.3s ease',
+              }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLElement).style.background = 'oklch(12% 0.005 60)')
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLElement).style.background = 'oklch(9% 0.005 60)')
+              }
+            >
+              {/* Name + price */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <h2
+                  className="font-display"
+                  style={{
+                    fontSize: '1.6rem',
+                    fontWeight: 400,
+                    color: 'oklch(93% 0.01 75)',
+                    lineHeight: 1.15,
+                    flex: 1,
+                  }}
+                >
+                  {classItem.name}
+                </h2>
+                <span
+                  className="font-display"
+                  style={{
+                    fontSize: '1.4rem',
+                    fontWeight: 300,
+                    color: 'oklch(71% 0.11 78)',
+                    marginLeft: '1rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  ${classItem.price}
+                </span>
               </div>
-              <ul className="mt-6 flex flex-col gap-2 text-xs">
-                <li>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="size-4 me-2 inline-block text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>{classItem.description}</span>
-                </li>
-                <li>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="size-4 me-2 inline-block text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Date: {new Date(classItem.date).toLocaleString()}</span>
-                </li>
-                <li className={classItem.certificate ? '' : 'opacity-50'}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`size-4 me-2 inline-block ${classItem.certificate ? 'text-success' : 'text-base-content/50'}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className={classItem.certificate ? '' : 'line-through'}>
-                    Certificate Included
-                  </span>
-                </li>
-                <li className={classItem.mentoring ? '' : 'opacity-50'}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`size-4 me-2 inline-block ${classItem.mentoring ? 'text-success' : 'text-base-content/50'}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className={classItem.mentoring ? '' : 'line-through'}>
-                    1-on-1 Mentoring
-                  </span>
-                </li>
-              </ul>
-              <div className="mt-6">
-                <button className="btn btn-primary btn-block">Enquire</button>
+
+              {/* Divider */}
+              <div style={{ width: '30px', height: '1px', background: 'oklch(28% 0.005 60)' }} />
+
+              {/* Description */}
+              <p
+                style={{
+                  fontSize: '0.88rem',
+                  lineHeight: 1.7,
+                  color: 'oklch(55% 0.01 60)',
+                }}
+              >
+                {classItem.description}
+              </p>
+
+              {/* Date */}
+              <p
+                style={{
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.12em',
+                  color: 'oklch(45% 0.01 60)',
+                }}
+              >
+                {new Date(classItem.date).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                {' · '}
+                {new Date(classItem.date).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+
+              {/* Features */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Feature active={true} label="Hands-on Training" />
+                <Feature active={hasCertificate} label="Certificate Included" />
+                <Feature active={hasMentoring} label="1-on-1 Mentoring" />
               </div>
+
+              {/* CTA */}
+              <button
+                className="btn-gold"
+                style={{ marginTop: '0.75rem', alignSelf: 'flex-start' }}
+                onClick={() => {
+                  window.location.href = '/contact';
+                }}
+              >
+                Enquire
+              </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 };
+
+function Feature({ active, label }: { active: boolean; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div
+        style={{
+          width: '16px',
+          height: '16px',
+          border: `1px solid ${active ? 'oklch(71% 0.11 78)' : 'oklch(25% 0.005 60)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {active && (
+          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+            <path
+              d="M1 3L3 5L7 1"
+              stroke="oklch(71% 0.11 78)"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </div>
+      <span
+        style={{
+          fontSize: '0.8rem',
+          color: active ? 'oklch(65% 0.01 60)' : 'oklch(30% 0.005 60)',
+          textDecoration: active ? 'none' : 'line-through',
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export default Classes;

@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 
 const Contact: React.FC = () => {
   const [name, setName] = useState('');
@@ -19,14 +17,17 @@ const Contact: React.FC = () => {
     setError(null);
 
     try {
-      await addDoc(collection(db, 'contactMessages'), {
-        name,
-        email,
-        phone,
-        subject,
-        message,
-        timestamp: new Date(),
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, subject, message }),
       });
+
+      if (!res.ok) {
+        const { error: err } = await res.json<{ error: string }>();
+        throw new Error(err ?? 'Failed to send message');
+      }
+
       setSuccess(true);
       setName('');
       setEmail('');
@@ -34,104 +35,201 @@ const Contact: React.FC = () => {
       setSubject('');
       setMessage('');
     } catch (err) {
-      console.error('Error adding document: ', err);
-      setError('Failed to send message. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-  {
-    /* <label className="input">
-  <span className="label">https://</span>
-  <input type="text" placeholder="URL" />
-</label> */
-  }
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold text-center mb-8">Contact Us</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-lg mx-auto bg-base-100 p-8 rounded-lg shadow-xl "
+    <div style={{ background: 'oklch(9% 0.005 60)', minHeight: '100vh' }}>
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '5rem 2rem 6rem',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '6rem',
+          alignItems: 'start',
+        }}
+        className="contact-grid"
       >
-        <div className="form-control mb-4">
-          <label className="input w-full">
-            <span className="label">Name </span>
-            <input
-              type="text"
-              className="grow"
-              placeholder=""
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </label>
+        {/* Left — info */}
+        <div style={{ paddingTop: '1rem' }}>
+          <p
+            className="anim-slide-right"
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: 'oklch(71% 0.11 78)',
+              marginBottom: '1rem',
+            }}
+          >
+            Get In Touch
+          </p>
+          <h1
+            className="anim-fade-up delay-1 font-display"
+            style={{
+              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+              fontWeight: 300,
+              lineHeight: 1.05,
+              color: 'oklch(93% 0.01 75)',
+              marginBottom: '2rem',
+            }}
+          >
+            Let's Create
+            <br />
+            <span style={{ fontStyle: 'italic', color: 'oklch(71% 0.11 78)' }}>Together</span>
+          </h1>
+
+          <div className="divider-gold anim-fade-in delay-2" style={{ marginBottom: '2rem' }} />
+
+          <p
+            className="anim-fade-up delay-2"
+            style={{
+              fontSize: '0.95rem',
+              lineHeight: 1.8,
+              color: 'oklch(55% 0.01 60)',
+              marginBottom: '3rem',
+              maxWidth: '400px',
+            }}
+          >
+            Whether you're planning a wedding, an editorial shoot, or simply want to look your best —
+            reach out and let's talk about your vision.
+          </p>
+
+          {/* Contact details */}
+          <div
+            className="anim-fade-up delay-3"
+            style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+          >
+            {[
+              { label: 'Based in', value: 'Kingston, Jamaica' },
+              { label: 'Instagram', value: '@tonishakong' },
+              { label: 'Facebook', value: 'Tonisha Kong Makeup' },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p
+                  style={{
+                    fontSize: '0.6rem',
+                    letterSpacing: '0.25em',
+                    textTransform: 'uppercase',
+                    color: 'oklch(45% 0.01 60)',
+                    marginBottom: '0.3rem',
+                  }}
+                >
+                  {label}
+                </p>
+                <p
+                  style={{
+                    fontSize: '0.9rem',
+                    color: 'oklch(70% 0.01 60)',
+                  }}
+                >
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Email</span>
-            <input
-              type="email"
-              className="grow"
-              placeholder=""
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-        </div>
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Phone</span>
-            <input
-              type="tel"
-              className="tabular-nums"
-              placeholder=""
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              pattern="[0-9]*"
-              minLength={10}
-              maxLength={10}
-              title="Must be 10 digits"
-            />
-          </label>
-        </div>
+        {/* Right — form */}
+        <div className="anim-fade-up delay-2">
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
+          >
+            {[
+              { label: 'Full Name', type: 'text', value: name, setter: setName, required: true },
+              { label: 'Email Address', type: 'email', value: email, setter: setEmail, required: true },
+              { label: 'Phone Number', type: 'tel', value: phone, setter: setPhone, required: false },
+              { label: 'Subject', type: 'text', value: subject, setter: setSubject, required: true },
+            ].map(({ label, type, value, setter, required }) => (
+              <div key={label}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.6rem',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'oklch(45% 0.01 60)',
+                    marginBottom: '0.5rem',
+                  }}
+                >
+                  {label}
+                </label>
+                <input
+                  type={type}
+                  className="input-luxury"
+                  value={value}
+                  onChange={(e) => setter(e.target.value)}
+                  required={required}
+                  placeholder={label}
+                />
+              </div>
+            ))}
 
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Subject</span>
-            <input
-              type="text"
-              className="grow"
-              placeholder=""
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-            />
-          </label>
-        </div>
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'oklch(45% 0.01 60)',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Message
+              </label>
+              <textarea
+                className="input-luxury"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
+                rows={4}
+                placeholder="Tell me about your event or vision..."
+                style={{ resize: 'vertical' }}
+              />
+            </div>
 
-        <div className="form-control mb-4 items-center">
-          <label className="textarea w-full textarea-bordered flex items-center gap-2">
-            <span className="label">Message</span>
-            <textarea
-              className="grow textarea textarea-bordered h-24"
-              placeholder=""
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              required
-            ></textarea>
-          </label>
+            <button
+              type="submit"
+              className="btn-gold"
+              disabled={loading}
+              style={{ alignSelf: 'flex-start', marginTop: '0.5rem' }}
+            >
+              {loading ? 'Sending...' : 'Send Message'}
+            </button>
+
+            {success && (
+              <p
+                style={{
+                  fontSize: '0.8rem',
+                  color: 'oklch(71% 0.11 78)',
+                  letterSpacing: '0.1em',
+                }}
+              >
+                Message received — I'll be in touch soon.
+              </p>
+            )}
+            {error && (
+              <p style={{ fontSize: '0.8rem', color: 'oklch(63% 0.20 25)' }}>{error}</p>
+            )}
+          </form>
         </div>
-        <div className="form-control mt-6 flex justify-center">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Sending...' : 'Send Message'}
-          </button>
-        </div>
-        {success && <div className="alert alert-success mt-4">Message sent successfully!</div>}
-        {error && <div className="alert alert-error mt-4">{error}</div>}
-      </form>
+      </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .contact-grid {
+            grid-template-columns: 1fr !important;
+            gap: 3rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,10 +1,180 @@
-/* @tailwind base;
-@tailwind components;
-@tailwind utilities;
-@plugin "daisyui"; */
 @import "tailwindcss";
-@plugin "daisyui"
-{
-themes: cupcake --default, light , dark ;
-    /* themes: cupcake --default, light , dark --prefersdark ; */
+@plugin "daisyui" {
+  themes: luxury --default;
+}
+
+/* ─── Custom luxury dark theme ─────────────────────────────────────── */
+[data-theme="luxury"] {
+  color-scheme: dark;
+  --color-base-100: oklch(9% 0.005 60);
+  --color-base-200: oklch(12% 0.005 60);
+  --color-base-300: oklch(16% 0.008 60);
+  --color-base-content: oklch(93% 0.01 75);
+  --color-primary: oklch(71% 0.11 78);
+  --color-primary-content: oklch(10% 0 0);
+  --color-secondary: oklch(60% 0.07 15);
+  --color-secondary-content: oklch(98% 0 0);
+  --color-accent: oklch(74% 0.09 78);
+  --color-accent-content: oklch(10% 0 0);
+  --color-neutral: oklch(18% 0.005 60);
+  --color-neutral-content: oklch(75% 0.01 60);
+  --color-info: oklch(68% 0.14 200);
+  --color-info-content: oklch(10% 0 0);
+  --color-success: oklch(63% 0.17 145);
+  --color-success-content: oklch(10% 0 0);
+  --color-warning: oklch(73% 0.16 80);
+  --color-warning-content: oklch(10% 0 0);
+  --color-error: oklch(63% 0.20 25);
+  --color-error-content: oklch(98% 0 0);
+  --rounded-box: 0rem;
+  --rounded-btn: 0rem;
+  --rounded-badge: 0rem;
+  --animation-btn: 0;
+  --animation-input: 0;
+  --btn-focus-scale: 1;
+  --border-btn: 1px;
+}
+
+/* ─── Global typography ─────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: oklch(9% 0.005 60);
+  color: oklch(93% 0.01 75);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* ─── Custom scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: oklch(9% 0 0);
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(71% 0.11 78);
+}
+
+/* ─── Gold divider ──────────────────────────────────────────────────── */
+.divider-gold {
+  width: 60px;
+  height: 1px;
+  background: oklch(71% 0.11 78);
+  margin: 1rem 0;
+}
+
+/* ─── Entrance animations ───────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.anim-fade-up {
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-fade-in {
+  animation: fadeIn 1s ease both;
+}
+.anim-slide-right {
+  animation: slideRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.35s; }
+.delay-4 { animation-delay: 0.5s; }
+.delay-5 { animation-delay: 0.65s; }
+.delay-6 { animation-delay: 0.8s; }
+.delay-7 { animation-delay: 0.95s; }
+.delay-8 { animation-delay: 1.1s; }
+
+/* ─── Gold button style ─────────────────────────────────────────────── */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2.5rem;
+  border: 1px solid oklch(71% 0.11 78);
+  color: oklch(71% 0.11 78);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease;
+  text-decoration: none;
+}
+.btn-gold:hover {
+  background: oklch(71% 0.11 78);
+  color: oklch(10% 0 0);
+}
+
+/* ─── Gold underline inputs ─────────────────────────────────────────── */
+.input-luxury {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid oklch(30% 0.01 60);
+  padding: 0.75rem 0;
+  color: oklch(93% 0.01 75);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+.input-luxury:focus {
+  border-bottom-color: oklch(71% 0.11 78);
+}
+.input-luxury::placeholder {
+  color: oklch(45% 0.01 60);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+.input-luxury:disabled {
+  color: oklch(45% 0.01 60);
+  cursor: default;
+}
+
+/* ─── Navbar ────────────────────────────────────────────────────────── */
+.lux-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: oklch(9% 0.005 60 / 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid oklch(18% 0.005 60);
+}
+
+/* ─── Service & class cards ─────────────────────────────────────────── */
+.lux-card {
+  background: oklch(12% 0.005 60);
+  border: 1px solid oklch(18% 0.005 60);
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+.lux-card:hover {
+  border-color: oklch(71% 0.11 78 / 0.4);
+  transform: translateY(-2px);
 }

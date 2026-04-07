@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 
 const Bookings: React.FC = () => {
   const location = useLocation();
   const initialService = location.state?.service?.name || '';
-  const [service, setService] = useState(initialService);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  // const [service, setService] = useState(serviceFromState || '');
+  const [phone, setPhone] = useState('');
+  const [service, setService] = useState(initialService);
   const [date, setDate] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -24,23 +22,26 @@ const Bookings: React.FC = () => {
     setError(null);
 
     try {
-      await addDoc(collection(db, 'bookings'), {
-        name,
-        email,
-        service,
-        date,
-        message,
-        timestamp: new Date(),
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, service, date, message }),
       });
+
+      if (!res.ok) {
+        const { error: err } = await res.json<{ error: string }>();
+        throw new Error(err ?? 'Booking failed');
+      }
+
       setSuccess(true);
       setName('');
       setEmail('');
+      setPhone('');
       setService('');
       setDate('');
       setMessage('');
     } catch (err) {
-      console.error('Error adding document: ', err);
-      setError('Failed to submit booking. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to submit booking. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -56,7 +57,6 @@ const Bookings: React.FC = () => {
         <div className="form-control mb-4">
           <label className="input w-full input-bordered flex items-center gap-2">
             <span className="label">Date</span>
-
             <input
               type="datetime-local"
               value={date}
@@ -70,7 +70,6 @@ const Bookings: React.FC = () => {
             <span className="label">Name</span>
             <input
               type="text"
-              placeholder=""
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -82,10 +81,19 @@ const Bookings: React.FC = () => {
             <span className="label">Email</span>
             <input
               type="email"
-              placeholder=""
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+            />
+          </label>
+        </div>
+        <div className="form-control mb-4">
+          <label className="input w-full input-bordered flex items-center gap-2">
+            <span className="label">Phone</span>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </label>
         </div>
@@ -101,7 +109,6 @@ const Bookings: React.FC = () => {
             />
           </label>
         </div>
-
         <div className="form-control mb-4">
           <label className="textarea w-full textarea-bordered flex items-center gap-2">
             <span className="label">Message</span>
@@ -110,7 +117,7 @@ const Bookings: React.FC = () => {
               placeholder="Any specific requests or questions?"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-            ></textarea>
+            />
           </label>
         </div>
         <div className="form-control mt-6 flex justify-center">
