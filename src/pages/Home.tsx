@@ -36,7 +36,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ background: 'oklch(9% 0.005 60)' }}>
+    <div style={{ background: 'var(--tk-bg)', transition: 'background-color 0.35s ease' }}>
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section
         style={{
@@ -69,7 +69,7 @@ const Home: React.FC = () => {
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(to top, oklch(9% 0.005 60) 0%, oklch(9% 0.005 60 / 0.5) 45%, transparent 70%)',
+              'linear-gradient(to top, var(--tk-hero-overlay) 0%, var(--tk-hero-overlay-half) 45%, transparent 70%)',
           }}
         />
 
@@ -92,7 +92,7 @@ const Home: React.FC = () => {
               fontSize: '0.65rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'oklch(71% 0.11 78)',
+              color: 'var(--tk-gold)',
               marginBottom: '1rem',
             }}
           >
@@ -107,13 +107,13 @@ const Home: React.FC = () => {
               fontWeight: 300,
               lineHeight: 0.92,
               letterSpacing: '-0.01em',
-              color: 'oklch(96% 0.01 80)',
+              color: 'var(--tk-text-bright)',
               marginBottom: '1.5rem',
             }}
           >
             Tonisha
             <br />
-            <span style={{ fontStyle: 'italic', color: 'oklch(71% 0.11 78)' }}>Kong</span>
+            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Kong</span>
           </h1>
 
           {/* Tagline */}
@@ -123,7 +123,7 @@ const Home: React.FC = () => {
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '0.95rem',
               fontWeight: 300,
-              color: 'oklch(65% 0.01 60)',
+              color: 'var(--tk-text-muted)',
               maxWidth: '380px',
               lineHeight: 1.6,
               marginBottom: '2.5rem',
@@ -140,7 +140,7 @@ const Home: React.FC = () => {
             <button
               className="btn-gold"
               onClick={() => navigate('/about')}
-              style={{ borderColor: 'oklch(30% 0.01 60)', color: 'oklch(65% 0.01 60)' }}
+              style={{ borderColor: 'var(--tk-border-soft)', color: 'var(--tk-text-muted)' }}
             >
               My Story
             </button>
@@ -165,7 +165,7 @@ const Home: React.FC = () => {
             style={{
               width: '1px',
               height: '60px',
-              background: 'linear-gradient(to bottom, transparent, oklch(71% 0.11 78))',
+              background: 'linear-gradient(to bottom, transparent, var(--tk-gold))',
             }}
           />
           <span
@@ -173,7 +173,7 @@ const Home: React.FC = () => {
               fontSize: '0.6rem',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: 'oklch(50% 0.01 60)',
+              color: 'var(--tk-text-faint)',
               writingMode: 'vertical-rl',
             }}
           >
@@ -193,7 +193,7 @@ const Home: React.FC = () => {
           gap: '2rem',
         }}
       >
-        <div style={{ borderLeft: '1px solid oklch(71% 0.11 78)', paddingLeft: '2rem' }}>
+        <div style={{ borderLeft: '1px solid var(--tk-gold)', paddingLeft: '2rem' }}>
           <blockquote
             className="font-display"
             style={{
@@ -201,7 +201,7 @@ const Home: React.FC = () => {
               fontWeight: 300,
               fontStyle: 'italic',
               lineHeight: 1.3,
-              color: 'oklch(88% 0.015 75)',
+              color: 'var(--tk-text-sub)',
               marginBottom: '1.5rem',
             }}
           >
@@ -212,7 +212,7 @@ const Home: React.FC = () => {
               fontSize: '0.7rem',
               letterSpacing: '0.25em',
               textTransform: 'uppercase',
-              color: 'oklch(71% 0.11 78)',
+              color: 'var(--tk-gold)',
             }}
           >
             — Tonisha Kong
@@ -240,7 +240,7 @@ const Home: React.FC = () => {
               fontSize: '0.7rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'oklch(55% 0.01 60)',
+              color: 'var(--tk-text-dim)',
             }}
           >
             Portfolio
@@ -294,11 +294,12 @@ const Home: React.FC = () => {
       {/* ── Services CTA ──────────────────────────────────────────────── */}
       <section
         style={{
-          background: 'oklch(12% 0.005 60)',
-          borderTop: '1px solid oklch(18% 0.005 60)',
-          borderBottom: '1px solid oklch(18% 0.005 60)',
+          background: 'var(--tk-bg-raised)',
+          borderTop: '1px solid var(--tk-border)',
+          borderBottom: '1px solid var(--tk-border)',
           padding: '5rem 2rem',
           textAlign: 'center',
+          transition: 'background-color 0.35s ease, border-color 0.35s ease',
         }}
       >
         <p
@@ -306,7 +307,7 @@ const Home: React.FC = () => {
             fontSize: '0.65rem',
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            color: 'oklch(71% 0.11 78)',
+            color: 'var(--tk-gold)',
             marginBottom: '1.5rem',
           }}
         >
@@ -317,7 +318,7 @@ const Home: React.FC = () => {
           style={{
             fontSize: 'clamp(2rem, 5vw, 4rem)',
             fontWeight: 300,
-            color: 'oklch(93% 0.01 75)',
+            color: 'var(--tk-text)',
             marginBottom: '1rem',
           }}
         >
@@ -326,7 +327,7 @@ const Home: React.FC = () => {
         <p
           style={{
             fontSize: '0.9rem',
-            color: 'oklch(55% 0.01 60)',
+            color: 'var(--tk-text-dim)',
             maxWidth: '500px',
             margin: '0 auto 2.5rem',
             lineHeight: 1.7,

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: luxury --default;
+  themes: luxury --default, lux-light;
 }
 
 /* ─── Custom luxury dark theme ─────────────────────────────────────── */
@@ -33,6 +33,84 @@
   --animation-input: 0;
   --btn-focus-scale: 1;
   --border-btn: 1px;
+
+  /* ── TK custom tokens ─── */
+  --tk-bg: oklch(9% 0.005 60);
+  --tk-bg-raised: oklch(12% 0.005 60);
+  --tk-bg-deep: oklch(6% 0.005 60);
+  --tk-border: oklch(18% 0.005 60);
+  --tk-border-soft: oklch(30% 0.01 60);
+  --tk-text: oklch(93% 0.01 75);
+  --tk-text-sub: oklch(88% 0.015 75);
+  --tk-text-bright: oklch(96% 0.01 80);
+  --tk-text-muted: oklch(65% 0.01 60);
+  --tk-text-body: oklch(60% 0.01 60);
+  --tk-text-dim: oklch(55% 0.01 60);
+  --tk-text-faint: oklch(45% 0.01 60);
+  --tk-text-footer: oklch(40% 0.01 60);
+  --tk-text-footer-dim: oklch(30% 0.005 60);
+  --tk-text-footer-dimmer: oklch(25% 0.005 60);
+  --tk-gold: oklch(71% 0.11 78);
+  --tk-gold-subtle: oklch(71% 0.11 78 / 0.4);
+  --tk-gold-on-gold: oklch(10% 0 0);
+  --tk-nav-bg: oklch(9% 0.005 60 / 0.95);
+  --tk-hero-overlay: oklch(9% 0.005 60);
+  --tk-hero-overlay-half: oklch(9% 0.005 60 / 0.5);
+}
+
+/* ─── Custom lux-light theme ────────────────────────────────────────── */
+[data-theme="lux-light"] {
+  color-scheme: light;
+  --color-base-100: oklch(98% 0.008 75);
+  --color-base-200: oklch(95% 0.008 75);
+  --color-base-300: oklch(91% 0.01 75);
+  --color-base-content: oklch(20% 0.005 60);
+  --color-primary: oklch(57% 0.14 78);
+  --color-primary-content: oklch(99% 0 0);
+  --color-secondary: oklch(55% 0.06 15);
+  --color-secondary-content: oklch(98% 0 0);
+  --color-accent: oklch(57% 0.12 78);
+  --color-accent-content: oklch(99% 0 0);
+  --color-neutral: oklch(92% 0.008 75);
+  --color-neutral-content: oklch(30% 0.005 60);
+  --color-info: oklch(50% 0.14 200);
+  --color-info-content: oklch(98% 0 0);
+  --color-success: oklch(50% 0.17 145);
+  --color-success-content: oklch(98% 0 0);
+  --color-warning: oklch(60% 0.16 80);
+  --color-warning-content: oklch(10% 0 0);
+  --color-error: oklch(55% 0.20 25);
+  --color-error-content: oklch(98% 0 0);
+  --rounded-box: 0rem;
+  --rounded-btn: 0rem;
+  --rounded-badge: 0rem;
+  --animation-btn: 0;
+  --animation-input: 0;
+  --btn-focus-scale: 1;
+  --border-btn: 1px;
+
+  /* ── TK custom tokens ─── */
+  --tk-bg: oklch(98% 0.008 75);
+  --tk-bg-raised: oklch(96% 0.006 75);
+  --tk-bg-deep: oklch(95% 0.006 75);
+  --tk-border: oklch(87% 0.01 75);
+  --tk-border-soft: oklch(78% 0.01 75);
+  --tk-text: oklch(18% 0.005 60);
+  --tk-text-sub: oklch(25% 0.005 60);
+  --tk-text-bright: oklch(16% 0.005 60);
+  --tk-text-muted: oklch(42% 0.01 60);
+  --tk-text-body: oklch(42% 0.01 60);
+  --tk-text-dim: oklch(50% 0.01 60);
+  --tk-text-faint: oklch(55% 0.01 60);
+  --tk-text-footer: oklch(55% 0.01 60);
+  --tk-text-footer-dim: oklch(52% 0.01 60);
+  --tk-text-footer-dimmer: oklch(52% 0.01 60);
+  --tk-gold: oklch(57% 0.14 78);
+  --tk-gold-subtle: oklch(57% 0.14 78 / 0.35);
+  --tk-gold-on-gold: oklch(99% 0 0);
+  --tk-nav-bg: oklch(98% 0.008 75 / 0.92);
+  --tk-hero-overlay: oklch(98% 0.008 75);
+  --tk-hero-overlay-half: oklch(98% 0.008 75 / 0.5);
 }
 
 /* ─── Global typography ─────────────────────────────────────────────── */
@@ -46,9 +124,10 @@ html {
 
 body {
   font-family: 'DM Sans', system-ui, sans-serif;
-  background: oklch(9% 0.005 60);
-  color: oklch(93% 0.01 75);
+  background: var(--tk-bg);
+  color: var(--tk-text);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.35s ease, color 0.35s ease;
 }
 
 .font-display {
@@ -60,17 +139,17 @@ body {
   width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: oklch(9% 0 0);
+  background: var(--tk-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(71% 0.11 78);
+  background: var(--tk-gold);
 }
 
 /* ─── Gold divider ──────────────────────────────────────────────────── */
 .divider-gold {
   width: 60px;
   height: 1px;
-  background: oklch(71% 0.11 78);
+  background: var(--tk-gold);
   margin: 1rem 0;
 }
 
@@ -115,8 +194,8 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0.75rem 2.5rem;
-  border: 1px solid oklch(71% 0.11 78);
-  color: oklch(71% 0.11 78);
+  border: 1px solid var(--tk-gold);
+  color: var(--tk-gold);
   font-family: 'DM Sans', sans-serif;
   font-size: 0.75rem;
   font-weight: 500;
@@ -124,12 +203,12 @@ body {
   text-transform: uppercase;
   background: transparent;
   cursor: pointer;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   text-decoration: none;
 }
 .btn-gold:hover {
-  background: oklch(71% 0.11 78);
-  color: oklch(10% 0 0);
+  background: var(--tk-gold);
+  color: var(--tk-gold-on-gold);
 }
 
 /* ─── Gold underline inputs ─────────────────────────────────────────── */
@@ -137,25 +216,37 @@ body {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1px solid oklch(30% 0.01 60);
+  border-bottom: 1px solid var(--tk-border-soft);
   padding: 0.75rem 0;
-  color: oklch(93% 0.01 75);
+  color: var(--tk-text);
   font-family: 'DM Sans', sans-serif;
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.3s ease;
 }
 .input-luxury:focus {
-  border-bottom-color: oklch(71% 0.11 78);
+  border-bottom-color: var(--tk-gold);
 }
 .input-luxury::placeholder {
-  color: oklch(45% 0.01 60);
+  color: var(--tk-text-faint);
   font-size: 0.8rem;
   letter-spacing: 0.05em;
 }
 .input-luxury:disabled {
-  color: oklch(45% 0.01 60);
+  color: var(--tk-text-faint);
   cursor: default;
+}
+
+/* ─── Date/time color-scheme ────────────────────────────────────────── */
+[data-theme="luxury"] input[type="datetime-local"],
+[data-theme="luxury"] input[type="date"],
+[data-theme="luxury"] input[type="time"] {
+  color-scheme: dark;
+}
+[data-theme="lux-light"] input[type="datetime-local"],
+[data-theme="lux-light"] input[type="date"],
+[data-theme="lux-light"] input[type="time"] {
+  color-scheme: light;
 }
 
 /* ─── Navbar ────────────────────────────────────────────────────────── */
@@ -163,18 +254,19 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: oklch(9% 0.005 60 / 0.95);
+  background: var(--tk-nav-bg);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid oklch(18% 0.005 60);
+  border-bottom: 1px solid var(--tk-border);
+  transition: background-color 0.35s ease, border-color 0.35s ease;
 }
 
 /* ─── Service & class cards ─────────────────────────────────────────── */
 .lux-card {
-  background: oklch(12% 0.005 60);
-  border: 1px solid oklch(18% 0.005 60);
-  transition: border-color 0.3s ease, transform 0.3s ease;
+  background: var(--tk-bg);
+  border: 1px solid var(--tk-border);
+  transition: border-color 0.3s ease, transform 0.3s ease, background-color 0.35s ease;
 }
 .lux-card:hover {
-  border-color: oklch(71% 0.11 78 / 0.4);
+  border-color: var(--tk-gold-subtle);
   transform: translateY(-2px);
 }

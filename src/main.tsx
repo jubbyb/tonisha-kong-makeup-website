@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 import App from './App.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
+import { ThemeProvider } from './context/ThemeContext.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 
 import Home from './pages/Home';
@@ -21,6 +22,7 @@ import ArtistDashboard from './pages/ArtistDashboard';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -56,5 +58,6 @@ createRoot(document.getElementById('root')!).render(
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

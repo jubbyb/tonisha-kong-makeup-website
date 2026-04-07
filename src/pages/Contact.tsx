@@ -42,7 +42,7 @@ const Contact: React.FC = () => {
   };
 
   return (
-    <div style={{ background: 'oklch(9% 0.005 60)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
       <div
         style={{
           maxWidth: '1280px',
@@ -63,7 +63,7 @@ const Contact: React.FC = () => {
               fontSize: '0.65rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'oklch(71% 0.11 78)',
+              color: 'var(--tk-gold)',
               marginBottom: '1rem',
             }}
           >
@@ -75,13 +75,13 @@ const Contact: React.FC = () => {
               fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
               fontWeight: 300,
               lineHeight: 1.05,
-              color: 'oklch(93% 0.01 75)',
+              color: 'var(--tk-text)',
               marginBottom: '2rem',
             }}
           >
             Let's Create
             <br />
-            <span style={{ fontStyle: 'italic', color: 'oklch(71% 0.11 78)' }}>Together</span>
+            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Together</span>
           </h1>
 
           <div className="divider-gold anim-fade-in delay-2" style={{ marginBottom: '2rem' }} />
@@ -91,7 +91,7 @@ const Contact: React.FC = () => {
             style={{
               fontSize: '0.95rem',
               lineHeight: 1.8,
-              color: 'oklch(55% 0.01 60)',
+              color: 'var(--tk-text-dim)',
               marginBottom: '3rem',
               maxWidth: '400px',
             }}
@@ -116,7 +116,7 @@ const Contact: React.FC = () => {
                     fontSize: '0.6rem',
                     letterSpacing: '0.25em',
                     textTransform: 'uppercase',
-                    color: 'oklch(45% 0.01 60)',
+                    color: 'var(--tk-text-faint)',
                     marginBottom: '0.3rem',
                   }}
                 >
@@ -125,7 +125,7 @@ const Contact: React.FC = () => {
                 <p
                   style={{
                     fontSize: '0.9rem',
-                    color: 'oklch(70% 0.01 60)',
+                    color: 'var(--tk-text-muted)',
                   }}
                 >
                   {value}
@@ -154,7 +154,7 @@ const Contact: React.FC = () => {
                     fontSize: '0.6rem',
                     letterSpacing: '0.22em',
                     textTransform: 'uppercase',
-                    color: 'oklch(45% 0.01 60)',
+                    color: 'var(--tk-text-faint)',
                     marginBottom: '0.5rem',
                   }}
                 >
@@ -178,7 +178,7 @@ const Contact: React.FC = () => {
                   fontSize: '0.6rem',
                   letterSpacing: '0.22em',
                   textTransform: 'uppercase',
-                  color: 'oklch(45% 0.01 60)',
+                  color: 'var(--tk-text-faint)',
                   marginBottom: '0.5rem',
                 }}
               >
@@ -208,7 +208,7 @@ const Contact: React.FC = () => {
               <p
                 style={{
                   fontSize: '0.8rem',
-                  color: 'oklch(71% 0.11 78)',
+                  color: 'var(--tk-gold)',
                   letterSpacing: '0.1em',
                 }}
               >
@@ -216,7 +216,7 @@ const Contact: React.FC = () => {
               </p>
             )}
             {error && (
-              <p style={{ fontSize: '0.8rem', color: 'oklch(63% 0.20 25)' }}>{error}</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-error)' }}>{error}</p>
             )}
           </form>
         </div>

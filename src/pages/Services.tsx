@@ -99,7 +99,7 @@ const Services: React.FC = () => {
           fontSize: '0.75rem',
           letterSpacing: '0.2em',
           textTransform: 'uppercase',
-          color: 'oklch(55% 0.01 60)',
+          color: 'var(--tk-text-dim)',
         }}
       >
         Loading Services...
@@ -115,7 +115,7 @@ const Services: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '60vh',
-          color: 'oklch(63% 0.20 25)',
+          color: 'var(--color-error)',
         }}
       >
         {error}
@@ -124,7 +124,7 @@ const Services: React.FC = () => {
   }
 
   return (
-    <div style={{ background: 'oklch(9% 0.005 60)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
       {/* Header */}
       <div
         style={{
@@ -139,7 +139,7 @@ const Services: React.FC = () => {
             fontSize: '0.65rem',
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            color: 'oklch(71% 0.11 78)',
+            color: 'var(--tk-gold)',
             marginBottom: '1rem',
           }}
         >
@@ -151,7 +151,7 @@ const Services: React.FC = () => {
             fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
             fontWeight: 300,
             lineHeight: 1.05,
-            color: 'oklch(93% 0.01 75)',
+            color: 'var(--tk-text)',
           }}
         >
           Services
@@ -167,8 +167,8 @@ const Services: React.FC = () => {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
           gap: '1px',
-          background: 'oklch(18% 0.005 60)',
-          border: '1px solid oklch(18% 0.005 60)',
+          background: 'var(--tk-border)',
+          border: '1px solid var(--tk-border)',
         }}
       >
         {services.map((service, i) => (
@@ -178,7 +178,7 @@ const Services: React.FC = () => {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              background: 'oklch(9% 0.005 60)',
+              background: 'var(--tk-bg)',
             }}
           >
             {service.image_url && (
@@ -222,7 +222,7 @@ const Services: React.FC = () => {
                   style={{
                     fontSize: '1.4rem',
                     fontWeight: 400,
-                    color: 'oklch(93% 0.01 75)',
+                    color: 'var(--tk-text)',
                     lineHeight: 1.2,
                   }}
                 >
@@ -233,7 +233,7 @@ const Services: React.FC = () => {
                     fontFamily: "'Cormorant Garamond', serif",
                     fontSize: '1.2rem',
                     fontWeight: 300,
-                    color: 'oklch(71% 0.11 78)',
+                    color: 'var(--tk-gold)',
                     whiteSpace: 'nowrap',
                     marginLeft: '1rem',
                   }}
@@ -242,13 +242,13 @@ const Services: React.FC = () => {
                 </span>
               </div>
 
-              <div style={{ width: '30px', height: '1px', background: 'oklch(28% 0.005 60)' }} />
+              <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
 
               <p
                 style={{
                   fontSize: '0.88rem',
                   lineHeight: 1.7,
-                  color: 'oklch(55% 0.01 60)',
+                  color: 'var(--tk-text-dim)',
                   flex: 1,
                 }}
               >
@@ -287,8 +287,8 @@ const Services: React.FC = () => {
         >
           <div
             style={{
-              background: 'oklch(12% 0.005 60)',
-              border: '1px solid oklch(22% 0.005 60)',
+              background: 'var(--tk-bg-raised)',
+              border: '1px solid var(--tk-border)',
               padding: '3rem',
               width: '100%',
               maxWidth: '520px',
@@ -308,13 +308,13 @@ const Services: React.FC = () => {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                color: 'oklch(45% 0.01 60)',
+                color: 'var(--tk-text-faint)',
                 fontSize: '1.2rem',
                 lineHeight: 1,
                 transition: 'color 0.2s',
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'oklch(93% 0.01 75)')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'oklch(45% 0.01 60)')}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text-faint)')}
             >
               ✕
             </button>
@@ -324,7 +324,7 @@ const Services: React.FC = () => {
                 fontSize: '0.6rem',
                 letterSpacing: '0.3em',
                 textTransform: 'uppercase',
-                color: 'oklch(71% 0.11 78)',
+                color: 'var(--tk-gold)',
                 marginBottom: '0.5rem',
               }}
             >
@@ -335,7 +335,7 @@ const Services: React.FC = () => {
               style={{
                 fontSize: '1.8rem',
                 fontWeight: 300,
-                color: 'oklch(93% 0.01 75)',
+                color: 'var(--tk-text)',
                 marginBottom: '2.5rem',
               }}
             >
@@ -355,7 +355,7 @@ const Services: React.FC = () => {
                       fontSize: '0.62rem',
                       letterSpacing: '0.2em',
                       textTransform: 'uppercase',
-                      color: 'oklch(50% 0.01 60)',
+                      color: 'var(--tk-text-dim)',
                       marginBottom: '0.5rem',
                     }}
                   >
@@ -379,7 +379,7 @@ const Services: React.FC = () => {
                     fontSize: '0.62rem',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
-                    color: 'oklch(50% 0.01 60)',
+                    color: 'var(--tk-text-dim)',
                     marginBottom: '0.5rem',
                   }}
                 >
@@ -401,7 +401,7 @@ const Services: React.FC = () => {
                     fontSize: '0.62rem',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
-                    color: 'oklch(50% 0.01 60)',
+                    color: 'var(--tk-text-dim)',
                     marginBottom: '0.5rem',
                   }}
                 >
@@ -413,7 +413,6 @@ const Services: React.FC = () => {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   required
-                  style={{ colorScheme: 'dark' }}
                 />
               </div>
 
@@ -424,7 +423,7 @@ const Services: React.FC = () => {
                     fontSize: '0.62rem',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
-                    color: 'oklch(50% 0.01 60)',
+                    color: 'var(--tk-text-dim)',
                     marginBottom: '0.5rem',
                   }}
                 >
@@ -454,7 +453,7 @@ const Services: React.FC = () => {
                   style={{
                     textAlign: 'center',
                     fontSize: '0.8rem',
-                    color: 'oklch(71% 0.11 78)',
+                    color: 'var(--tk-gold)',
                     letterSpacing: '0.1em',
                   }}
                 >
@@ -462,7 +461,7 @@ const Services: React.FC = () => {
                 </p>
               )}
               {submitError && (
-                <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'oklch(63% 0.20 25)' }}>
+                <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-error)' }}>
                   {submitError}
                 </p>
               )}

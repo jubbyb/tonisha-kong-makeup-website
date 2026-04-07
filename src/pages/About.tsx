@@ -9,7 +9,7 @@ const milestones = [
 
 const About: React.FC = () => {
   return (
-    <div style={{ background: 'oklch(9% 0.005 60)' }}>
+    <div style={{ background: 'var(--tk-bg)', transition: 'background-color 0.35s ease' }}>
       {/* ── Split Hero ────────────────────────────────────────────────── */}
       <section
         style={{
@@ -34,7 +34,7 @@ const About: React.FC = () => {
               fontSize: '0.65rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'oklch(71% 0.11 78)',
+              color: 'var(--tk-gold)',
               marginBottom: '1.5rem',
             }}
           >
@@ -47,13 +47,13 @@ const About: React.FC = () => {
               fontSize: 'clamp(2.5rem, 6vw, 5.5rem)',
               fontWeight: 300,
               lineHeight: 1.05,
-              color: 'oklch(93% 0.01 75)',
+              color: 'var(--tk-text)',
               marginBottom: '2.5rem',
             }}
           >
             About
             <br />
-            <span style={{ fontStyle: 'italic', color: 'oklch(71% 0.11 78)' }}>Tonisha Kong</span>
+            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Tonisha Kong</span>
           </h1>
 
           <div className="divider-gold anim-fade-in delay-2" />
@@ -63,7 +63,7 @@ const About: React.FC = () => {
             style={{
               fontSize: '0.95rem',
               lineHeight: 1.85,
-              color: 'oklch(60% 0.01 60)',
+              color: 'var(--tk-text-body)',
               maxWidth: '500px',
               marginTop: '1.5rem',
               marginBottom: '2rem',
@@ -78,7 +78,7 @@ const About: React.FC = () => {
             style={{
               fontSize: '0.95rem',
               lineHeight: 1.85,
-              color: 'oklch(60% 0.01 60)',
+              color: 'var(--tk-text-body)',
               maxWidth: '500px',
               marginBottom: '2rem',
             }}
@@ -94,7 +94,7 @@ const About: React.FC = () => {
             style={{
               fontSize: '0.95rem',
               lineHeight: 1.85,
-              color: 'oklch(60% 0.01 60)',
+              color: 'var(--tk-text-body)',
               maxWidth: '500px',
             }}
           >
@@ -106,7 +106,7 @@ const About: React.FC = () => {
 
         {/* Right — photo */}
         <div
-          style={{ position: 'relative', overflow: 'hidden', background: 'oklch(12% 0.005 60)' }}
+          style={{ position: 'relative', overflow: 'hidden', background: 'var(--tk-bg-raised)' }}
           className="about-photo"
         >
           <img
@@ -128,8 +128,8 @@ const About: React.FC = () => {
               left: 0,
               width: '80px',
               height: '80px',
-              borderLeft: '1px solid oklch(71% 0.11 78)',
-              borderBottom: '1px solid oklch(71% 0.11 78)',
+              borderLeft: '1px solid var(--tk-gold)',
+              borderBottom: '1px solid var(--tk-gold)',
             }}
           />
         </div>
@@ -138,10 +138,11 @@ const About: React.FC = () => {
       {/* ── Philosophy ────────────────────────────────────────────────── */}
       <section
         style={{
-          background: 'oklch(12% 0.005 60)',
-          borderTop: '1px solid oklch(18% 0.005 60)',
+          background: 'var(--tk-bg-raised)',
+          borderTop: '1px solid var(--tk-border)',
           padding: '5rem 2rem',
           textAlign: 'center',
+          transition: 'background-color 0.35s ease, border-color 0.35s ease',
         }}
       >
         <blockquote
@@ -150,7 +151,7 @@ const About: React.FC = () => {
             fontSize: 'clamp(1.5rem, 3.5vw, 2.8rem)',
             fontWeight: 300,
             fontStyle: 'italic',
-            color: 'oklch(88% 0.015 75)',
+            color: 'var(--tk-text-sub)',
             maxWidth: '800px',
             margin: '0 auto 2rem',
             lineHeight: 1.4,
@@ -162,7 +163,7 @@ const About: React.FC = () => {
           style={{
             width: '40px',
             height: '1px',
-            background: 'oklch(71% 0.11 78)',
+            background: 'var(--tk-gold)',
             margin: '0 auto',
           }}
         />
@@ -183,7 +184,7 @@ const About: React.FC = () => {
               fontSize: '0.65rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'oklch(55% 0.01 60)',
+              color: 'var(--tk-text-dim)',
             }}
           >
             The Journey
@@ -203,7 +204,7 @@ const About: React.FC = () => {
               className={`anim-fade-up delay-${i + 1}`}
               style={{
                 padding: '2.5rem',
-                borderLeft: '1px solid oklch(18% 0.005 60)',
+                borderLeft: '1px solid var(--tk-border)',
                 borderBottom: i < 2 ? 'none' : undefined,
               }}
             >
@@ -213,7 +214,7 @@ const About: React.FC = () => {
                   fontSize: '0.65rem',
                   letterSpacing: '0.25em',
                   textTransform: 'uppercase',
-                  color: 'oklch(71% 0.11 78)',
+                  color: 'var(--tk-gold)',
                   marginBottom: '1rem',
                 }}
               >
@@ -223,7 +224,7 @@ const About: React.FC = () => {
                 style={{
                   fontSize: '0.9rem',
                   lineHeight: 1.7,
-                  color: 'oklch(60% 0.01 60)',
+                  color: 'var(--tk-text-body)',
                 }}
               >
                 {m.text}
@@ -236,7 +237,7 @@ const About: React.FC = () => {
       {/* ── Gratitude ─────────────────────────────────────────────────── */}
       <section
         style={{
-          borderTop: '1px solid oklch(18% 0.005 60)',
+          borderTop: '1px solid var(--tk-border)',
           padding: '5rem 2rem',
           maxWidth: '700px',
           margin: '0 auto',
@@ -248,7 +249,7 @@ const About: React.FC = () => {
             fontSize: '0.65rem',
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            color: 'oklch(71% 0.11 78)',
+            color: 'var(--tk-gold)',
             marginBottom: '1.5rem',
           }}
         >
@@ -258,7 +259,7 @@ const About: React.FC = () => {
           style={{
             fontSize: '1rem',
             lineHeight: 1.8,
-            color: 'oklch(60% 0.01 60)',
+            color: 'var(--tk-text-body)',
           }}
         >
           Special thanks to my mom and big sister for their constant encouragement and love.

@@ -10,7 +10,7 @@
 			"binding": "DB",
 			"database_name": "tonisha-kong-db",
 			"database_id": "76796839-90f1-43dc-9615-e215cf8246dd",
-			"remote": true
+			// "remote": true
 		}
 		// ,
 		// {

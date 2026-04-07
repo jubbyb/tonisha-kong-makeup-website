@@ -39,7 +39,7 @@ const Classes: React.FC = () => {
           fontSize: '0.75rem',
           letterSpacing: '0.2em',
           textTransform: 'uppercase',
-          color: 'oklch(55% 0.01 60)',
+          color: 'var(--tk-text-dim)',
         }}
       >
         Loading Classes...
@@ -55,7 +55,7 @@ const Classes: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '60vh',
-          color: 'oklch(63% 0.20 25)',
+          color: 'var(--color-error)',
         }}
       >
         {error}
@@ -64,7 +64,7 @@ const Classes: React.FC = () => {
   }
 
   return (
-    <div style={{ background: 'oklch(9% 0.005 60)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
       {/* Header */}
       <div
         style={{
@@ -79,7 +79,7 @@ const Classes: React.FC = () => {
             fontSize: '0.65rem',
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            color: 'oklch(71% 0.11 78)',
+            color: 'var(--tk-gold)',
             marginBottom: '1rem',
           }}
         >
@@ -91,7 +91,7 @@ const Classes: React.FC = () => {
             fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
             fontWeight: 300,
             lineHeight: 1.05,
-            color: 'oklch(93% 0.01 75)',
+            color: 'var(--tk-text)',
             marginBottom: '1rem',
           }}
         >
@@ -101,7 +101,7 @@ const Classes: React.FC = () => {
           className="anim-fade-up delay-2"
           style={{
             fontSize: '0.9rem',
-            color: 'oklch(50% 0.01 60)',
+            color: 'var(--tk-text-dim)',
             maxWidth: '500px',
             lineHeight: 1.7,
           }}
@@ -119,8 +119,8 @@ const Classes: React.FC = () => {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
           gap: '1px',
-          background: 'oklch(18% 0.005 60)',
-          border: '1px solid oklch(18% 0.005 60)',
+          background: 'var(--tk-border)',
+          border: '1px solid var(--tk-border)',
         }}
       >
         {classes.map((classItem, i) => {
@@ -132,18 +132,18 @@ const Classes: React.FC = () => {
               key={classItem.id}
               className={`anim-fade-up delay-${Math.min(i + 1, 8)}`}
               style={{
-                background: 'oklch(9% 0.005 60)',
+                background: 'var(--tk-bg)',
                 padding: '2.5rem',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1.25rem',
-                transition: 'background 0.3s ease',
+                transition: 'background-color 0.3s ease',
               }}
               onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = 'oklch(12% 0.005 60)')
+                ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--tk-bg-raised)')
               }
               onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = 'oklch(9% 0.005 60)')
+                ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--tk-bg)')
               }
             >
               {/* Name + price */}
@@ -153,7 +153,7 @@ const Classes: React.FC = () => {
                   style={{
                     fontSize: '1.6rem',
                     fontWeight: 400,
-                    color: 'oklch(93% 0.01 75)',
+                    color: 'var(--tk-text)',
                     lineHeight: 1.15,
                     flex: 1,
                   }}
@@ -165,7 +165,7 @@ const Classes: React.FC = () => {
                   style={{
                     fontSize: '1.4rem',
                     fontWeight: 300,
-                    color: 'oklch(71% 0.11 78)',
+                    color: 'var(--tk-gold)',
                     marginLeft: '1rem',
                     whiteSpace: 'nowrap',
                   }}
@@ -175,14 +175,14 @@ const Classes: React.FC = () => {
               </div>
 
               {/* Divider */}
-              <div style={{ width: '30px', height: '1px', background: 'oklch(28% 0.005 60)' }} />
+              <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
 
               {/* Description */}
               <p
                 style={{
                   fontSize: '0.88rem',
                   lineHeight: 1.7,
-                  color: 'oklch(55% 0.01 60)',
+                  color: 'var(--tk-text-dim)',
                 }}
               >
                 {classItem.description}
@@ -193,7 +193,7 @@ const Classes: React.FC = () => {
                 style={{
                   fontSize: '0.72rem',
                   letterSpacing: '0.12em',
-                  color: 'oklch(45% 0.01 60)',
+                  color: 'var(--tk-text-faint)',
                 }}
               >
                 {new Date(classItem.date).toLocaleDateString('en-US', {
@@ -241,7 +241,7 @@ function Feature({ active, label }: { active: boolean; label: string }) {
         style={{
           width: '16px',
           height: '16px',
-          border: `1px solid ${active ? 'oklch(71% 0.11 78)' : 'oklch(25% 0.005 60)'}`,
+          border: `1px solid ${active ? 'var(--tk-gold)' : 'var(--tk-text-footer-dimmer)'}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -249,10 +249,10 @@ function Feature({ active, label }: { active: boolean; label: string }) {
         }}
       >
         {active && (
-          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+          <svg width="8" height="6" viewBox="0 0 8 6" fill="none" style={{ color: 'var(--tk-gold)' }}>
             <path
               d="M1 3L3 5L7 1"
-              stroke="oklch(71% 0.11 78)"
+              stroke="currentColor"
               strokeWidth="1.2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -263,7 +263,7 @@ function Feature({ active, label }: { active: boolean; label: string }) {
       <span
         style={{
           fontSize: '0.8rem',
-          color: active ? 'oklch(65% 0.01 60)' : 'oklch(30% 0.005 60)',
+          color: active ? 'var(--tk-text-muted)' : 'var(--tk-text-footer-dimmer)',
           textDecoration: active ? 'none' : 'line-through',
         }}
       >
