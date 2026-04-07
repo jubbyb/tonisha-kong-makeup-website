@@ -15,11 +15,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
     try {
-      const body = await res.json<{ error?: string }>();
+      const body = (await res.json()) as { error?: string };
       if (body.error) message = body.error;
     } catch {}
     throw new Error(message);
   }
 
-  return res.json<T>();
+  return res.json() as Promise<T>;
 }

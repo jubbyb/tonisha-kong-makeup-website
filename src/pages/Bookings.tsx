@@ -29,7 +29,7 @@ const Bookings: React.FC = () => {
       });
 
       if (!res.ok) {
-        const { error: err } = await res.json<{ error: string }>();
+        const { error: err } = (await res.json()) as { error: string };
         throw new Error(err ?? 'Booking failed');
       }
 

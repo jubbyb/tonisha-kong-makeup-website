@@ -415,7 +415,7 @@ function ArtistsTab({ token }: { token: string }) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: form.name, email: form.email, password: form.password, bio: form.bio || undefined, specialties: form.specialties || undefined, photo_url: form.photo_url || undefined }),
       });
-      if (!res.ok) { const d = await res.json<{ error: string }>(); throw new Error(d.error); }
+      if (!res.ok) { const d = (await res.json()) as { error: string }; throw new Error(d.error); }
       await fetchArtists();
       setModalOpen(false);
       setForm(emptyArtistForm());

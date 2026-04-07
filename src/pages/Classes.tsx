@@ -17,7 +17,7 @@ const Classes: React.FC = () => {
 
   useEffect(() => {
     fetch('/api/classes')
-      .then((res) => res.json<ClassItem[]>())
+      .then((res) => res.json() as Promise<ClassItem[]>)
       .then((data) => {
         setClasses(data);
         setLoading(false);

@@ -41,7 +41,7 @@ export default function Login() {
         body: JSON.stringify(body),
       });
 
-      const data = await res.json<{ token?: string; user?: { id: string; name: string; email: string; role: 'user' | 'artist' }; error?: string }>();
+      const data = (await res.json()) as { token?: string; user?: { id: string; name: string; email: string; role: 'user' | 'artist' }; error?: string };
 
       if (!res.ok) throw new Error(data.error ?? 'Authentication failed');
 

@@ -26,7 +26,7 @@ const Services: React.FC = () => {
 
   useEffect(() => {
     fetch('/api/services')
-      .then((res) => res.json<Service[]>())
+      .then((res) => res.json() as Promise<Service[]>)
       .then((data) => {
         setServices(data);
         setLoading(false);
@@ -74,7 +74,7 @@ const Services: React.FC = () => {
       });
 
       if (!res.ok) {
-        const { error: err } = await res.json<{ error: string }>();
+        const { error: err } = (await res.json()) as { error: string };
         throw new Error(err ?? 'Booking failed');
       }
 

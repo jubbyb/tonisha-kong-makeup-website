@@ -49,8 +49,8 @@ export default function ArtistProfile() {
   useEffect(() => {
     if (!id) return;
     Promise.all([
-      fetch(`/api/artists/${id}`).then((r) => r.json<Artist>()),
-      fetch('/api/services').then((r) => r.json<Service[]>()),
+      fetch(`/api/artists/${id}`).then((r) => r.json() as Promise<Artist>),
+      fetch('/api/services').then((r) => r.json() as Promise<Service[]>),
     ])
       .then(([a, s]) => { setArtist(a); setServices(s); setLoading(false); })
       .catch(() => setLoading(false));
@@ -62,7 +62,7 @@ export default function ArtistProfile() {
     const lastDay = new Date(calYear, calMonth + 1, 0).getDate();
     const to = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
     fetch(`/api/artists/${id}/slots?from=${from}&to=${to}`)
-      .then((r) => r.json<Slot[]>())
+      .then((r) => r.json() as Promise<Slot[]>)
       .then(setSlots);
   }, [id, calYear, calMonth]);
 

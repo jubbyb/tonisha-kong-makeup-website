@@ -17,7 +17,7 @@ export default function Artists() {
 
   useEffect(() => {
     fetch('/api/artists')
-      .then((r) => r.json<Artist[]>())
+      .then((r) => r.json() as Promise<Artist[]>)
       .then((data) => { setArtists(data); setLoading(false); })
       .catch(() => { setError('Failed to load artists.'); setLoading(false); });
   }, []);
