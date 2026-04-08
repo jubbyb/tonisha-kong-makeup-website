@@ -67,7 +67,7 @@ const BackButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
   </button>
 );
 
-const BookingFlow: React.FC<BookingFlowProps> = ({ onClose }) => {
+const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, onClose }) => {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
@@ -150,6 +150,18 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ onClose }) => {
       .then((data) => { setArtistCatalog(data); setCatalogLoading(false); })
       .catch(() => setCatalogLoading(false));
   }, [selectedArtist]);
+
+  // ── Auto-select preselected service once catalog loads ───────────────────────
+  useEffect(() => {
+    if (!preselectedService || catalogLoading || artistCatalog.length === 0) return;
+    const match = artistCatalog.find(
+      (s) => s.name.toLowerCase() === preselectedService.toLowerCase()
+    );
+    if (match) {
+      setSelectedService(match);
+      setStep('schedule');
+    }
+  }, [preselectedService, artistCatalog, catalogLoading]);
 
   // ── Fetch slots when artist or month changes ─────────────────────────────────
   useEffect(() => {
