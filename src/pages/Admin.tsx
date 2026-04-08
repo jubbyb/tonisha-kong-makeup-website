@@ -521,11 +521,381 @@ function ArtistsTab({ token }: { token: string }) {
   );
 }
 
+// ── Users tab ─────────────────────────────────────────────────────────────────
+
+interface UserRecord {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
+function UsersTab({ token }: { token: string }) {
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<number | null>(null);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
+    setUsers(await res.json());
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const handleRoleChange = async (user: UserRecord, newRole: string) => {
+    setSaving(user.id);
+    await fetch(`/api/admin/users/${user.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ role: newRole }),
+    });
+    setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, role: newRole } : u));
+    setSaving(null);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this user? This cannot be undone.')) return;
+    await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+  };
+
+  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Users</h2>
+        <span className="badge badge-neutral">{users.length} total</span>
+      </div>
+      {users.length === 0 ? (
+        <div className="text-center text-base-content/50 py-12">No users yet.</div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-base-300">
+          <table className="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Joined</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td className="font-medium">{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>
+                    <select
+                      className="select select-bordered select-xs"
+                      value={u.role}
+                      disabled={saving === u.id}
+                      onChange={(e) => handleRoleChange(u, e.target.value)}
+                    >
+                      <option value="user">Client</option>
+                      <option value="artist">Artist</option>
+                    </select>
+                  </td>
+                  <td className="text-sm text-base-content/60 whitespace-nowrap">
+                    {new Date(u.created_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <button className="btn btn-error btn-xs" onClick={() => handleDelete(u.id)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Services tab ─────────────────────────────────────────────────────────────
+
+interface ServiceCategory { id: number; name: string; sort_order: number }
+interface ServiceSubcategory { id: number; category_id: number; name: string; sort_order: number }
+interface CatalogServiceItem { id: number; subcategory_id: number; name: string; description: string | null; price: number | null; duration_min: number; sort_order: number }
+
+function ServicesTab({ token }: { token: string }) {
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [subcategories, setSubcategories] = useState<ServiceSubcategory[]>([]);
+  const [services, setServices] = useState<CatalogServiceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // UI sub-section: 'categories' | 'subcategories' | 'services'
+  const [section, setSection] = useState<'categories' | 'subcategories' | 'services'>('categories');
+
+  // Modal state
+  const [modal, setModal] = useState<null | { type: 'category' | 'subcategory' | 'service'; item?: ServiceCategory | ServiceSubcategory | CatalogServiceItem }>(null);
+  const [formData, setFormData] = useState<Record<string, string | number | null>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const authHeaders = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    const [cats, subs, svcs] = await Promise.all([
+      fetch('/api/admin/service-catalog/categories', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json() as Promise<ServiceCategory[]>),
+      fetch('/api/admin/service-catalog/subcategories', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json() as Promise<ServiceSubcategory[]>),
+      fetch('/api/admin/service-catalog/services', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json() as Promise<CatalogServiceItem[]>),
+    ]);
+    setCategories(cats);
+    setSubcategories(subs);
+    setServices(svcs);
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const openAdd = (type: 'category' | 'subcategory' | 'service') => {
+    const defaults: Record<string, string | number> =
+      type === 'category' ? { name: '', sort_order: 0 } :
+      type === 'subcategory' ? { name: '', sort_order: 0, category_id: categories[0]?.id ?? '' } :
+      { name: '', description: '', price: '', duration_min: 60, sort_order: 0, subcategory_id: subcategories[0]?.id ?? '' };
+    setFormData(defaults);
+    setSaveError(null);
+    setModal({ type });
+  };
+
+  const openEdit = (type: 'category' | 'subcategory' | 'service', item: ServiceCategory | ServiceSubcategory | CatalogServiceItem) => {
+    setFormData({ ...item });
+    setSaveError(null);
+    setModal({ type, item });
+  };
+
+  const handleDelete = async (type: 'category' | 'subcategory' | 'service', id: number) => {
+    const label = type === 'category' ? 'category (and all subcategories and services within it)' : type === 'subcategory' ? 'subcategory (and all services within it)' : 'service';
+    if (!confirm(`Delete this ${label}?`)) return;
+    const url =
+      type === 'category' ? `/api/admin/service-catalog/categories/${id}` :
+      type === 'subcategory' ? `/api/admin/service-catalog/subcategories/${id}` :
+      `/api/admin/service-catalog/services/${id}`;
+    await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    fetchAll();
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modal) return;
+    setSaving(true);
+    setSaveError(null);
+    const { type, item } = modal;
+    const url = item
+      ? `/api/admin/service-catalog/${type === 'category' ? 'categories' : type === 'subcategory' ? 'subcategories' : 'services'}/${(item as ServiceCategory).id}`
+      : `/api/admin/service-catalog/${type === 'category' ? 'categories' : type === 'subcategory' ? 'subcategories' : 'services'}`;
+    try {
+      const body: Record<string, string | number | null> = { ...formData };
+      if (type === 'service') {
+        body.price = formData.price === '' ? null : Number(formData.price);
+        body.duration_min = Number(formData.duration_min) || 60;
+        body.sort_order = Number(formData.sort_order) || 0;
+        body.subcategory_id = Number(formData.subcategory_id);
+      } else if (type === 'subcategory') {
+        body.category_id = Number(formData.category_id);
+        body.sort_order = Number(formData.sort_order) || 0;
+      } else {
+        body.sort_order = Number(formData.sort_order) || 0;
+      }
+      const res = await fetch(url, { method: item ? 'PUT' : 'POST', headers: authHeaders, body: JSON.stringify(body) });
+      if (!res.ok) { const d = (await res.json()) as { error: string }; throw new Error(d.error); }
+      await fetchAll();
+      setModal(null);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+
+  const catName = (id: number) => categories.find((c) => c.id === id)?.name ?? '—';
+  const subName = (id: number) => { const s = subcategories.find((s) => s.id === id); return s ? `${catName(s.category_id)} › ${s.name}` : '—'; };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Service Catalog</h2>
+      </div>
+
+      <div className="tabs tabs-boxed mb-6 w-fit">
+        {(['categories', 'subcategories', 'services'] as const).map((s) => (
+          <button key={s} className={`tab capitalize ${section === s ? 'tab-active' : ''}`} onClick={() => setSection(s)}>{s}</button>
+        ))}
+      </div>
+
+      {/* ── Categories ── */}
+      {section === 'categories' && (
+        <div>
+          <div className="flex justify-end mb-3">
+            <button className="btn btn-primary btn-sm" onClick={() => openAdd('category')}>+ Add Category</button>
+          </div>
+          {categories.length === 0 ? (
+            <div className="text-center text-base-content/50 py-12">No categories yet.</div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-base-300">
+              <table className="table table-zebra w-full">
+                <thead><tr><th>Name</th><th>Sort Order</th><th>Subcategories</th><th></th></tr></thead>
+                <tbody>
+                  {categories.map((c) => (
+                    <tr key={c.id}>
+                      <td className="font-medium">{c.name}</td>
+                      <td>{c.sort_order}</td>
+                      <td className="text-sm text-base-content/60">{subcategories.filter((s) => s.category_id === c.id).length}</td>
+                      <td className="space-x-2">
+                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit('category', c)}>Edit</button>
+                        <button className="btn btn-error btn-xs" onClick={() => handleDelete('category', c.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Subcategories ── */}
+      {section === 'subcategories' && (
+        <div>
+          <div className="flex justify-end mb-3">
+            <button className="btn btn-primary btn-sm" onClick={() => openAdd('subcategory')}>+ Add Subcategory</button>
+          </div>
+          {subcategories.length === 0 ? (
+            <div className="text-center text-base-content/50 py-12">No subcategories yet.</div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-base-300">
+              <table className="table table-zebra w-full">
+                <thead><tr><th>Category</th><th>Name</th><th>Sort Order</th><th>Services</th><th></th></tr></thead>
+                <tbody>
+                  {subcategories.map((s) => (
+                    <tr key={s.id}>
+                      <td className="text-sm text-base-content/60">{catName(s.category_id)}</td>
+                      <td className="font-medium">{s.name}</td>
+                      <td>{s.sort_order}</td>
+                      <td className="text-sm text-base-content/60">{services.filter((sv) => sv.subcategory_id === s.id).length}</td>
+                      <td className="space-x-2">
+                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit('subcategory', s)}>Edit</button>
+                        <button className="btn btn-error btn-xs" onClick={() => handleDelete('subcategory', s.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Services ── */}
+      {section === 'services' && (
+        <div>
+          <div className="flex justify-end mb-3">
+            <button className="btn btn-primary btn-sm" onClick={() => openAdd('service')}>+ Add Service</button>
+          </div>
+          {services.length === 0 ? (
+            <div className="text-center text-base-content/50 py-12">No services yet.</div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-base-300">
+              <table className="table table-zebra w-full">
+                <thead><tr><th>Category › Sub</th><th>Name</th><th>Price</th><th>Duration</th><th>Sort</th><th></th></tr></thead>
+                <tbody>
+                  {services.map((sv) => (
+                    <tr key={sv.id}>
+                      <td className="text-sm text-base-content/60">{subName(sv.subcategory_id)}</td>
+                      <td>
+                        <div className="font-medium">{sv.name}</div>
+                        {sv.description && <div className="text-xs text-base-content/50 max-w-xs truncate">{sv.description}</div>}
+                      </td>
+                      <td>{sv.price != null ? `$${sv.price}` : '—'}</td>
+                      <td>{sv.duration_min} min</td>
+                      <td>{sv.sort_order}</td>
+                      <td className="space-x-2">
+                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit('service', sv)}>Edit</button>
+                        <button className="btn btn-error btn-xs" onClick={() => handleDelete('service', sv.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Modal ── */}
+      {modal && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <button type="button" className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => setModal(null)}>✕</button>
+            <h3 className="font-bold text-lg mb-4 capitalize">{modal.item ? 'Edit' : 'Add'} {modal.type}</h3>
+            <form onSubmit={handleSave} className="space-y-3">
+              {modal.type === 'subcategory' && (
+                <div className="form-control">
+                  <label className="label"><span className="label-text">Category</span></label>
+                  <select className="select select-bordered" value={formData.category_id ?? ''} onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })} required>
+                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {modal.type === 'service' && (
+                <div className="form-control">
+                  <label className="label"><span className="label-text">Subcategory</span></label>
+                  <select className="select select-bordered" value={formData.subcategory_id ?? ''} onChange={(e) => setFormData({ ...formData, subcategory_id: Number(e.target.value) })} required>
+                    {subcategories.map((s) => <option key={s.id} value={s.id}>{catName(s.category_id)} › {s.name}</option>)}
+                  </select>
+                </div>
+              )}
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-24">Name</span>
+                <input type="text" className="grow" value={String(formData.name ?? '')} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+              </label>
+              {modal.type === 'service' && (
+                <>
+                  <label className="textarea textarea-bordered flex items-start gap-2 pt-2">
+                    <span className="label w-24 mt-1">Description</span>
+                    <textarea className="grow" rows={2} value={String(formData.description ?? '')} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                  </label>
+                  <label className="input input-bordered flex items-center gap-2">
+                    <span className="label w-24">Price ($)</span>
+                    <input type="number" min="0" step="0.01" className="grow" placeholder="Optional" value={String(formData.price ?? '')} onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
+                  </label>
+                  <label className="input input-bordered flex items-center gap-2">
+                    <span className="label w-24">Duration</span>
+                    <input type="number" min="1" className="grow" value={String(formData.duration_min ?? 60)} onChange={(e) => setFormData({ ...formData, duration_min: e.target.value })} required />
+                    <span className="text-sm text-base-content/60">min</span>
+                  </label>
+                </>
+              )}
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-24">Sort Order</span>
+                <input type="number" className="grow" value={String(formData.sort_order ?? 0)} onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })} />
+              </label>
+              {saveError && <div className="alert alert-error py-2 text-sm">{saveError}</div>}
+              <div className="modal-action mt-2">
+                <button type="button" className="btn btn-ghost" onClick={() => setModal(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : modal.item ? 'Save Changes' : 'Add'}</button>
+              </div>
+            </form>
+          </div>
+        </dialog>
+      )}
+    </div>
+  );
+}
+
 // ── Admin shell ───────────────────────────────────────────────────────────────
 
 const Admin: React.FC = () => {
   const [token, setToken] = useState<string | null>(() => sessionStorage.getItem('adminToken'));
-  const [activeTab, setActiveTab] = useState<'bookings' | 'classes' | 'artists'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'classes' | 'artists' | 'users' | 'services'>('bookings');
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminToken');
@@ -544,7 +914,7 @@ const Admin: React.FC = () => {
       </div>
 
       <div role="tablist" className="tabs tabs-bordered mb-6">
-        {(['bookings', 'classes', 'artists'] as const).map((t) => (
+        {(['bookings', 'classes', 'artists', 'users', 'services'] as const).map((t) => (
           <button key={t} role="tab" className={`tab tab-lg capitalize ${activeTab === t ? 'tab-active' : ''}`} onClick={() => setActiveTab(t)}>
             {t}
           </button>
@@ -554,6 +924,8 @@ const Admin: React.FC = () => {
       {activeTab === 'bookings' && <BookingsTab token={token} />}
       {activeTab === 'classes' && <ClassesTab token={token} />}
       {activeTab === 'artists' && <ArtistsTab token={token} />}
+      {activeTab === 'users' && <UsersTab token={token} />}
+      {activeTab === 'services' && <ServicesTab token={token} />}
     </div>
   );
 };

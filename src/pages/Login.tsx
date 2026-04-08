@@ -15,12 +15,28 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const { setAuth } = useAuth();
   const navigate = useNavigate();
 
+  const validateEmail = (v: string) => {
+    if (!v.trim()) return 'Email is required.';
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+      ? ''
+      : 'Please enter a valid email address.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate email
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setEmailError(emailErr);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -41,12 +57,12 @@ export default function Login() {
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as { token?: string; user?: { id: string; name: string; email: string; role: 'user' | 'artist' }; error?: string };
+      const data = (await res.json()) as { token?: string; user?: { id: string; name: string; email: string; role: 'user' | 'artist'; artist_id?: string }; error?: string };
 
       if (!res.ok) throw new Error(data.error ?? 'Authentication failed');
 
       setAuth(data.token!, data.user!);
-      navigate(data.user!.role === 'artist' ? '/artist-dashboard' : returnTo, { replace: true });
+      navigate(mode === 'artist' ? '/artist-dashboard' : returnTo, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -76,10 +92,21 @@ export default function Login() {
                 <input type="text" className="grow" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />
               </label>
             )}
-            <label className="input input-bordered flex items-center gap-2">
-              <span className="label w-20">Email</span>
-              <input type="email" className="grow" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-            </label>
+            <div>
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-20">Email</span>
+                <input
+                  type="email"
+                  className="grow"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => setEmailError(validateEmail(email))}
+                  required
+                  autoComplete="email"
+                />
+              </label>
+              {emailError && <p className="text-error text-sm mt-2">{emailError}</p>}
+            </div>
             <label className="input input-bordered flex items-center gap-2">
               <span className="label w-20">Password</span>
               <input type="password" className="grow" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />

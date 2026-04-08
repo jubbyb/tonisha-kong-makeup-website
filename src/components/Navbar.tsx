@@ -144,11 +144,10 @@ export default function Navbar() {
 
           {user ? (
             <>
-              {user.role === 'artist' ? (
+              {user.role === 'artist' && (
                 <Link to="/artist-dashboard" style={authLinkStyle}>Dashboard</Link>
-              ) : (
-                <Link to="/my-bookings" style={authLinkStyle}>My Bookings</Link>
               )}
+              <Link to="/my-bookings" style={authLinkStyle}>My Bookings</Link>
               <button
                 onClick={handleLogout}
                 className="btn-gold"
@@ -248,7 +247,7 @@ export default function Navbar() {
           <div style={{ borderTop: '1px solid var(--tk-border)', paddingTop: '1rem', marginTop: '0.25rem' }}>
             {user ? (
               <>
-                {user.role === 'artist' ? (
+                {user.role === 'artist' && (
                   <Link
                     to="/artist-dashboard"
                     onClick={() => setMenuOpen(false)}
@@ -256,15 +255,14 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
-                ) : (
-                  <Link
-                    to="/my-bookings"
-                    onClick={() => setMenuOpen(false)}
-                    style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none', display: 'block', marginBottom: '1rem' }}
-                  >
-                    My Bookings
-                  </Link>
                 )}
+                <Link
+                  to="/my-bookings"
+                  onClick={() => setMenuOpen(false)}
+                  style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none', display: 'block', marginBottom: '1rem' }}
+                >
+                  My Bookings
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="btn-gold"

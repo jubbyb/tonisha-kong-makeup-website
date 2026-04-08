@@ -470,6 +470,133 @@ function AvailabilityTab() {
   );
 }
 
+// ─── Services tab ─────────────────────────────────────────────────────────────
+
+interface CatalogCategory {
+  id: number;
+  name: string;
+  sort_order: number;
+  subcategories: Array<{
+    id: number;
+    name: string;
+    services: Array<{
+      id: number;
+      name: string;
+      description: string | null;
+      price: number | null;
+      duration_min: number;
+    }>;
+  }>;
+}
+
+function ServicesTab() {
+  const [catalog, setCatalog] = useState<CatalogCategory[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/service-catalog').then((r) => r.json() as Promise<CatalogCategory[]>),
+      apiFetch<number[]>('/api/artist/services'),
+    ])
+      .then(([cat, ids]) => {
+        setCatalog(cat);
+        setSelected(new Set(ids));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const toggle = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await apiFetch('/api/artist/services', {
+        method: 'PUT',
+        body: JSON.stringify({ service_ids: Array.from(selected) }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-1">
+        <h2 className="text-2xl font-bold">My Services</h2>
+        <button className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`} onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
+        </button>
+      </div>
+      <p className="text-sm text-base-content/60 mb-6">
+        Select the services you offer. Clients will only see these when booking with you.
+      </p>
+      {error && <div className="alert alert-error py-2 text-sm mb-4">{error}</div>}
+
+      {catalog.length === 0 ? (
+        <div className="text-center text-base-content/50 py-12">No services in the catalog yet. Ask an admin to add some.</div>
+      ) : (
+        <div className="space-y-6">
+          {catalog.map((cat) => (
+            <div key={cat.id} className="card bg-base-100 border border-base-300">
+              <div className="card-body py-4 px-5">
+                <h3 className="font-semibold text-base mb-3">{cat.name}</h3>
+                {cat.subcategories.map((sub) => (
+                  <div key={sub.id} className="mb-4 last:mb-0">
+                    <p className="text-xs uppercase tracking-widest text-base-content/50 mb-2">{sub.name}</p>
+                    <div className="space-y-2">
+                      {sub.services.map((svc) => (
+                        <label key={svc.id} className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-base-200 transition-colors">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-primary checkbox-sm mt-0.5"
+                            checked={selected.has(svc.id)}
+                            onChange={() => toggle(svc.id)}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="font-medium text-sm">{svc.name}</span>
+                              <div className="text-right whitespace-nowrap text-xs text-base-content/60">
+                                {svc.price != null && <span className="mr-2">${svc.price}</span>}
+                                <span>{svc.duration_min} min</span>
+                              </div>
+                            </div>
+                            {svc.description && (
+                              <p className="text-xs text-base-content/60 mt-0.5">{svc.description}</p>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Profile tab ──────────────────────────────────────────────────────────────
 
 function ProfileTab() {
@@ -536,7 +663,7 @@ function ProfileTab() {
 
 // ─── Dashboard shell ──────────────────────────────────────────────────────────
 
-type Tab = 'bookings' | 'availability' | 'profile';
+type Tab = 'bookings' | 'availability' | 'services' | 'profile';
 
 export default function ArtistDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('bookings');
@@ -545,7 +672,7 @@ export default function ArtistDashboard() {
     <div className="container mx-auto p-6 max-w-6xl">
       <h1 className="text-3xl font-bold mb-6">Artist Dashboard</h1>
       <div role="tablist" className="tabs tabs-bordered mb-6">
-        {(['bookings', 'availability', 'profile'] as Tab[]).map((t) => (
+        {(['bookings', 'availability', 'services', 'profile'] as Tab[]).map((t) => (
           <button key={t} role="tab" className={`tab tab-lg capitalize ${activeTab === t ? 'tab-active' : ''}`} onClick={() => setActiveTab(t)}>
             {t}
           </button>
@@ -553,6 +680,7 @@ export default function ArtistDashboard() {
       </div>
       {activeTab === 'bookings' && <BookingsTab />}
       {activeTab === 'availability' && <AvailabilityTab />}
+      {activeTab === 'services' && <ServicesTab />}
       {activeTab === 'profile' && <ProfileTab />}
     </div>
   );

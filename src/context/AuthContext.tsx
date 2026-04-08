@@ -5,6 +5,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: 'user' | 'artist';
+  artist_id?: string; // set when logged in via artists table (client tab)
 }
 
 interface AuthContextType {
@@ -20,7 +21,7 @@ function decodeToken(token: string): AuthUser | null {
   try {
     const payload = token.split('.')[1];
     const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return { id: decoded.sub, name: decoded.name, email: decoded.email, role: decoded.role };
+    return { id: decoded.sub, name: decoded.name, email: decoded.email, role: decoded.role, artist_id: decoded.artist_id };
   } catch {
     return null;
   }

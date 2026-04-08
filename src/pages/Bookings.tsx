@@ -1,135 +1,115 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation } from 'react-router-dom';
+import BookingFlow from '../components/BookingFlow';
 
 const Bookings: React.FC = () => {
   const location = useLocation();
-  const initialService = location.state?.service?.name || '';
-
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [service, setService] = useState(initialService);
-  const [date, setDate] = useState('');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [success, setSuccess] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setSuccess(false);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, service, date, message }),
-      });
-
-      if (!res.ok) {
-        const { error: err } = (await res.json()) as { error: string };
-        throw new Error(err ?? 'Booking failed');
-      }
-
-      setSuccess(true);
-      setName('');
-      setEmail('');
-      setPhone('');
-      setService('');
-      setDate('');
-      setMessage('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit booking. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const preselectedService: string = (location.state as { service?: { name?: string } } | null)?.service?.name ?? '';
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold text-center mb-8">Book an Appointment</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-lg mx-auto bg-base-100 p-8 rounded-lg shadow-xl"
+    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '5rem 2rem 3rem',
+        }}
       >
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Date</span>
-            <input
-              type="datetime-local"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </label>
+        <p
+          className="anim-slide-right"
+          style={{
+            fontSize: '0.65rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--tk-gold)',
+            marginBottom: '1rem',
+          }}
+        >
+          Reserve Your Session
+        </p>
+        <h1
+          className="anim-fade-up delay-1 font-display"
+          style={{
+            fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+            fontWeight: 300,
+            lineHeight: 1.05,
+            color: 'var(--tk-text)',
+            marginBottom: '1rem',
+          }}
+        >
+          Book an
+          <br />
+          <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Appointment</span>
+        </h1>
+        <p
+          className="anim-fade-up delay-2"
+          style={{
+            fontSize: '0.9rem',
+            color: 'var(--tk-text-dim)',
+            maxWidth: '480px',
+            lineHeight: 1.7,
+            marginBottom: '4rem',
+          }}
+        >
+          Select your artist, choose an available time, and we'll take care of the rest.
+        </p>
+      </div>
+
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 2rem 6rem',
+          display: 'grid',
+          gridTemplateColumns: '1fr 520px',
+          gap: '5rem',
+          alignItems: 'start',
+        }}
+        className="bookings-grid"
+      >
+        {/* Left — decorative info */}
+        <div className="anim-fade-up delay-2 bookings-sidebar" style={{ paddingTop: '0.5rem' }}>
+          <div className="divider-gold" style={{ marginBottom: '2.5rem' }} />
+          {[
+            { label: 'Consultation', value: 'All bookings begin with a brief consultation to understand your vision and needs.' },
+            { label: 'Preparation', value: 'Come to your appointment with a clean, moisturised face for best results.' },
+            { label: 'Cancellation', value: 'Please give at least 24 hours notice if you need to reschedule.' },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ marginBottom: '2rem' }}>
+              <p style={{ fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--tk-gold)', marginBottom: '0.5rem' }}>
+                {label}
+              </p>
+              <p style={{ fontSize: '0.88rem', lineHeight: 1.75, color: 'var(--tk-text-dim)' }}>
+                {value}
+              </p>
+            </div>
+          ))}
         </div>
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Name</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </label>
+
+        {/* Right — booking flow */}
+        <div
+          className="anim-fade-up delay-3"
+          style={{
+            border: '1px solid var(--tk-border)',
+            padding: '2.5rem',
+            background: 'var(--tk-bg-raised)',
+          }}
+        >
+          <BookingFlow preselectedService={preselectedService} />
         </div>
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-        </div>
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Phone</span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </label>
-        </div>
-        <div className="form-control mb-4">
-          <label className="input w-full input-bordered flex items-center gap-2">
-            <span className="label">Service</span>
-            <input
-              type="text"
-              placeholder="e.g., Bridal Makeup, Photoshoot Makeup"
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-              required
-            />
-          </label>
-        </div>
-        <div className="form-control mb-4">
-          <label className="textarea w-full textarea-bordered flex items-center gap-2">
-            <span className="label">Message</span>
-            <textarea
-              className="textarea textarea-bordered h-24"
-              placeholder="Any specific requests or questions?"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-          </label>
-        </div>
-        <div className="form-control mt-6 flex justify-center">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Submitting...' : 'Submit Booking Request'}
-          </button>
-        </div>
-        {success && (
-          <div className="alert alert-success mt-4">Booking request submitted successfully!</div>
-        )}
-        {error && <div className="alert alert-error mt-4">{error}</div>}
-      </form>
+      </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .bookings-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+          }
+          .bookings-sidebar {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

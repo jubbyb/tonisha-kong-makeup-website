@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import BookingFlow from '../components/BookingFlow';
 
 interface ClassItem {
   id: number;
@@ -14,6 +15,8 @@ const Classes: React.FC = () => {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/classes')
@@ -220,16 +223,70 @@ const Classes: React.FC = () => {
               <button
                 className="btn-gold"
                 style={{ marginTop: '0.75rem', alignSelf: 'flex-start' }}
-                onClick={() => {
-                  window.location.href = '/contact';
-                }}
+                onClick={() => { setSelectedClass(classItem.name); setShowModal(true); }}
               >
-                Enquire
+                Book Class
               </button>
             </div>
           );
         })}
       </div>
+
+      {/* Booking Modal */}
+      {showModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'oklch(5% 0 0 / 0.85)',
+            backdropFilter: 'blur(8px)',
+            padding: '1rem',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+        >
+          <div
+            style={{
+              background: 'var(--tk-bg-raised)',
+              border: '1px solid var(--tk-border)',
+              padding: '2.5rem',
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+            }}
+            className="anim-fade-up"
+          >
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--tk-text-faint)',
+                fontSize: '1.2rem',
+                lineHeight: 1,
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text-faint)')}
+            >
+              ✕
+            </button>
+            <BookingFlow
+              preselectedService={selectedClass ?? undefined}
+              onClose={() => setShowModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

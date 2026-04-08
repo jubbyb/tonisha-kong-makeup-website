@@ -9,9 +9,41 @@ const Contact: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateEmail = (v: string) => {
+    if (!v.trim()) return 'Email is required.';
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+      ? ''
+      : 'Please enter a valid email address.';
+  };
+
+  const validatePhone = (v: string) => {
+    if (!v.trim()) return '';
+    return /^[+\d][\d\s\-().]{6,19}$/.test(v.trim())
+      ? ''
+      : 'Please enter a valid phone number (digits, spaces, dashes, parentheses).';
+  };
+
+  const validateFields = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    const emailErr = validateEmail(email);
+    if (emailErr) errs.email = emailErr;
+    const phoneErr = validatePhone(phone);
+    if (phoneErr) errs.phone = phoneErr;
+    return errs;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate before submitting
+    const errs = validateFields();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+
     setLoading(true);
     setSuccess(false);
     setError(null);
@@ -34,6 +66,7 @@ const Contact: React.FC = () => {
       setPhone('');
       setSubject('');
       setMessage('');
+      setFieldErrors({});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
     } finally {
@@ -142,11 +175,11 @@ const Contact: React.FC = () => {
             style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
           >
             {[
-              { label: 'Full Name', type: 'text', value: name, setter: setName, required: true },
-              { label: 'Email Address', type: 'email', value: email, setter: setEmail, required: true },
-              { label: 'Phone Number', type: 'tel', value: phone, setter: setPhone, required: false },
-              { label: 'Subject', type: 'text', value: subject, setter: setSubject, required: true },
-            ].map(({ label, type, value, setter, required }) => (
+              { label: 'Full Name', key: 'name', type: 'text', value: name, setter: setName, required: true },
+              { label: 'Email Address', key: 'email', type: 'email', value: email, setter: setEmail, required: true },
+              { label: 'Phone Number', key: 'phone', type: 'tel', value: phone, setter: setPhone, required: false },
+              { label: 'Subject', key: 'subject', type: 'text', value: subject, setter: setSubject, required: true },
+            ].map(({ label, key, type, value, setter, required }) => (
               <div key={label}>
                 <label
                   style={{
@@ -165,9 +198,20 @@ const Contact: React.FC = () => {
                   className="input-luxury"
                   value={value}
                   onChange={(e) => setter(e.target.value)}
+                  onBlur={() => {
+                    let err = '';
+                    if (key === 'email') err = validateEmail(value);
+                    else if (key === 'phone') err = validatePhone(value);
+                    setFieldErrors((prev) => ({ ...prev, [key]: err }));
+                  }}
                   required={required}
                   placeholder={label}
                 />
+                {fieldErrors[key] && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--color-error, oklch(65% 0.2 25))', marginTop: '0.35rem' }}>
+                    {fieldErrors[key]}
+                  </p>
+                )}
               </div>
             ))}
 

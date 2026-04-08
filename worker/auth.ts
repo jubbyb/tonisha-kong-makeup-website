@@ -20,6 +20,7 @@ export interface JWTPayload {
   email: string;
   name: string;
   role: 'user' | 'artist';
+  artist_id?: string; // set when logged in from artists table (not users table)
   iat: number;
   exp: number;
 }

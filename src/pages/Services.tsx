@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import BookingFlow from '../components/BookingFlow';
 
 interface Service {
   id: number;
@@ -15,14 +16,6 @@ const Services: React.FC = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [date, setDate] = useState('');
-  const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/services')
@@ -40,51 +33,11 @@ const Services: React.FC = () => {
   const handleBookNow = (service: Service) => {
     setSelectedService(service);
     setShowModal(true);
-    setSuccess(false);
-    setSubmitError(null);
-    setName('');
-    setEmail('');
-    setPhone('');
-    setDate('');
-    setMessage('');
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedService(null);
-  };
-
-  const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          service: selectedService?.name,
-          date,
-          message,
-        }),
-      });
-
-      if (!res.ok) {
-        const { error: err } = (await res.json()) as { error: string };
-        throw new Error(err ?? 'Booking failed');
-      }
-
-      setSuccess(true);
-      setTimeout(() => setShowModal(false), 1800);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to submit booking.');
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   if (loading) {
@@ -289,9 +242,9 @@ const Services: React.FC = () => {
             style={{
               background: 'var(--tk-bg-raised)',
               border: '1px solid var(--tk-border)',
-              padding: '3rem',
+              padding: '2.5rem',
               width: '100%',
-              maxWidth: '520px',
+              maxWidth: '560px',
               maxHeight: '90vh',
               overflowY: 'auto',
               position: 'relative',
@@ -319,153 +272,10 @@ const Services: React.FC = () => {
               ✕
             </button>
 
-            <p
-              style={{
-                fontSize: '0.6rem',
-                letterSpacing: '0.3em',
-                textTransform: 'uppercase',
-                color: 'var(--tk-gold)',
-                marginBottom: '0.5rem',
-              }}
-            >
-              Reserve Your Session
-            </p>
-            <h3
-              className="font-display"
-              style={{
-                fontSize: '1.8rem',
-                fontWeight: 300,
-                color: 'var(--tk-text)',
-                marginBottom: '2.5rem',
-              }}
-            >
-              {selectedService?.name}
-            </h3>
-
-            <form onSubmit={handleBookingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-              {[
-                { label: 'Full Name', type: 'text', value: name, setter: setName, required: true },
-                { label: 'Email Address', type: 'email', value: email, setter: setEmail, required: true },
-                { label: 'Phone Number', type: 'tel', value: phone, setter: setPhone, required: false },
-              ].map(({ label, type, value, setter, required }) => (
-                <div key={label}>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.62rem',
-                      letterSpacing: '0.2em',
-                      textTransform: 'uppercase',
-                      color: 'var(--tk-text-dim)',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    {label}
-                  </label>
-                  <input
-                    type={type}
-                    className="input-luxury"
-                    value={value}
-                    onChange={(e) => setter(e.target.value)}
-                    required={required}
-                    placeholder={label}
-                  />
-                </div>
-              ))}
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.62rem',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    color: 'var(--tk-text-dim)',
-                    marginBottom: '0.5rem',
-                  }}
-                >
-                  Service
-                </label>
-                <input
-                  type="text"
-                  className="input-luxury"
-                  value={selectedService?.name ?? ''}
-                  disabled
-                  readOnly
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.62rem',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    color: 'var(--tk-text-dim)',
-                    marginBottom: '0.5rem',
-                  }}
-                >
-                  Preferred Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  className="input-luxury"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.62rem',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    color: 'var(--tk-text-dim)',
-                    marginBottom: '0.5rem',
-                  }}
-                >
-                  Additional Notes
-                </label>
-                <textarea
-                  className="input-luxury"
-                  placeholder="Any additional details or requests..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                  style={{ resize: 'vertical' }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn-gold"
-                disabled={submitting}
-                style={{ marginTop: '0.5rem' }}
-              >
-                {submitting ? 'Submitting...' : 'Confirm Booking'}
-              </button>
-
-              {success && (
-                <p
-                  style={{
-                    textAlign: 'center',
-                    fontSize: '0.8rem',
-                    color: 'var(--tk-gold)',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  Booking confirmed — we'll be in touch.
-                </p>
-              )}
-              {submitError && (
-                <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-error)' }}>
-                  {submitError}
-                </p>
-              )}
-            </form>
+            <BookingFlow
+              preselectedService={selectedService?.name}
+              onClose={handleCloseModal}
+            />
           </div>
         </div>
       )}
