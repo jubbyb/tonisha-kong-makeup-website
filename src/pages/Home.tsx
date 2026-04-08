@@ -3,31 +3,32 @@ import { useNavigate } from 'react-router-dom';
 
 const galleryImages = [
   {
-    src: 'https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-TonishaKong__378130F60C3E4EF8B946227AE0549CCA_1697820629968.jpg',
+    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/e889690c-deae-484d-876f-fd818921bd96-20190806_143114-01.jpeg',
     span: 'row-span-2',
   },
   {
-    src: 'https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-TonishaKong__AndieJamaica41_1697820629969.jpeg',
+    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/33148347-b587-47f1-bdc9-5474239b1892-IMG_1120.jpg',
     span: '',
   },
   {
-    src: 'https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-TonishaKong__IMG2958_1697820629959.jpg',
+    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/dda95bc7-b855-4eb6-9323-e25900c43c45-80f9db98-da7e-470f-b28a-cb1cf01c40a5.jpg',
+    span: '',
+  },
+   {
+    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/f7ae9e7e-48c3-4fc5-8449-5bb4e5e49198-IMG_1121.jpg',
     span: '',
   },
   {
-    src: 'https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-TonishaKong__IMG2970_1697820629934.jpg',
+    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/f1a18aab-5b90-49a9-b8a3-c46ce92de646-BYDC18.jpg',
     span: 'row-span-2',
   },
+ 
   {
-    src: 'https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-TonishaKong__IMG2124_1697820629963.jpg',
+    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/9152a979-871b-46ff-bbeb-9865313f5eeb-Andie-Jamaica-132%20(1).jpg',
     span: '',
   },
   {
-    src: 'https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-TonishaKong__JIK7515_1697820629912.jpg',
-    span: '',
-  },
-  {
-    src: 'https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-TonishaKong__BYDC12_1697820629918.jpg',
+    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/7d1e6328-2667-4bc6-a475-64a4d0217ad6-IMG-20210324-WA0038.jpg',
     span: '',
   },
 ];
