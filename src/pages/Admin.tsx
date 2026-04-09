@@ -800,14 +800,21 @@ function ServicesTab({ token }: { token: string }) {
           <div className="flex justify-end mb-3">
             <button className="btn btn-primary btn-sm" onClick={() => openAdd('service')}>+ Add Service</button>
           </div>
-          {services.length === 0 ? (
+          {(() => {
+            const nonClassServices = services.filter((sv) => {
+              const sub = subcategories.find((s) => s.id === sv.subcategory_id);
+              if (!sub) return true;
+              const cat = categories.find((c) => c.id === sub.category_id);
+              return cat?.name !== 'Lessons & Education';
+            });
+            return nonClassServices.length === 0 ? (
             <div className="text-center text-base-content/50 py-12">No services yet.</div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-base-300">
               <table className="table table-zebra w-full">
                 <thead><tr><th>Category › Sub</th><th>Name</th><th>Price</th><th>Duration</th><th>Sort</th><th></th></tr></thead>
                 <tbody>
-                  {services.map((sv) => (
+                  {nonClassServices.map((sv) => (
                     <tr key={sv.id}>
                       <td className="text-sm text-base-content/60">{subName(sv.subcategory_id)}</td>
                       <td>
@@ -826,7 +833,8 @@ function ServicesTab({ token }: { token: string }) {
                 </tbody>
               </table>
             </div>
-          )}
+          );
+          })()}
         </div>
       )}
 
@@ -891,11 +899,276 @@ function ServicesTab({ token }: { token: string }) {
   );
 }
 
+// ── Reviews tab ───────────────────────────────────────────────────────────────
+
+interface ReviewRecord {
+  id: number;
+  name: string;
+  service: string;
+  rating: number;
+  body: string;
+  approved: number;
+  created_at: string;
+  booking_date: string | null;
+  booking_email: string | null;
+}
+
+function ReviewsTab({ token }: { token: string }) {
+  const [reviews, setReviews] = useState<ReviewRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReviews = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const data = (await res.json()) as { results: ReviewRecord[] };
+      setReviews(data.results);
+    } catch {
+      setError('Failed to load reviews.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchReviews(); }, [fetchReviews]);
+
+  const handleToggleApprove = async (id: number, currentApproved: number) => {
+    await fetch(`/api/admin/reviews/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ approved: currentApproved ? 0 : 1 }),
+    });
+    setReviews((prev) => prev.map((r) => r.id === id ? { ...r, approved: currentApproved ? 0 : 1 } : r));
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this review? This cannot be undone.')) return;
+    await fetch(`/api/admin/reviews/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setReviews((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (error) return <div className="alert alert-error mt-4">{error}</div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Reviews</h2>
+        <span className="badge badge-neutral">{reviews.length} total</span>
+      </div>
+      {reviews.length === 0 ? (
+        <div className="text-center text-base-content/60 py-12">No reviews yet. They will appear here once clients submit surveys.</div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-base-300">
+          <table className="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Rating</th>
+                <th>Comment</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {reviews.map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    <div className="font-medium">{r.name}</div>
+                    {r.booking_email && <div className="text-xs text-base-content/50">{r.booking_email}</div>}
+                  </td>
+                  <td className="text-sm">{r.service}</td>
+                  <td className="whitespace-nowrap">
+                    {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
+                  </td>
+                  <td className="max-w-xs">
+                    <div className="truncate text-sm">{r.body || '—'}</div>
+                  </td>
+                  <td>
+                    <button
+                      className={`badge cursor-pointer select-none ${r.approved ? 'badge-success' : 'badge-warning'}`}
+                      onClick={() => handleToggleApprove(r.id, r.approved)}
+                    >
+                      {r.approved ? 'Approved' : 'Pending'}
+                    </button>
+                  </td>
+                  <td className="text-sm text-base-content/60 whitespace-nowrap">
+                    {new Date(r.created_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <button className="btn btn-error btn-xs" onClick={() => handleDelete(r.id)}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Surveys tab ───────────────────────────────────────────────────────────────
+
+interface SurveyRecord {
+  id: number;
+  token: string;
+  sent_at: string;
+  submitted_at: string | null;
+  rating: number | null;
+  body: string | null;
+  review_requested: number;
+  review_request_sent_at: string | null;
+  booking_id: number;
+  name: string;
+  email: string;
+  service: string;
+  date: string;
+}
+
+function SurveysTab({ token }: { token: string }) {
+  const [surveys, setSurveys] = useState<SurveyRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+
+  const fetchSurveys = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch('/api/admin/surveys', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setSurveys(await res.json() as SurveyRecord[]);
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { fetchSurveys(); }, [fetchSurveys]);
+
+  const handleAction = async (id: number, endpoint: string, label: string) => {
+    setActionLoading(id);
+    setActionMsg(null);
+    try {
+      const res = await fetch(`/api/admin/surveys/${id}/${endpoint}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const d = (await res.json()) as { error?: string };
+        setActionMsg(d.error ?? 'Failed');
+      } else {
+        setActionMsg(`${label} sent successfully`);
+        await fetchSurveys();
+      }
+    } catch {
+      setActionMsg('Request failed');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Surveys</h2>
+        <span className="badge badge-neutral">{surveys.length} total</span>
+      </div>
+      {actionMsg && (
+        <div className="alert alert-info mb-4 py-2 text-sm">
+          {actionMsg}
+          <button className="btn btn-ghost btn-xs ml-2" onClick={() => setActionMsg(null)}>✕</button>
+        </div>
+      )}
+      {surveys.length === 0 ? (
+        <div className="text-center text-base-content/60 py-12">No surveys sent yet. Surveys are sent automatically 1 hour after a booking is marked as completed.</div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-base-300">
+          <table className="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Sent</th>
+                <th>Response</th>
+                <th>Rating</th>
+                <th>Comment</th>
+                <th>Review Req.</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {surveys.map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    <div className="font-medium">{s.name}</div>
+                    <div className="text-xs text-base-content/50">{s.email}</div>
+                  </td>
+                  <td className="text-sm">{s.service}</td>
+                  <td className="text-sm whitespace-nowrap">
+                    {new Date(s.sent_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    {s.submitted_at
+                      ? <span className="badge badge-success badge-sm">Submitted</span>
+                      : <span className="badge badge-ghost badge-sm">Pending</span>}
+                  </td>
+                  <td className="whitespace-nowrap">
+                    {s.rating ? `${s.rating}/5` : '—'}
+                  </td>
+                  <td className="max-w-xs">
+                    <div className="truncate text-sm">{s.body ?? '—'}</div>
+                  </td>
+                  <td>
+                    {s.review_requested
+                      ? <span className="badge badge-info badge-sm" title={s.review_request_sent_at ?? ''}>Sent</span>
+                      : <span className="text-base-content/40 text-sm">—</span>}
+                  </td>
+                  <td>
+                    <div className="flex gap-1">
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => handleAction(s.id, 'resend', 'Survey')}
+                        disabled={actionLoading === s.id}
+                        title="Resend survey email"
+                      >
+                        Resend
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => handleAction(s.id, 'request-review', 'Review request')}
+                        disabled={actionLoading === s.id || !!s.review_requested}
+                        title={s.review_requested ? 'Already sent' : 'Send Google review request'}
+                      >
+                        Req. Review
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Admin shell ───────────────────────────────────────────────────────────────
 
 const Admin: React.FC = () => {
   const [token, setToken] = useState<string | null>(() => sessionStorage.getItem('adminToken'));
-  const [activeTab, setActiveTab] = useState<'bookings' | 'classes' | 'artists' | 'users' | 'services'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'classes' | 'artists' | 'users' | 'services' | 'reviews' | 'surveys'>('bookings');
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminToken');
@@ -914,7 +1187,7 @@ const Admin: React.FC = () => {
       </div>
 
       <div role="tablist" className="tabs tabs-bordered mb-6">
-        {(['bookings', 'classes', 'artists', 'users', 'services'] as const).map((t) => (
+        {(['bookings', 'classes', 'artists', 'users', 'services', 'reviews', 'surveys'] as const).map((t) => (
           <button key={t} role="tab" className={`tab tab-lg capitalize ${activeTab === t ? 'tab-active' : ''}`} onClick={() => setActiveTab(t)}>
             {t}
           </button>
@@ -926,6 +1199,8 @@ const Admin: React.FC = () => {
       {activeTab === 'artists' && <ArtistsTab token={token} />}
       {activeTab === 'users' && <UsersTab token={token} />}
       {activeTab === 'services' && <ServicesTab token={token} />}
+      {activeTab === 'reviews' && <ReviewsTab token={token} />}
+      {activeTab === 'surveys' && <SurveysTab token={token} />}
     </div>
   );
 };

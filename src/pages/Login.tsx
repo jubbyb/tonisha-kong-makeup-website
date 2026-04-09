@@ -57,9 +57,12 @@ export default function Login() {
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as { token?: string; user?: { id: string; name: string; email: string; role: 'user' | 'artist'; artist_id?: string }; error?: string };
+      const contentType = res.headers.get('content-type') ?? '';
+      const data = contentType.includes('application/json')
+        ? ((await res.json()) as { token?: string; user?: { id: string; name: string; email: string; role: 'user' | 'artist'; artist_id?: string }; error?: string })
+        : {};
 
-      if (!res.ok) throw new Error(data.error ?? 'Authentication failed');
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Invalid email or password. Please try again.');
 
       setAuth(data.token!, data.user!);
       navigate(mode === 'artist' ? '/artist-dashboard' : returnTo, { replace: true });

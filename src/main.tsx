@@ -19,6 +19,7 @@ import Artists from './pages/Artists';
 import ArtistProfile from './pages/ArtistProfile';
 import MyBookings from './pages/MyBookings';
 import ArtistDashboard from './pages/ArtistDashboard';
+import Survey from './pages/Survey';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -54,6 +55,7 @@ createRoot(document.getElementById('root')!).render(
               }
             />
             <Route path="admin" element={<Admin />} />
+            <Route path="survey/:token" element={<Survey />} />
           </Route>
         </Routes>
       </BrowserRouter>

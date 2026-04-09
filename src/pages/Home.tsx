@@ -1,5 +1,156 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// ── Testimonials ──────────────────────────────────────────────────────────────
+
+interface Review {
+  id: number;
+  name: string;
+  service: string;
+  rating: number;
+  body: string;
+}
+
+function StarRating({ rating }: { rating: number }) {
+  return (
+    <div style={{ display: 'flex', gap: '4px', marginBottom: '1rem' }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <svg
+          key={star}
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          style={{ flexShrink: 0, color: star <= rating ? 'var(--tk-gold)' : 'var(--tk-border)' }}
+        >
+          <polygon
+            points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+            fill="currentColor"
+          />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function TestimonialsSection() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/reviews')
+      .then((r) => r.json())
+      .then((data: Review[]) => {
+        setReviews(data);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  if (!loaded || reviews.length === 0) return null;
+
+  return (
+    <section
+      style={{
+        padding: '6rem 0',
+        background: 'var(--tk-bg)',
+        transition: 'background-color 0.35s ease',
+      }}
+    >
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3.5rem' }}>
+          <div
+            style={{
+              height: '1px',
+              width: '3rem',
+              background: 'var(--tk-gold)',
+              flexShrink: 0,
+            }}
+          />
+          <p
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: 'var(--tk-text-dim)',
+              margin: 0,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Client Stories
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: '1.5rem',
+          }}
+        >
+          {reviews.map((review, i) => (
+            <div
+              key={review.id}
+              className={`lux-card anim-fade-up delay-${Math.min(i + 1, 8)}`}
+              style={{
+                padding: '2rem',
+                borderTop: '2px solid var(--tk-gold)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+              }}
+            >
+              <StarRating rating={review.rating} />
+              <blockquote
+                className="font-display"
+                style={{
+                  fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
+                  fontWeight: 300,
+                  fontStyle: 'italic',
+                  lineHeight: 1.65,
+                  color: 'var(--tk-text-sub)',
+                  flex: 1,
+                  margin: 0,
+                }}
+              >
+                "{review.body}"
+              </blockquote>
+              <div
+                style={{
+                  borderTop: '1px solid var(--tk-border)',
+                  paddingTop: '1rem',
+                  marginTop: 'auto',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '0.85rem',
+                    color: 'var(--tk-text-bright)',
+                    fontWeight: 500,
+                    margin: 0,
+                  }}
+                >
+                  {review.name}
+                </p>
+                <p
+                  style={{
+                    fontSize: '0.6rem',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color: 'var(--tk-gold)',
+                    marginTop: '0.3rem',
+                    marginBottom: 0,
+                  }}
+                >
+                  {review.service}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 const galleryImages = [
   {
@@ -291,6 +442,8 @@ const Home: React.FC = () => {
           ))}
         </div>
       </section>
+
+      <TestimonialsSection />
 
       {/* ── Services CTA ──────────────────────────────────────────────── */}
       <section

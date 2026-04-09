@@ -1,27 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import BookingFlow from '../components/BookingFlow';
 
-interface Service {
+interface CatalogService {
   id: number;
   name: string;
-  description: string;
-  price: number;
-  image_url?: string;
+  description: string | null;
+  price: number | null;
+  duration_min: number;
+  category: string;
+  subcategory: string;
+}
+
+interface CatalogResponse {
+  id: number;
+  name: string;
+  subcategories: {
+    id: number;
+    name: string;
+    services: {
+      id: number;
+      name: string;
+      description: string | null;
+      price: number | null;
+      duration_min: number;
+    }[];
+  }[];
 }
 
 const Services: React.FC = () => {
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<CatalogService[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const [showModal, setShowModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<CatalogService | null>(null);
 
   useEffect(() => {
-    fetch('/api/services')
-      .then((res) => res.json() as Promise<Service[]>)
-      .then((data) => {
-        setServices(data);
+    fetch('/api/service-catalog')
+      .then((res) => res.json() as Promise<CatalogResponse[]>)
+      .then((catalog) => {
+        const flat: CatalogService[] = [];
+        for (const cat of catalog) {
+          if (cat.name === 'Lessons & Education') continue;
+          for (const sub of cat.subcategories) {
+            for (const svc of sub.services) {
+              flat.push({ ...svc, category: cat.name, subcategory: sub.name });
+            }
+          }
+        }
+        setServices(flat);
         setLoading(false);
       })
       .catch(() => {
@@ -30,7 +57,7 @@ const Services: React.FC = () => {
       });
   }, []);
 
-  const handleBookNow = (service: Service) => {
+  const handleBookNow = (service: CatalogService) => {
     setSelectedService(service);
     setShowModal(true);
   };
@@ -134,26 +161,6 @@ const Services: React.FC = () => {
               background: 'var(--tk-bg)',
             }}
           >
-            {service.image_url && (
-              <div style={{ overflow: 'hidden', height: '220px' }}>
-                <img
-                  src={service.image_url}
-                  alt={service.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.5s ease',
-                  }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1.05)')
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1)')
-                  }
-                />
-              </div>
-            )}
             <div
               style={{
                 padding: '2rem',
@@ -163,6 +170,18 @@ const Services: React.FC = () => {
                 gap: '0.75rem',
               }}
             >
+              <p
+                style={{
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  color: 'var(--tk-gold)',
+                  margin: 0,
+                }}
+              >
+                {service.category}
+              </p>
+
               <div
                 style={{
                   display: 'flex',
@@ -181,31 +200,39 @@ const Services: React.FC = () => {
                 >
                   {service.name}
                 </h2>
-                <span
-                  style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: '1.2rem',
-                    fontWeight: 300,
-                    color: 'var(--tk-gold)',
-                    whiteSpace: 'nowrap',
-                    marginLeft: '1rem',
-                  }}
-                >
-                  ${service.price}
-                </span>
+                {service.price != null && (
+                  <span
+                    style={{
+                      fontFamily: "'Cormorant Garamond', serif",
+                      fontSize: '1.2rem',
+                      fontWeight: 300,
+                      color: 'var(--tk-gold)',
+                      whiteSpace: 'nowrap',
+                      marginLeft: '1rem',
+                    }}
+                  >
+                    ${service.price}
+                  </span>
+                )}
               </div>
 
               <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
 
-              <p
-                style={{
-                  fontSize: '0.88rem',
-                  lineHeight: 1.7,
-                  color: 'var(--tk-text-dim)',
-                  flex: 1,
-                }}
-              >
-                {service.description}
+              {service.description && (
+                <p
+                  style={{
+                    fontSize: '0.88rem',
+                    lineHeight: 1.7,
+                    color: 'var(--tk-text-dim)',
+                    flex: 1,
+                  }}
+                >
+                  {service.description}
+                </p>
+              )}
+
+              <p style={{ fontSize: '0.75rem', color: 'var(--tk-text-dim)', margin: 0 }}>
+                {service.duration_min} min
               </p>
 
               <button

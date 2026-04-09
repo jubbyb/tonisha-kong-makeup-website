@@ -19,5 +19,11 @@
 		// 	"database_id": "76796839-90f1-43dc-9615-e215cf8246dd",
 		// 	"remote": true
 		// }
-	]
+	],
+	// "triggers": { "crons": ["0 * * * *"] },  // uncomment before deploying to production
+	"vars": {
+		"SITE_URL": "http://localhost:5173",
+		"FROM_EMAIL": "hello@tonishakong.com",
+		"GOOGLE_REVIEW_URL": "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK"
+	}
 }

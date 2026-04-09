@@ -4,6 +4,10 @@ interface Env {
   DB: D1Database;
   ADMIN_SECRET: string;
   JWT_SECRET: string;
+  RESEND_API_KEY: string;
+  SITE_URL: string;
+  FROM_EMAIL: string;
+  GOOGLE_REVIEW_URL: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -13,6 +17,65 @@ function json(data: unknown, status = 200): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+async function sendEmail(
+  env: Env,
+  to: string,
+  subject: string,
+  html: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: env.FROM_EMAIL, to, subject, html }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+function generateToken(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function buildSurveyEmail(clientName: string, service: string, surveyUrl: string): string {
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Thank you, ${clientName}</h1>
+  <p style="color:#a09890;line-height:1.7;margin-bottom:8px;">Your <em>${service}</em> session is complete. We hope you loved your look!</p>
+  <p style="color:#a09890;line-height:1.7;">We would appreciate 2 minutes of your time to share your experience.</p>
+  <div style="margin:32px 0;">
+    <a href="${surveyUrl}" style="display:inline-block;padding:14px 40px;border:1px solid #c9a96e;color:#c9a96e;text-decoration:none;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">
+      Share Your Feedback
+    </a>
+  </div>
+  <p style="font-size:11px;color:#4a4540;">This link is unique to your booking and expires after submission.</p>
+</div>`;
+}
+
+function buildReviewRequestEmail(clientName: string, googleUrl: string): string {
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">We're glad you loved it, ${clientName}!</h1>
+  <p style="color:#a09890;line-height:1.7;">Your kind words mean the world. Would you mind sharing your experience on Google? It helps other clients discover us.</p>
+  <div style="margin:32px 0;">
+    <a href="${googleUrl}" style="display:inline-block;padding:14px 40px;border:1px solid #c9a96e;color:#c9a96e;text-decoration:none;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">
+      Leave a Google Review
+    </a>
+  </div>
+</div>`;
 }
 
 async function getAuth(request: Request, env: Env): Promise<JWTPayload | null> {
@@ -83,12 +146,7 @@ export default {
     const { pathname } = new URL(request.url);
     const method = request.method;
 
-    // ── Public: services, classes ────────────────────────────────────────────
-
-    if (pathname === '/api/services' && method === 'GET') {
-      const { results } = await env.DB.prepare('SELECT * FROM services ORDER BY id').all();
-      return json(results);
-    }
+    // ── Public: classes ───────────────────────────────────────────────────────
 
     if (pathname === '/api/classes' && method === 'GET') {
       const { results } = await env.DB.prepare('SELECT * FROM classes ORDER BY date').all();
@@ -457,8 +515,12 @@ export default {
         const body = await request.json<{ status?: string }>();
         const allowed = ['pending', 'confirmed', 'cancelled', 'completed'];
         if (!body.status || !allowed.includes(body.status)) return json({ error: 'Invalid status' }, 400);
-        await env.DB.prepare('UPDATE bookings SET status = ? WHERE id = ? AND artist_id = ?')
-          .bind(body.status, Number(bookingId[1]), artistId).run();
+        const completedAt = body.status === 'completed'
+          ? new Date().toISOString().replace('T', ' ').slice(0, 19)
+          : null;
+        await env.DB.prepare(
+          'UPDATE bookings SET status = ?, completed_at = COALESCE(?, completed_at) WHERE id = ? AND artist_id = ?'
+        ).bind(body.status, completedAt, Number(bookingId[1]), artistId).run();
         return json({ success: true });
       }
 
@@ -750,6 +812,219 @@ export default {
       }
     }
 
+    // ── Public: approved reviews (for home page testimonials) ─────────────────
+
+    if (pathname === '/api/reviews' && method === 'GET') {
+      const { results } = await env.DB.prepare(
+        `SELECT id, name, service, rating, body, created_at
+         FROM reviews WHERE approved = 1
+         ORDER BY created_at DESC`
+      ).all();
+      return json(results);
+    }
+
+    // ── Public: survey submission ─────────────────────────────────────────────
+
+    const surveyTokenMatch = pathname.match(/^\/api\/surveys\/([a-f0-9]+)$/);
+    if (surveyTokenMatch) {
+      const token = surveyTokenMatch[1];
+
+      if (method === 'GET') {
+        const survey = await env.DB.prepare(
+          `SELECT s.id, s.submitted_at, b.name, b.service, b.date
+           FROM surveys s
+           JOIN bookings b ON b.id = s.booking_id
+           WHERE s.token = ?`
+        ).bind(token).first<{ id: number; submitted_at: string | null; name: string; service: string; date: string }>();
+        if (!survey) return json({ error: 'Survey not found' }, 404);
+        return json({
+          already_submitted: !!survey.submitted_at,
+          name: survey.name,
+          service: survey.service,
+          date: survey.date,
+        });
+      }
+
+      if (method === 'POST') {
+        const body = await request.json<{ rating?: number; body?: string }>();
+        if (!body.rating || body.rating < 1 || body.rating > 5) {
+          return json({ error: 'Rating must be 1–5' }, 400);
+        }
+        const survey = await env.DB.prepare(
+          `SELECT s.id, s.submitted_at, s.booking_id, b.email, b.name, b.service
+           FROM surveys s
+           JOIN bookings b ON b.id = s.booking_id
+           WHERE s.token = ?`
+        ).bind(token).first<{
+          id: number; submitted_at: string | null; booking_id: number;
+          email: string; name: string; service: string;
+        }>();
+        if (!survey) return json({ error: 'Survey not found' }, 404);
+        if (survey.submitted_at) return json({ error: 'Already submitted' }, 409);
+
+        const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+        await env.DB.prepare(
+          'UPDATE surveys SET submitted_at = ?, rating = ?, body = ? WHERE id = ?'
+        ).bind(now, body.rating, body.body ?? null, survey.id).run();
+
+        await env.DB.prepare(
+          `INSERT INTO reviews (booking_id, name, service, rating, body, approved) VALUES (?, ?, ?, ?, ?, 0)`
+        ).bind(survey.booking_id, survey.name, survey.service, body.rating, body.body ?? '').run();
+
+        if (body.rating >= 4) {
+          const html = buildReviewRequestEmail(survey.name, env.GOOGLE_REVIEW_URL);
+          const sent = await sendEmail(env, survey.email, 'Share Your Experience — Thank You!', html);
+          if (sent) {
+            await env.DB.prepare(
+              'UPDATE surveys SET review_requested = 1, review_request_sent_at = ? WHERE id = ?'
+            ).bind(now, survey.id).run();
+          }
+        }
+
+        return json({ success: true });
+      }
+    }
+
+    // ── Admin: reviews ────────────────────────────────────────────────────────
+
+    if (pathname.startsWith('/api/admin/')) {
+      if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401);
+
+      if (pathname === '/api/admin/reviews' && method === 'GET') {
+        const url = new URL(request.url);
+        const page = Math.max(1, Number(url.searchParams.get('page') ?? '1'));
+        const limit = 50;
+        const offset = (page - 1) * limit;
+        const { results } = await env.DB.prepare(
+          `SELECT r.id, r.name, r.service, r.rating, r.body, r.approved, r.created_at,
+                  b.date AS booking_date, b.email AS booking_email
+           FROM reviews r
+           LEFT JOIN bookings b ON b.id = r.booking_id
+           ORDER BY r.created_at DESC
+           LIMIT ? OFFSET ?`
+        ).bind(limit, offset).all();
+        const countRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM reviews').first<{ total: number }>();
+        return json({ results, total: countRow?.total ?? 0, page, limit });
+      }
+
+      const adminReview = pathname.match(/^\/api\/admin\/reviews\/(\d+)$/);
+      if (adminReview && method === 'PUT') {
+        const body = await request.json<{ approved?: number; name?: string; service?: string; body?: string; rating?: number }>();
+        await env.DB.prepare(
+          `UPDATE reviews
+           SET approved = COALESCE(?, approved),
+               name     = COALESCE(?, name),
+               service  = COALESCE(?, service),
+               body     = COALESCE(?, body),
+               rating   = COALESCE(?, rating)
+           WHERE id = ?`
+        ).bind(
+          body.approved ?? null,
+          body.name ?? null,
+          body.service ?? null,
+          body.body ?? null,
+          body.rating ?? null,
+          Number(adminReview[1])
+        ).run();
+        return json({ success: true });
+      }
+
+      if (adminReview && method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM reviews WHERE id = ?').bind(Number(adminReview[1])).run();
+        return json({ success: true });
+      }
+
+      // ── Admin: surveys ──────────────────────────────────────────────────────
+
+      if (pathname === '/api/admin/surveys' && method === 'GET') {
+        const { results } = await env.DB.prepare(
+          `SELECT s.id, s.token, s.sent_at, s.submitted_at, s.rating, s.body,
+                  s.review_requested, s.review_request_sent_at,
+                  b.id AS booking_id, b.name, b.email, b.service, b.date
+           FROM surveys s
+           JOIN bookings b ON b.id = s.booking_id
+           ORDER BY s.sent_at DESC`
+        ).all();
+        return json(results);
+      }
+
+      const adminSurveyResend = pathname.match(/^\/api\/admin\/surveys\/(\d+)\/resend$/);
+      if (adminSurveyResend && method === 'POST') {
+        const survey = await env.DB.prepare(
+          `SELECT s.id, s.token, b.email, b.name, b.service
+           FROM surveys s JOIN bookings b ON b.id = s.booking_id
+           WHERE s.id = ?`
+        ).bind(Number(adminSurveyResend[1])).first<{
+          id: number; token: string; email: string; name: string; service: string;
+        }>();
+        if (!survey) return json({ error: 'Survey not found' }, 404);
+        const surveyUrl = `${env.SITE_URL}/survey/${survey.token}`;
+        const html = buildSurveyEmail(survey.name, survey.service, surveyUrl);
+        const sent = await sendEmail(env, survey.email, 'We would love your feedback', html);
+        if (!sent) return json({ error: 'Failed to send email' }, 500);
+        await env.DB.prepare('UPDATE surveys SET sent_at = ? WHERE id = ?')
+          .bind(new Date().toISOString().replace('T', ' ').slice(0, 19), survey.id).run();
+        return json({ success: true });
+      }
+
+      const adminSurveyReviewReq = pathname.match(/^\/api\/admin\/surveys\/(\d+)\/request-review$/);
+      if (adminSurveyReviewReq && method === 'POST') {
+        const survey = await env.DB.prepare(
+          `SELECT s.id, b.email, b.name FROM surveys s
+           JOIN bookings b ON b.id = s.booking_id
+           WHERE s.id = ?`
+        ).bind(Number(adminSurveyReviewReq[1])).first<{ id: number; email: string; name: string }>();
+        if (!survey) return json({ error: 'Survey not found' }, 404);
+        const html = buildReviewRequestEmail(survey.name, env.GOOGLE_REVIEW_URL);
+        const sent = await sendEmail(env, survey.email, 'Share Your Experience!', html);
+        if (!sent) return json({ error: 'Failed to send email' }, 500);
+        const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+        await env.DB.prepare(
+          'UPDATE surveys SET review_requested = 1, review_request_sent_at = ? WHERE id = ?'
+        ).bind(ts, survey.id).run();
+        return json({ success: true });
+      }
+    }
+
     return new Response(null, { status: 404 });
+  },
+
+  async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    // Find bookings completed 55–75 minutes ago that haven't had a survey sent yet
+    const now = new Date();
+    const windowEnd = new Date(now.getTime() - 55 * 60 * 1000)
+      .toISOString().replace('T', ' ').slice(0, 19);
+    const windowStart = new Date(now.getTime() - 75 * 60 * 1000)
+      .toISOString().replace('T', ' ').slice(0, 19);
+
+    const { results } = await env.DB.prepare(
+      `SELECT b.id, b.email, b.name, b.service
+       FROM bookings b
+       WHERE b.status = 'completed'
+         AND b.survey_sent = 0
+         AND b.completed_at >= ?
+         AND b.completed_at <= ?
+       LIMIT 50`
+    ).bind(windowStart, windowEnd).all<{ id: number; email: string; name: string; service: string }>();
+
+    for (const booking of results) {
+      const token = generateToken();
+      try {
+        await env.DB.prepare(
+          `INSERT OR IGNORE INTO surveys (booking_id, token, sent_at) VALUES (?, ?, datetime('now'))`
+        ).bind(booking.id, token).run();
+
+        const surveyUrl = `${env.SITE_URL}/survey/${token}`;
+        const html = buildSurveyEmail(booking.name, booking.service, surveyUrl);
+        const sent = await sendEmail(env, booking.email, 'How was your experience?', html);
+
+        if (sent) {
+          await env.DB.prepare('UPDATE bookings SET survey_sent = 1 WHERE id = ?')
+            .bind(booking.id).run();
+        }
+      } catch {
+        // Continue processing others if one fails
+      }
+    }
   },
 } satisfies ExportedHandler<Env>;
