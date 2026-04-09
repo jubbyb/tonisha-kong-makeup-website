@@ -50,7 +50,7 @@ export default function ArtistProfile() {
     if (!id) return;
     Promise.all([
       fetch(`/api/artists/${id}`).then((r) => r.json() as Promise<Artist>),
-      fetch('/api/services').then((r) => r.json() as Promise<Service[]>),
+      fetch(`/api/artists/${id}/services`).then((r) => r.json() as Promise<Service[]>),
     ])
       .then(([a, s]) => { setArtist(a); setServices(s); setLoading(false); })
       .catch(() => setLoading(false));
