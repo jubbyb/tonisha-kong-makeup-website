@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface Booking {
   id: number;
@@ -19,6 +19,10 @@ interface ClassItem {
   price: number;
   certificate: number;
   mentoring: number;
+  host_artist_id: number | null;
+  host_name?: string;
+  total_slots: number;
+  duration_min: number;
 }
 
 type ClassFormData = {
@@ -28,6 +32,9 @@ type ClassFormData = {
   price: string;
   certificate: boolean;
   mentoring: boolean;
+  host_artist_id: string;
+  total_slots: string;
+  duration_min: string;
 };
 
 const emptyClassForm = (): ClassFormData => ({
@@ -37,6 +44,9 @@ const emptyClassForm = (): ClassFormData => ({
   price: '',
   certificate: false,
   mentoring: false,
+  host_artist_id: '',
+  total_slots: '0',
+  duration_min: '60',
 });
 
 // ── Login ─────────────────────────────────────────────────────────────────────
@@ -187,6 +197,8 @@ function BookingsTab({ token }: { token: string }) {
 
 function ClassesTab({ token }: { token: string }) {
   const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [artists, setArtists] = useState<ArtistRecord[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -195,14 +207,23 @@ function ClassesTab({ token }: { token: string }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const artistById = useMemo(
+    () => new Map(artists.map((a) => [a.id, a.name])),
+    [artists],
+  );
+
   const fetchClasses = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/classes', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error();
-      setClasses(await res.json());
+      const [classRes, artistRes, bookingRes] = await Promise.all([
+        fetch('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin/artists', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin/bookings', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (!classRes.ok) throw new Error();
+      setClasses(await classRes.json());
+      if (artistRes.ok) setArtists(await artistRes.json());
+      if (bookingRes.ok) setBookings(await bookingRes.json());
     } catch {
       setError('Failed to load classes.');
     } finally {
@@ -228,6 +249,9 @@ function ClassesTab({ token }: { token: string }) {
       price: String(c.price),
       certificate: !!c.certificate,
       mentoring: !!c.mentoring,
+      host_artist_id: c.host_artist_id != null ? String(c.host_artist_id) : '',
+      total_slots: String(c.total_slots),
+      duration_min: String(c.duration_min),
     });
     setSaveError(null);
     setModalOpen(true);
@@ -253,6 +277,9 @@ function ClassesTab({ token }: { token: string }) {
       price: parseFloat(form.price),
       certificate: form.certificate,
       mentoring: form.mentoring,
+      host_artist_id: form.host_artist_id ? parseInt(form.host_artist_id) : null,
+      total_slots: parseInt(form.total_slots) || 0,
+      duration_min: parseInt(form.duration_min) || 60,
     };
 
     try {
@@ -295,13 +322,20 @@ function ClassesTab({ token }: { token: string }) {
                 <th>Name</th>
                 <th>Date</th>
                 <th>Price</th>
+                <th>Host</th>
+                <th>Bookings</th>
                 <th>Certificate</th>
                 <th>Mentoring</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {classes.map((c) => (
+              {classes.map((c) => {
+                const classDate = c.date.substring(0, 10);
+                const booked = bookings.filter(
+                  (b) => b.service === c.name && b.date.startsWith(classDate),
+                ).length;
+                return (
                 <tr key={c.id}>
                   <td>
                     <div className="font-medium">{c.name}</div>
@@ -309,6 +343,12 @@ function ClassesTab({ token }: { token: string }) {
                   </td>
                   <td className="whitespace-nowrap">{new Date(c.date).toLocaleString()}</td>
                   <td>${c.price}</td>
+                  <td>{c.host_artist_id ? (artistById.get(c.host_artist_id) ?? '—') : '—'}</td>
+                  <td>
+                    {c.total_slots > 0
+                      ? <span className={booked >= c.total_slots ? 'text-error font-medium' : ''}>{booked} / {c.total_slots}</span>
+                      : <span>{booked}</span>}
+                  </td>
                   <td>{c.certificate ? '✓' : '—'}</td>
                   <td>{c.mentoring ? '✓' : '—'}</td>
                   <td className="space-x-2 whitespace-nowrap">
@@ -316,7 +356,8 @@ function ClassesTab({ token }: { token: string }) {
                     <button className="btn btn-error btn-xs" onClick={() => handleDelete(c.id)}>Delete</button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -348,6 +389,38 @@ function ClassesTab({ token }: { token: string }) {
                 <span className="label w-24">Price ($)</span>
                 <input type="number" min="0" step="0.01" className="grow" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
               </label>
+              <label className="form-control w-full">
+                <div className="label"><span className="label-text">Host Artist</span></div>
+                <select
+                  className="select select-bordered w-full"
+                  value={form.host_artist_id}
+                  onChange={(e) => setForm({ ...form, host_artist_id: e.target.value })}
+                >
+                  <option value="">— No host —</option>
+                  {artists.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex gap-3">
+                <label className="input input-bordered flex items-center gap-2 flex-1">
+                  <span className="label whitespace-nowrap">Total Slots</span>
+                  <input
+                    type="number" min="0" className="grow"
+                    value={form.total_slots}
+                    onChange={(e) => setForm({ ...form, total_slots: e.target.value })}
+                    placeholder="0 = unlimited"
+                  />
+                </label>
+                <label className="input input-bordered flex items-center gap-2 flex-1">
+                  <span className="label whitespace-nowrap">Duration (min)</span>
+                  <input
+                    type="number" min="1" className="grow"
+                    value={form.duration_min}
+                    onChange={(e) => setForm({ ...form, duration_min: e.target.value })}
+                  />
+                </label>
+              </div>
               <div className="flex gap-6 pl-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" className="checkbox checkbox-primary" checked={form.certificate} onChange={(e) => setForm({ ...form, certificate: e.target.checked })} />

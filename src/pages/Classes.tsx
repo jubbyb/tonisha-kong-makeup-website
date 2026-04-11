@@ -9,6 +9,11 @@ interface ClassItem {
   price: number;
   certificate: number;
   mentoring: number;
+  host_artist_id: number | null;
+  host_name: string | null;
+  total_slots: number;
+  slots_remaining: number | null;
+  duration_min: number;
 }
 
 const Classes: React.FC = () => {
@@ -16,7 +21,7 @@ const Classes: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
 
   useEffect(() => {
     fetch('/api/classes')
@@ -151,18 +156,24 @@ const Classes: React.FC = () => {
             >
               {/* Name + price */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <h2
-                  className="font-display"
-                  style={{
-                    fontSize: '1.6rem',
-                    fontWeight: 400,
-                    color: 'var(--tk-text)',
-                    lineHeight: 1.15,
-                    flex: 1,
-                  }}
-                >
-                  {classItem.name}
-                </h2>
+                <div style={{ flex: 1 }}>
+                  <h2
+                    className="font-display"
+                    style={{
+                      fontSize: '1.6rem',
+                      fontWeight: 400,
+                      color: 'var(--tk-text)',
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {classItem.name}
+                  </h2>
+                  {classItem.host_name && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--tk-text-dim)', marginTop: '0.25rem', letterSpacing: '0.06em' }}>
+                      with {classItem.host_name}
+                    </p>
+                  )}
+                </div>
                 <span
                   className="font-display"
                   style={{
@@ -212,6 +223,29 @@ const Classes: React.FC = () => {
                 })}
               </p>
 
+              {/* Slots remaining */}
+              {classItem.slots_remaining !== null && (
+                <p
+                  style={{
+                    fontSize: '0.72rem',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color:
+                      classItem.slots_remaining <= 0
+                        ? 'var(--color-error, #c0392b)'
+                        : classItem.slots_remaining <= 3
+                        ? 'var(--color-warning, #d97706)'
+                        : 'var(--tk-gold)',
+                  }}
+                >
+                  {classItem.slots_remaining <= 0
+                    ? 'Fully Booked'
+                    : classItem.slots_remaining <= 3
+                    ? `Only ${classItem.slots_remaining} spot${classItem.slots_remaining === 1 ? '' : 's'} left`
+                    : `${classItem.slots_remaining} spots remaining`}
+                </p>
+              )}
+
               {/* Features */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <Feature active={true} label="Hands-on Training" />
@@ -222,10 +256,16 @@ const Classes: React.FC = () => {
               {/* CTA */}
               <button
                 className="btn-gold"
-                style={{ marginTop: '0.75rem', alignSelf: 'flex-start' }}
-                onClick={() => { setSelectedClass(classItem.name); setShowModal(true); }}
+                style={{
+                  marginTop: '0.75rem',
+                  alignSelf: 'flex-start',
+                  opacity: classItem.slots_remaining !== null && classItem.slots_remaining <= 0 ? 0.45 : 1,
+                  cursor: classItem.slots_remaining !== null && classItem.slots_remaining <= 0 ? 'not-allowed' : 'pointer',
+                }}
+                disabled={classItem.slots_remaining !== null && classItem.slots_remaining <= 0}
+                onClick={() => { setSelectedClass(classItem); setShowModal(true); }}
               >
-                Book Class
+                {classItem.slots_remaining !== null && classItem.slots_remaining <= 0 ? 'Fully Booked' : 'Book Class'}
               </button>
             </div>
           );
@@ -281,7 +321,10 @@ const Classes: React.FC = () => {
               ✕
             </button>
             <BookingFlow
-              preselectedService={selectedClass ?? undefined}
+              preselectedService={selectedClass?.name}
+              preselectedArtistId={selectedClass?.host_artist_id ?? undefined}
+              classDatetime={selectedClass?.host_artist_id ? selectedClass.date : undefined}
+              classDuration={selectedClass?.host_artist_id ? selectedClass.duration_min : undefined}
               onClose={() => setShowModal(false)}
             />
           </div>

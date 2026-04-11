@@ -149,7 +149,21 @@ export default {
     // ── Public: classes ───────────────────────────────────────────────────────
 
     if (pathname === '/api/classes' && method === 'GET') {
-      const { results } = await env.DB.prepare('SELECT * FROM classes ORDER BY date').all();
+      const { results } = await env.DB.prepare(`
+        SELECT c.*,
+          a.name AS host_name,
+          CASE WHEN c.total_slots > 0
+            THEN c.total_slots - COALESCE((
+              SELECT COUNT(*) FROM bookings b
+              WHERE b.service = c.name
+                AND b.date = substr(c.date, 1, 10)
+                AND b.status != 'cancelled'
+            ), 0)
+          ELSE NULL END AS slots_remaining
+        FROM classes c
+        LEFT JOIN artists a ON a.id = c.host_artist_id
+        ORDER BY c.date
+      `).all();
       return json(results);
     }
 
@@ -644,20 +658,20 @@ export default {
         return json(results);
       }
       if (pathname === '/api/admin/classes' && method === 'POST') {
-        const body = await request.json<{ name?: string; description?: string; date?: string; price?: number; certificate?: boolean; mentoring?: boolean }>();
+        const body = await request.json<{ name?: string; description?: string; date?: string; price?: number; certificate?: boolean; mentoring?: boolean; host_artist_id?: number | null; total_slots?: number; duration_min?: number }>();
         if (!body.name || !body.description || !body.date || body.price == null) return json({ error: 'Missing required fields' }, 400);
         const result = await env.DB.prepare(
-          'INSERT INTO classes (name, description, date, price, certificate, mentoring) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(body.name, body.description, body.date, body.price, body.certificate ? 1 : 0, body.mentoring ? 1 : 0).run();
+          'INSERT INTO classes (name, description, date, price, certificate, mentoring, host_artist_id, total_slots, duration_min) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(body.name, body.description, body.date, body.price, body.certificate ? 1 : 0, body.mentoring ? 1 : 0, body.host_artist_id ?? null, body.total_slots ?? 0, body.duration_min ?? 60).run();
         return json({ success: true, id: result.meta.last_row_id }, 201);
       }
       const adminClass = pathname.match(/^\/api\/admin\/classes\/(\d+)$/);
       if (adminClass && method === 'PUT') {
-        const body = await request.json<{ name?: string; description?: string; date?: string; price?: number; certificate?: boolean; mentoring?: boolean }>();
+        const body = await request.json<{ name?: string; description?: string; date?: string; price?: number; certificate?: boolean; mentoring?: boolean; host_artist_id?: number | null; total_slots?: number; duration_min?: number }>();
         if (!body.name || !body.description || !body.date || body.price == null) return json({ error: 'Missing required fields' }, 400);
         await env.DB.prepare(
-          'UPDATE classes SET name=?, description=?, date=?, price=?, certificate=?, mentoring=? WHERE id=?'
-        ).bind(body.name, body.description, body.date, body.price, body.certificate ? 1 : 0, body.mentoring ? 1 : 0, Number(adminClass[1])).run();
+          'UPDATE classes SET name=?, description=?, date=?, price=?, certificate=?, mentoring=?, host_artist_id=?, total_slots=?, duration_min=? WHERE id=?'
+        ).bind(body.name, body.description, body.date, body.price, body.certificate ? 1 : 0, body.mentoring ? 1 : 0, body.host_artist_id ?? null, body.total_slots ?? 0, body.duration_min ?? 60, Number(adminClass[1])).run();
         return json({ success: true });
       }
       if (adminClass && method === 'DELETE') {

@@ -30,6 +30,9 @@ type BookingStep = 'artist' | 'service' | 'schedule' | 'details' | 'success';
 
 interface BookingFlowProps {
   preselectedService?: string;
+  preselectedArtistId?: number;
+  classDatetime?: string;   // ISO datetime like "2025-08-10T14:00"
+  classDuration?: number;   // minutes, default 60
   onClose?: () => void;
 }
 
@@ -67,7 +70,7 @@ const BackButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
   </button>
 );
 
-const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, onClose }) => {
+const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselectedArtistId, classDatetime, classDuration, onClose }) => {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
@@ -132,28 +135,32 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, onClose }
       .then((data) => {
         setArtists(data);
         setArtistsLoading(false);
-        if (data.length === 1) {
+        // In class mode, the class mode effect handles artist selection and step
+        if (!preselectedArtistId && data.length === 1) {
           setSelectedArtist(data[0]);
           setStep('service');
         }
       })
       .catch(() => setArtistsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Fetch artist's offered services when artist changes ──────────────────────
   useEffect(() => {
     if (!selectedArtist) return;
+    if (classDatetime) return; // class mode: use synthetic service, skip catalog fetch
     setCatalogLoading(true);
     setSelectedService(null);
     fetch(`/api/artists/${selectedArtist.id}/services`)
       .then((r) => r.json() as Promise<CatalogService[]>)
       .then((data) => { setArtistCatalog(data); setCatalogLoading(false); })
       .catch(() => setCatalogLoading(false));
-  }, [selectedArtist]);
+  }, [selectedArtist, classDatetime]);
 
   // ── Auto-select preselected service once catalog loads ───────────────────────
   useEffect(() => {
     if (!preselectedService || catalogLoading || artistCatalog.length === 0) return;
+    if (classDatetime) return; // class mode handles this separately
     const match = artistCatalog.find(
       (s) => s.name.toLowerCase() === preselectedService.toLowerCase()
     );
@@ -161,7 +168,37 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, onClose }
       setSelectedService(match);
       setStep('schedule');
     }
-  }, [preselectedService, artistCatalog, catalogLoading]);
+  }, [preselectedService, artistCatalog, catalogLoading, classDatetime]);
+
+  // ── Class mode: auto-select host artist + date/time, skip to details ─────────
+  useEffect(() => {
+    if (!preselectedArtistId || !classDatetime || artistsLoading || artists.length === 0) return;
+    const artist = artists.find((a) => a.id === preselectedArtistId);
+    if (!artist) return;
+
+    const dateStr = classDatetime.split('T')[0];
+    const startTime = classDatetime.split('T')[1]?.slice(0, 5) ?? '09:00';
+    const dur = classDuration ?? 60;
+    const [h, m] = startTime.split(':').map(Number);
+    const endMin = h * 60 + m + dur;
+    const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+
+    setSelectedArtist(artist);
+    setSelectedDate(dateStr);
+    setSelectedSlot({ date: dateStr, start: startTime, end: endTime });
+    setSelectedService({
+      id: -1,
+      name: preselectedService ?? '',
+      description: null,
+      price: null,
+      duration_min: dur,
+      subcategory_id: -1,
+      subcategory_name: '',
+      category_id: -1,
+      category_name: '',
+    });
+    setStep('details');
+  }, [preselectedArtistId, classDatetime, classDuration, artistsLoading, artists, preselectedService]);
 
   // ── Fetch slots when artist or month changes ─────────────────────────────────
   useEffect(() => {
@@ -274,6 +311,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, onClose }
 
   // ── Step indicator ────────────────────────────────────────────────────────────
   const visibleSteps: BookingStep[] =
+    classDatetime ? ['details'] :
     artists.length === 1 ? ['service', 'schedule', 'details'] : ['artist', 'service', 'schedule', 'details'];
   const stepLabels: Record<BookingStep, string> = {
     artist: 'Artist', service: 'Service', schedule: 'Schedule', details: 'Details', success: 'Confirmed',
