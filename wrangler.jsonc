@@ -25,6 +25,7 @@
 		"SITE_URL": "http://localhost:5173",
 		"FROM_EMAIL": "hello@tonishakong.com",
 		"GOOGLE_REVIEW_URL": "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK",
-		"GOOGLE_REDIRECT_URI": "http://localhost:5173/api/auth/google/callback"
+		// "GOOGLE_REDIRECT_URI": "http://localhost:5173/api/auth/google/callback"
+		"GOOGLE_REDIRECT_URI": "http://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev/api/auth/google/callback"
 	}
 }
