@@ -8,6 +8,9 @@ interface Env {
   SITE_URL: string;
   FROM_EMAIL: string;
   GOOGLE_REVIEW_URL: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_REDIRECT_URI: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -377,7 +380,7 @@ export default {
       // Check users table first
       const user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?').bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string; role: string }>();
-      if (user && (await verifyPassword(body.password, user.password_hash))) {
+      if (user && user.password_hash && (await verifyPassword(body.password, user.password_hash))) {
         const role = user.role === 'artist' ? 'artist' : 'user';
         const token = await signJWT(
           { sub: String(user.id), email: user.email, name: user.name, role, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
@@ -413,6 +416,114 @@ export default {
         env.JWT_SECRET,
       );
       return json({ token, user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' } });
+    }
+
+    // ── Google OAuth ──────────────────────────────────────────────────────────
+
+    if (pathname === '/api/auth/google' && method === 'GET') {
+      const returnTo = new URL(request.url).searchParams.get('returnTo') ?? '/';
+      const state = btoa(JSON.stringify({ returnTo }));
+      const params = new URLSearchParams({
+        client_id: env.GOOGLE_CLIENT_ID,
+        redirect_uri: env.GOOGLE_REDIRECT_URI,
+        response_type: 'code',
+        scope: 'openid email profile',
+        state,
+      });
+      return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`, 302);
+    }
+
+    if (pathname === '/api/auth/google/callback' && method === 'GET') {
+      const url = new URL(request.url);
+      const code  = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+      const error = url.searchParams.get('error');
+
+      if (error || !code) {
+        return Response.redirect(`${env.SITE_URL}/login?error=oauth_cancelled`, 302);
+      }
+
+      let returnTo = '/';
+      try {
+        const parsed = JSON.parse(atob(state ?? ''));
+        if (typeof parsed.returnTo === 'string') returnTo = parsed.returnTo;
+      } catch { /* ignore */ }
+
+      // Exchange code for access token
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: env.GOOGLE_CLIENT_ID,
+          client_secret: env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: env.GOOGLE_REDIRECT_URI,
+          grant_type: 'authorization_code',
+        }),
+      });
+      if (!tokenRes.ok) {
+        return Response.redirect(`${env.SITE_URL}/login?error=oauth_token_exchange`, 302);
+      }
+      const tokenData = await tokenRes.json() as { access_token: string };
+
+      // Fetch Google user info
+      const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      if (!userInfoRes.ok) {
+        return Response.redirect(`${env.SITE_URL}/login?error=oauth_userinfo`, 302);
+      }
+      const googleUser = await userInfoRes.json() as {
+        sub: string;
+        email: string;
+        name: string;
+        email_verified: boolean;
+      };
+
+      if (!googleUser.email_verified) {
+        return Response.redirect(`${env.SITE_URL}/login?error=email_not_verified`, 302);
+      }
+
+      const normalizedEmail = googleUser.email.toLowerCase().trim();
+
+      // Upsert user in D1: look up by google_id, then by email
+      let user = await env.DB.prepare(
+        'SELECT id, name, email, role FROM users WHERE google_id = ?'
+      ).bind(googleUser.sub).first<{ id: number; name: string; email: string; role: string }>();
+
+      if (!user) {
+        const existing = await env.DB.prepare(
+          'SELECT id, name, email, role FROM users WHERE LOWER(email) = ?'
+        ).bind(normalizedEmail).first<{ id: number; name: string; email: string; role: string }>();
+
+        if (existing) {
+          // Link existing password account to Google
+          await env.DB.prepare('UPDATE users SET google_id = ? WHERE id = ?')
+            .bind(googleUser.sub, existing.id).run();
+          user = existing;
+        } else {
+          // New user via Google
+          const result = await env.DB.prepare(
+            'INSERT INTO users (name, email, password_hash, google_id, role) VALUES (?, ?, ?, ?, ?)'
+          ).bind(googleUser.name, normalizedEmail, '', googleUser.sub, 'user').run();
+          user = {
+            id: result.meta.last_row_id as number,
+            name: googleUser.name,
+            email: normalizedEmail,
+            role: 'user',
+          };
+        }
+      }
+
+      const jwtToken = await signJWT(
+        { sub: String(user.id), email: user.email, name: user.name, role: 'user', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
+        env.JWT_SECRET,
+      );
+
+      const callbackUrl = new URL(`${env.SITE_URL}/auth/callback`);
+      callbackUrl.searchParams.set('token', jwtToken);
+      callbackUrl.searchParams.set('returnTo', returnTo);
+      return Response.redirect(callbackUrl.toString(), 302);
     }
 
     // ── User bookings (JWT role=user) ─────────────────────────────────────────

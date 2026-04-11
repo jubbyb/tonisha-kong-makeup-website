@@ -20,6 +20,7 @@ import ArtistProfile from './pages/ArtistProfile';
 import MyBookings from './pages/MyBookings';
 import ArtistDashboard from './pages/ArtistDashboard';
 import Survey from './pages/Survey';
+import AuthCallback from './pages/AuthCallback';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -56,7 +57,11 @@ createRoot(document.getElementById('root')!).render(
             />
             <Route path="admin" element={<Admin />} />
             <Route path="survey/:token" element={<Survey />} />
+            <Route path="auth/callback" element={<AuthCallback />} />
           </Route>
+          {/* Worker handles /api/* — this route prevents React Router from logging a warning
+              when the browser briefly sees this URL before the worker redirect fires */}
+          <Route path="api/*" element={null} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
