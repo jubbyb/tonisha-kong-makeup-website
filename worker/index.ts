@@ -2,6 +2,7 @@ import { signJWT, verifyJWT, hashPassword, verifyPassword, type JWTPayload } fro
 
 interface Env {
   DB: D1Database;
+  ASSETS: Fetcher;
   ADMIN_SECRET: string;
   JWT_SECRET: string;
   RESEND_API_KEY: string;
@@ -1111,7 +1112,7 @@ export default {
       }
     }
 
-    return new Response(null, { status: 404 });
+    return env.ASSETS.fetch(request);
   },
 
   async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {

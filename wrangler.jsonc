@@ -2,8 +2,9 @@
 	"name": "tonisha-kong-makeup-website",
 	"compatibility_date": "2025-07-05",
 	"assets": {
+		"binding": "ASSETS",
 		"not_found_handling": "single-page-application",
-		// "run_worker_first": true
+		"run_worker_first": true
 	},
 	"main": "./worker/index.ts",
 	"d1_databases": [
