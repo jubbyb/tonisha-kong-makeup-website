@@ -3,7 +3,7 @@
 	"compatibility_date": "2025-07-05",
 	"assets": {
 		"not_found_handling": "single-page-application",
-		"run_worker_first": true
+		// "run_worker_first": true
 	},
 	"main": "./worker/index.ts",
 	"d1_databases": [
@@ -23,10 +23,10 @@
 	],
 	// "triggers": { "crons": ["0 * * * *"] },  // uncomment before deploying to production
 	"vars": {
-		"SITE_URL": "http://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev",
+		"SITE_URL": "https://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev",
 		"FROM_EMAIL": "hello@tonishakong.com",
 		"GOOGLE_REVIEW_URL": "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK",
 		// "GOOGLE_REDIRECT_URI": "http://localhost:5173/api/auth/google/callback"
-		"GOOGLE_REDIRECT_URI": "http://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev/api/auth/google/callback"
+		"GOOGLE_REDIRECT_URI": "https://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev/api/auth/google/callback"
 	}
 }
