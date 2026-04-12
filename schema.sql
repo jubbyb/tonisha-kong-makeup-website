@@ -42,8 +42,10 @@ CREATE TABLE IF NOT EXISTS artists (
   specialties TEXT,
   photo_url TEXT,
   is_active INTEGER NOT NULL DEFAULT 1,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  user_id INTEGER REFERENCES users(id)
 );
+CREATE INDEX IF NOT EXISTS idx_artists_user_id ON artists(user_id);
 
 -- Artist weekly working hours (one row per working day; if no row, that day is unavailable)
 -- day_of_week: 0=Monday ... 6=Sunday

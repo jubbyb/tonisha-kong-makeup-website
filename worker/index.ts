@@ -383,8 +383,15 @@ export default {
         .first<{ id: number; name: string; email: string; password_hash: string; role: string }>();
       if (user && user.password_hash && (await verifyPassword(body.password, user.password_hash))) {
         const role = user.role === 'artist' ? 'artist' : 'user';
+        let loginArtistId: string | undefined;
+        if (role === 'artist') {
+          const linked = await env.DB.prepare(
+            'SELECT id FROM artists WHERE user_id = ? AND is_active = 1'
+          ).bind(user.id).first<{ id: number }>();
+          loginArtistId = linked ? String(linked.id) : undefined;
+        }
         const token = await signJWT(
-          { sub: String(user.id), email: user.email, name: user.name, role, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
+          { sub: String(user.id), email: user.email, name: user.name, role, artist_id: loginArtistId, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
           env.JWT_SECRET,
         );
         return json({ token, user: { id: String(user.id), name: user.name, email: user.email, role } });
@@ -516,8 +523,17 @@ export default {
         }
       }
 
+      // Resolve artist_id for users promoted to artist role
+      let googleArtistId: string | undefined;
+      if (user.role === 'artist') {
+        const linked = await env.DB.prepare(
+          'SELECT id FROM artists WHERE user_id = ? AND is_active = 1'
+        ).bind(user.id).first<{ id: number }>();
+        googleArtistId = linked ? String(linked.id) : undefined;
+      }
+
       const jwtToken = await signJWT(
-        { sub: String(user.id), email: user.email, name: user.name, role: 'user', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
+        { sub: String(user.id), email: user.email, name: user.name, role: user.role as 'user' | 'artist', artist_id: googleArtistId, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
         env.JWT_SECRET,
       );
 
@@ -622,7 +638,7 @@ export default {
     if (pathname.startsWith('/api/artist/')) {
       const auth = await getAuth(request, env);
       if (!auth || auth.role !== 'artist') return json({ error: 'Artist authentication required' }, 401);
-      const artistId = Number(auth.sub);
+      const artistId = auth.artist_id ? Number(auth.artist_id) : Number(auth.sub);
 
       // Bookings
       if (pathname === '/api/artist/bookings' && method === 'GET') {
@@ -793,7 +809,7 @@ export default {
 
       if (pathname === '/api/admin/artists' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, name, email, bio, specialties, photo_url, is_active, created_at FROM artists ORDER BY name'
+          'SELECT id, name, email, bio, specialties, photo_url, is_active, user_id, created_at FROM artists ORDER BY name'
         ).all();
         return json(results);
       }
@@ -830,6 +846,56 @@ export default {
         return json(results);
       }
 
+      // Promote user to artist
+      const adminUserPromote = pathname.match(/^\/api\/admin\/users\/(\d+)\/promote$/);
+      if (adminUserPromote && method === 'POST') {
+        const userId = Number(adminUserPromote[1]);
+        const body = await request.json<{ bio?: string; specialties?: string; photo_url?: string }>();
+
+        const targetUser = await env.DB.prepare(
+          'SELECT id, name, email, role FROM users WHERE id = ?'
+        ).bind(userId).first<{ id: number; name: string; email: string; role: string }>();
+        if (!targetUser) return json({ error: 'User not found' }, 404);
+        if (targetUser.role === 'artist') return json({ error: 'User is already an artist' }, 409);
+
+        // If a linked artist record already exists but is inactive, reactivate it
+        const existingLinked = await env.DB.prepare(
+          'SELECT id, is_active FROM artists WHERE user_id = ?'
+        ).bind(userId).first<{ id: number; is_active: number }>();
+        if (existingLinked) {
+          await env.DB.prepare('UPDATE artists SET is_active = 1 WHERE id = ?').bind(existingLinked.id).run();
+          await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?').bind('artist', userId).run();
+          return json({ success: true, artist_id: existingLinked.id });
+        }
+
+        // If a standalone artist shares the same email, link it instead of creating a duplicate
+        const normalizedEmail = targetUser.email.toLowerCase().trim();
+        const standaloneByEmail = await env.DB.prepare(
+          'SELECT id FROM artists WHERE LOWER(email) = ? AND user_id IS NULL'
+        ).bind(normalizedEmail).first<{ id: number }>();
+        if (standaloneByEmail) {
+          await env.DB.prepare('UPDATE artists SET user_id = ?, is_active = 1 WHERE id = ?')
+            .bind(userId, standaloneByEmail.id).run();
+          await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?').bind('artist', userId).run();
+          return json({ success: true, artist_id: standaloneByEmail.id, linked_existing: true });
+        }
+
+        // Create a new artist record linked to this user
+        const result = await env.DB.prepare(
+          'INSERT INTO artists (name, email, password_hash, bio, specialties, photo_url, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(
+          targetUser.name,
+          normalizedEmail,
+          '', // auth goes through users table; no standalone password needed
+          body.bio ?? null,
+          body.specialties ?? null,
+          body.photo_url ?? null,
+          userId,
+        ).run();
+        await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?').bind('artist', userId).run();
+        return json({ success: true, artist_id: result.meta.last_row_id }, 201);
+      }
+
       const adminUser = pathname.match(/^\/api\/admin\/users\/(\d+)$/);
       if (adminUser && method === 'PUT') {
         const body = await request.json<{ name?: string; role?: string }>();
@@ -838,6 +904,11 @@ export default {
         await env.DB.prepare(
           'UPDATE users SET name = COALESCE(?, name), role = COALESCE(?, role) WHERE id = ?'
         ).bind(body.name ?? null, body.role ?? null, Number(adminUser[1])).run();
+        // On demotion to regular user, soft-deactivate the linked artist profile
+        if (body.role === 'user') {
+          await env.DB.prepare('UPDATE artists SET is_active = 0 WHERE user_id = ?')
+            .bind(Number(adminUser[1])).run();
+        }
         return json({ success: true });
       }
 

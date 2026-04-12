@@ -456,6 +456,7 @@ interface ArtistRecord {
   specialties: string | null;
   photo_url: string | null;
   is_active: number;
+  user_id: number | null;
 }
 
 type ArtistForm = { name: string; email: string; password: string; bio: string; specialties: string; photo_url: string };
@@ -528,7 +529,7 @@ function ArtistsTab({ token }: { token: string }) {
       ) : (
         <div className="overflow-x-auto rounded-lg border border-base-300">
           <table className="table table-zebra w-full">
-            <thead><tr><th>Name</th><th>Email</th><th>Specialties</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Specialties</th><th>Account</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {artists.map((a) => (
                 <tr key={a.id}>
@@ -538,6 +539,11 @@ function ArtistsTab({ token }: { token: string }) {
                   </td>
                   <td>{a.email}</td>
                   <td className="text-sm">{a.specialties ?? '—'}</td>
+                  <td>
+                    {a.user_id != null
+                      ? <span className="badge badge-info badge-sm">Linked</span>
+                      : <span className="text-base-content/40 text-xs">Standalone</span>}
+                  </td>
                   <td>
                     <button className={`badge ${a.is_active ? 'badge-success' : 'badge-error'} cursor-pointer`} onClick={() => handleToggleActive(a)}>
                       {a.is_active ? 'Active' : 'Inactive'}
@@ -604,10 +610,18 @@ interface UserRecord {
   created_at: string;
 }
 
+type PromoteForm = { bio: string; specialties: string; photo_url: string };
+const emptyPromoteForm = (): PromoteForm => ({ bio: '', specialties: '', photo_url: '' });
+
 function UsersTab({ token }: { token: string }) {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<number | null>(null);
+  const [promoteModalOpen, setPromoteModalOpen] = useState(false);
+  const [promotingUser, setPromotingUser] = useState<UserRecord | null>(null);
+  const [promoteForm, setPromoteForm] = useState<PromoteForm>(emptyPromoteForm());
+  const [promoteError, setPromoteError] = useState<string | null>(null);
+  const [promoting, setPromoting] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -618,15 +632,45 @@ function UsersTab({ token }: { token: string }) {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleRoleChange = async (user: UserRecord, newRole: string) => {
+  const handleDemote = async (user: UserRecord) => {
+    if (!confirm(`Convert ${user.name} back to a client? Their artist profile will be deactivated.`)) return;
     setSaving(user.id);
     await fetch(`/api/admin/users/${user.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ role: newRole }),
+      body: JSON.stringify({ role: 'user' }),
     });
-    setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, role: newRole } : u));
+    setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, role: 'user' } : u));
     setSaving(null);
+  };
+
+  const handlePromote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promotingUser) return;
+    setPromoting(true);
+    setPromoteError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${promotingUser.id}/promote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          bio: promoteForm.bio || undefined,
+          specialties: promoteForm.specialties || undefined,
+          photo_url: promoteForm.photo_url || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json() as { error: string };
+        throw new Error(d.error);
+      }
+      await fetchUsers();
+      setPromoteModalOpen(false);
+      setPromotingUser(null);
+    } catch (err) {
+      setPromoteError(err instanceof Error ? err.message : 'Failed to promote user');
+    } finally {
+      setPromoting(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -663,27 +707,95 @@ function UsersTab({ token }: { token: string }) {
                   <td className="font-medium">{u.name}</td>
                   <td>{u.email}</td>
                   <td>
-                    <select
-                      className="select select-bordered select-xs"
-                      value={u.role}
-                      disabled={saving === u.id}
-                      onChange={(e) => handleRoleChange(u, e.target.value)}
-                    >
-                      <option value="user">Client</option>
-                      <option value="artist">Artist</option>
-                    </select>
+                    <span className={`badge badge-sm ${u.role === 'artist' ? 'badge-primary' : 'badge-neutral'}`}>
+                      {u.role === 'artist' ? 'Artist' : 'Client'}
+                    </span>
                   </td>
                   <td className="text-sm text-base-content/60 whitespace-nowrap">
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
                   <td>
-                    <button className="btn btn-error btn-xs" onClick={() => handleDelete(u.id)}>Delete</button>
+                    <div className="flex gap-1 justify-end">
+                      {u.role === 'user' && (
+                        <button
+                          className="btn btn-xs btn-outline btn-primary"
+                          disabled={saving === u.id}
+                          onClick={() => {
+                            setPromotingUser(u);
+                            setPromoteForm(emptyPromoteForm());
+                            setPromoteError(null);
+                            setPromoteModalOpen(true);
+                          }}
+                        >
+                          Promote to Artist
+                        </button>
+                      )}
+                      {u.role === 'artist' && (
+                        <button
+                          className="btn btn-xs btn-outline btn-warning"
+                          disabled={saving === u.id}
+                          onClick={() => handleDemote(u)}
+                        >
+                          Convert to Client
+                        </button>
+                      )}
+                      <button className="btn btn-error btn-xs" onClick={() => handleDelete(u.id)}>Delete</button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {promoteModalOpen && promotingUser && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <button type="button" className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => setPromoteModalOpen(false)}>✕</button>
+            <h3 className="font-bold text-lg mb-1">Promote to Artist</h3>
+            <p className="text-sm text-base-content/60 mb-4">
+              Creating artist profile for <strong>{promotingUser.name}</strong> ({promotingUser.email}). All fields are optional.
+            </p>
+            <form onSubmit={handlePromote} className="space-y-3">
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-24">Specialties</span>
+                <input
+                  type="text"
+                  className="grow"
+                  placeholder="Bridal, Editorial"
+                  value={promoteForm.specialties}
+                  onChange={(e) => setPromoteForm({ ...promoteForm, specialties: e.target.value })}
+                />
+              </label>
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-24">Photo URL</span>
+                <input
+                  type="url"
+                  className="grow"
+                  value={promoteForm.photo_url}
+                  onChange={(e) => setPromoteForm({ ...promoteForm, photo_url: e.target.value })}
+                />
+              </label>
+              <label className="textarea textarea-bordered flex items-start gap-2 pt-2">
+                <span className="label w-24 mt-1">Bio</span>
+                <textarea
+                  className="grow"
+                  rows={3}
+                  value={promoteForm.bio}
+                  onChange={(e) => setPromoteForm({ ...promoteForm, bio: e.target.value })}
+                />
+              </label>
+              {promoteError && <div className="alert alert-error py-2 text-sm">{promoteError}</div>}
+              <div className="modal-action">
+                <button type="button" className="btn btn-ghost" onClick={() => setPromoteModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={promoting}>
+                  {promoting ? 'Promoting...' : 'Promote to Artist'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </dialog>
       )}
     </div>
   );
