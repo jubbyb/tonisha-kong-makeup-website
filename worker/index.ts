@@ -663,6 +663,34 @@ export default {
       return json({ success: true });
     }
 
+    // ── User profile ──────────────────────────────────────────────────────────
+
+    if (pathname === '/api/user/profile' && method === 'GET') {
+      const auth = await getAuth(request, env);
+      if (!auth) return json({ error: 'Authentication required' }, 401);
+      const user = await env.DB.prepare(
+        'SELECT name, email, phone FROM users WHERE id = ?'
+      ).bind(Number(auth.sub)).first<{ name: string; email: string; phone: string | null }>();
+      if (!user) return json({ error: 'User not found' }, 404);
+      return json(user);
+    }
+
+    if (pathname === '/api/user/profile' && method === 'PUT') {
+      const auth = await getAuth(request, env);
+      if (!auth) return json({ error: 'Authentication required' }, 401);
+      const body = await request.json<{ name?: string; phone?: string }>();
+      const name = body.name?.trim();
+      const phone = body.phone?.trim() ?? null;
+      if (!name) return json({ error: 'Name is required' }, 400);
+      await env.DB.prepare(
+        'UPDATE users SET name = ?, phone = ? WHERE id = ?'
+      ).bind(name, phone || null, Number(auth.sub)).run();
+      const updated = await env.DB.prepare(
+        'SELECT name, email, phone FROM users WHERE id = ?'
+      ).bind(Number(auth.sub)).first<{ name: string; email: string; phone: string | null }>();
+      return json(updated);
+    }
+
     // ── Artist dashboard (JWT role=artist) ────────────────────────────────────
 
     if (pathname.startsWith('/api/artist/')) {

@@ -18,6 +18,7 @@ import Login from './pages/Login';
 import Artists from './pages/Artists';
 import ArtistProfile from './pages/ArtistProfile';
 import MyBookings from './pages/MyBookings';
+import Profile from './pages/Profile';
 import ArtistDashboard from './pages/ArtistDashboard';
 import Survey from './pages/Survey';
 import AuthCallback from './pages/AuthCallback';
@@ -44,6 +45,14 @@ createRoot(document.getElementById('root')!).render(
               element={
                 <ProtectedRoute role="user">
                   <MyBookings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <ProtectedRoute role="user">
+                  <Profile />
                 </ProtectedRoute>
               }
             />

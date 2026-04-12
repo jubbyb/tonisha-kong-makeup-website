@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { apiFetch } from '../lib/api';
 
 interface Artist {
   id: number;
@@ -74,6 +76,8 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
+  const { user, token } = useAuth();
+
   // ── Step ────────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<BookingStep>('artist');
 
@@ -103,6 +107,24 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // ── Pre-populate details from user profile ───────────────────────────────────
+  useEffect(() => {
+    if (step !== 'details' || !user || !token) return;
+    if (name || email) return; // already filled (user typed something)
+    apiFetch<{ name: string; email: string; phone: string | null }>('/api/user/profile')
+      .then((profile) => {
+        setName(profile.name);
+        setEmail(profile.email);
+        setPhone(profile.phone ?? '');
+      })
+      .catch(() => {
+        // fall back to JWT claims
+        setName(user.name);
+        setEmail(user.email);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   // ── Validation ──────────────────────────────────────────────────────────────
   const validateEmail = (v: string) => {
