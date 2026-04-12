@@ -211,11 +211,12 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
     const lastDay = new Date(calYear, calMonth + 1, 0).getDate();
     const to = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    fetch(`/api/artists/${selectedArtist.id}/slots?from=${from}&to=${to}`)
+    const durationParam = selectedService ? `&duration=${selectedService.duration_min}` : '';
+    fetch(`/api/artists/${selectedArtist.id}/slots?from=${from}&to=${to}${durationParam}`)
       .then((r) => r.json() as Promise<Slot[]>)
       .then((data) => { setSlots(data); setSlotsLoading(false); })
       .catch(() => setSlotsLoading(false));
-  }, [selectedArtist, calYear, calMonth, step]);
+  }, [selectedArtist, calYear, calMonth, step, selectedService]);
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const availableDates = useMemo(() => {
@@ -280,7 +281,11 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
           artist_id: selectedArtist.id,
           date: selectedSlot.date,
           start_time: selectedSlot.start,
-          end_time: selectedSlot.end,
+          end_time: (() => {
+            const [h, m] = selectedSlot.start.split(':').map(Number);
+            const endMin = h * 60 + m + selectedService.duration_min;
+            return `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+          })(),
           message: notes,
         }),
       });

@@ -248,6 +248,7 @@ export default {
       const today = new Date().toISOString().split('T')[0];
       const from = url.searchParams.get('from') ?? today;
       const to = url.searchParams.get('to') ?? from;
+      const serviceDuration = Number(url.searchParams.get('duration') ?? 0);
 
       // Working hours
       const { results: hoursRows } = await env.DB.prepare(
@@ -269,17 +270,17 @@ export default {
         blocksByDate.get(b.date)!.push(b);
       }
 
-      // Booked start times in range
+      // Booked times in range
       const { results: bookedRows } = await env.DB.prepare(
-        `SELECT date, start_time FROM bookings
+        `SELECT date, start_time, end_time FROM bookings
          WHERE artist_id = ? AND date >= ? AND date <= ?
          AND start_time IS NOT NULL AND status NOT IN ('cancelled')`
-      ).bind(artistId, from, to).all<{ date: string; start_time: string }>();
+      ).bind(artistId, from, to).all<{ date: string; start_time: string; end_time: string | null }>();
 
-      const bookedByDate = new Map<string, Set<string>>();
+      const bookedByDate = new Map<string, Array<{ start_time: string; end_time: string | null }>>();
       for (const b of bookedRows) {
-        if (!bookedByDate.has(b.date)) bookedByDate.set(b.date, new Set());
-        bookedByDate.get(b.date)!.add(b.start_time);
+        if (!bookedByDate.has(b.date)) bookedByDate.set(b.date, []);
+        bookedByDate.get(b.date)!.push({ start_time: b.start_time, end_time: b.end_time });
       }
 
       // Compute available slots
@@ -296,14 +297,33 @@ export default {
 
         const { start_time, end_time, slot_duration } = hoursByDay.get(dayOfWeek)!;
         const dayBlocks = blocksByDate.get(date) ?? [];
-        const dayBooked = bookedByDate.get(date) ?? new Set();
+        const dayBooked = bookedByDate.get(date) ?? [];
 
         // Full-day block?
         if (dayBlocks.some((b) => !b.start_time)) continue;
 
+        // Use service duration for filtering if provided; otherwise fall back to slot_duration
+        const filterDuration = serviceDuration > 0 ? serviceDuration : slot_duration;
+
         for (const slot of generateSlots(start_time, end_time, slot_duration)) {
-          if (dayBooked.has(slot.start)) continue;
-          if (isBlocked(slot.start, slot.end, dayBlocks)) continue;
+          const slotStartMin = timeToMin(slot.start);
+          const slotEndMin = slotStartMin + filterDuration;
+          const slotEndStr = minToTime(slotEndMin);
+
+          // Reject if service window extends past artist's working hours
+          if (slotEndMin > timeToMin(end_time)) continue;
+
+          // Reject if service window overlaps any existing booking
+          const bookedConflict = dayBooked.some((b) => {
+            const bStart = timeToMin(b.start_time);
+            const bEnd = b.end_time ? timeToMin(b.end_time) : bStart + slot_duration;
+            return bStart < slotEndMin && bEnd > slotStartMin;
+          });
+          if (bookedConflict) continue;
+
+          // Reject if artist_block overlaps the service window
+          if (isBlocked(slot.start, slotEndStr, dayBlocks)) continue;
+
           result.push({ date, ...slot });
         }
       }
@@ -322,11 +342,16 @@ export default {
       if (!body.name || !body.email || !body.service || !body.date) {
         return json({ error: 'Missing required fields' }, 400);
       }
-      // Conflict check when an artist + time slot is specified
-      if (body.artist_id && body.start_time) {
+      // Conflict check when an artist + time window is specified
+      if (body.artist_id && body.start_time && body.end_time) {
         const conflict = await env.DB.prepare(
-          `SELECT 1 FROM bookings WHERE artist_id = ? AND date = ? AND start_time = ? AND status NOT IN ('cancelled')`
-        ).bind(body.artist_id, body.date, body.start_time).first();
+          `SELECT 1 FROM bookings
+           WHERE artist_id = ?
+             AND date = ?
+             AND start_time < ?
+             AND end_time > ?
+             AND status NOT IN ('cancelled')`
+        ).bind(body.artist_id, body.date, body.end_time, body.start_time).first();
         if (conflict) return json({ error: 'This slot was just taken — please choose another.' }, 409);
       }
       await env.DB.prepare(
@@ -572,10 +597,15 @@ export default {
         userId = Number(auth.sub);
       }
 
-      // Check no existing confirmed booking for this artist+date+time
+      // Check no existing confirmed booking overlaps this artist+date+time window
       const conflict = await env.DB.prepare(
-        `SELECT 1 FROM bookings WHERE artist_id = ? AND date = ? AND start_time = ? AND status NOT IN ('cancelled')`
-      ).bind(body.artist_id, body.date, body.start_time).first();
+        `SELECT 1 FROM bookings
+         WHERE artist_id = ?
+           AND date = ?
+           AND start_time < ?
+           AND end_time > ?
+           AND status NOT IN ('cancelled')`
+      ).bind(body.artist_id, body.date, body.end_time, body.start_time).first();
       if (conflict) return json({ error: 'This slot was just taken — please choose another.' }, 409);
 
       await env.DB.prepare(
