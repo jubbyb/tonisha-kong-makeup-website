@@ -77,6 +77,67 @@ function buildReviewRequestEmail(clientName: string, googleUrl: string): string 
 </div>`;
 }
 
+function buildBookingReceivedEmail(name: string, service: string, date: string, startTime: string, artistName?: string): string {
+  const withArtist = artistName ? ` with ${artistName}` : '';
+  const atTime = startTime ? ` at ${startTime}` : '';
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Thank you, ${name}</h1>
+  <p style="color:#a09890;line-height:1.7;">Your booking request for <em>${service}</em>${withArtist} on <strong style="color:#ede8e0;">${date}</strong>${atTime} has been received.</p>
+  <p style="color:#a09890;line-height:1.7;margin-top:12px;">We'll be in touch shortly to confirm your appointment.</p>
+  <p style="font-size:11px;color:#4a4540;margin-top:32px;">If you have any questions, simply reply to this email.</p>
+</div>`;
+}
+
+function buildBookingConfirmedEmail(name: string, service: string, date: string, startTime: string, artistName?: string): string {
+  const withArtist = artistName ? ` with ${artistName}` : '';
+  const atTime = startTime ? ` at ${startTime}` : '';
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">You're confirmed, ${name}!</h1>
+  <p style="color:#a09890;line-height:1.7;">Your booking for <em>${service}</em>${withArtist} on <strong style="color:#ede8e0;">${date}</strong>${atTime} is confirmed.</p>
+  <p style="color:#a09890;line-height:1.7;margin-top:12px;">We look forward to seeing you!</p>
+  <p style="font-size:11px;color:#4a4540;margin-top:32px;">If you need to make any changes, please contact us as soon as possible.</p>
+</div>`;
+}
+
+function buildBookingCancelledEmail(name: string, service: string, date: string, startTime: string): string {
+  const atTime = startTime ? ` at ${startTime}` : '';
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Booking Cancelled</h1>
+  <p style="color:#a09890;line-height:1.7;">Hi ${name}, your booking for <em>${service}</em> on <strong style="color:#ede8e0;">${date}</strong>${atTime} has been cancelled.</p>
+  <p style="color:#a09890;line-height:1.7;margin-top:12px;">If you'd like to rebook or have any questions, please don't hesitate to get in touch.</p>
+  <p style="font-size:11px;color:#4a4540;margin-top:32px;">We hope to see you soon.</p>
+</div>`;
+}
+
+function buildArtistNewBookingEmail(clientName: string, clientEmail: string, service: string, date: string, startTime: string): string {
+  const atTime = startTime ? ` at ${startTime}` : '';
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">New Booking Request</h1>
+  <p style="color:#a09890;line-height:1.7;"><strong style="color:#ede8e0;">${clientName}</strong> has requested a booking for <em>${service}</em> on <strong style="color:#ede8e0;">${date}</strong>${atTime}.</p>
+  <p style="color:#a09890;line-height:1.7;margin-top:12px;">Client email: <a href="mailto:${clientEmail}" style="color:#c9a96e;">${clientEmail}</a></p>
+  <p style="color:#a09890;line-height:1.7;margin-top:12px;">Log in to your dashboard to confirm or manage this booking.</p>
+</div>`;
+}
+
+function buildArtistClientCancelledEmail(clientName: string, service: string, date: string, startTime: string): string {
+  const atTime = startTime ? ` at ${startTime}` : '';
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Booking Cancelled by Client</h1>
+  <p style="color:#a09890;line-height:1.7;"><strong style="color:#ede8e0;">${clientName}</strong> has cancelled their booking for <em>${service}</em> on <strong style="color:#ede8e0;">${date}</strong>${atTime}.</p>
+  <p style="color:#a09890;line-height:1.7;margin-top:12px;">This time slot is now available again.</p>
+</div>`;
+}
+
 async function getAuth(request: Request, env: Env): Promise<JWTPayload | null> {
   const auth = request.headers.get('Authorization');
   if (!auth?.startsWith('Bearer ')) return null;
@@ -492,6 +553,26 @@ export default {
           body.message ?? null,
         )
         .run();
+      let anonArtistName: string | undefined;
+      let anonArtistEmail: string | undefined;
+      if (body.artist_id) {
+        const a = await env.DB.prepare('SELECT name, email FROM artists WHERE id = ?')
+          .bind(body.artist_id).first<{ name: string; email: string }>();
+        anonArtistName = a?.name;
+        anonArtistEmail = a?.email;
+      }
+      await sendEmail(
+        env, body.email,
+        'Booking Request Received — Tonisha Kong Makeup',
+        buildBookingReceivedEmail(body.name, body.service, body.date, body.start_time ?? '', anonArtistName),
+      );
+      if (anonArtistEmail) {
+        await sendEmail(
+          env, anonArtistEmail,
+          'New Booking Request — Tonisha Kong Makeup',
+          buildArtistNewBookingEmail(body.name, body.email, body.service, body.date, body.start_time ?? ''),
+        );
+      }
       return json({ success: true }, 201);
     }
 
@@ -844,6 +925,20 @@ export default {
         )
         .run();
 
+      const artistRow = await env.DB.prepare('SELECT name, email FROM artists WHERE id = ?')
+        .bind(body.artist_id).first<{ name: string; email: string }>();
+      await sendEmail(
+        env, clientEmail,
+        'Booking Request Received — Tonisha Kong Makeup',
+        buildBookingReceivedEmail(clientName, body.service, body.date, body.start_time, artistRow?.name),
+      );
+      if (artistRow?.email) {
+        await sendEmail(
+          env, artistRow.email,
+          'New Booking Request — Tonisha Kong Makeup',
+          buildArtistNewBookingEmail(clientName, clientEmail, body.service, body.date, body.start_time),
+        );
+      }
       return json({ success: true }, 201);
     }
 
@@ -900,6 +995,27 @@ export default {
         )
           .bind(Number(cancelMine[1]), Number(auth.sub))
           .run();
+      }
+      const cancelled = await env.DB.prepare(
+        'SELECT name, email, service, date, start_time, artist_id FROM bookings WHERE id = ?',
+      ).bind(Number(cancelMine[1])).first<{ name: string; email: string; service: string; date: string; start_time: string | null; artist_id: number | null }>();
+      if (cancelled) {
+        await sendEmail(
+          env, cancelled.email,
+          'Booking Cancellation — Tonisha Kong Makeup',
+          buildBookingCancelledEmail(cancelled.name, cancelled.service, cancelled.date, cancelled.start_time ?? ''),
+        );
+        if (cancelled.artist_id) {
+          const artist = await env.DB.prepare('SELECT email FROM artists WHERE id = ?')
+            .bind(cancelled.artist_id).first<{ email: string }>();
+          if (artist?.email) {
+            await sendEmail(
+              env, artist.email,
+              'Booking Cancelled by Client — Tonisha Kong Makeup',
+              buildArtistClientCancelledEmail(cancelled.name, cancelled.service, cancelled.date, cancelled.start_time ?? ''),
+            );
+          }
+        }
       }
       return json({ success: true });
     }
@@ -966,11 +1082,31 @@ export default {
           body.status === 'completed'
             ? new Date().toISOString().replace('T', ' ').slice(0, 19)
             : null;
+        const bookingForEmail = await env.DB.prepare(
+          `SELECT b.name, b.email, b.service, b.date, b.start_time, a.name as artist_name
+           FROM bookings b LEFT JOIN artists a ON b.artist_id = a.id
+           WHERE b.id = ? AND b.artist_id = ?`,
+        ).bind(Number(bookingId[1]), artistId).first<{ name: string; email: string; service: string; date: string; start_time: string | null; artist_name: string | null }>();
         await env.DB.prepare(
           'UPDATE bookings SET status = ?, completed_at = COALESCE(?, completed_at) WHERE id = ? AND artist_id = ?',
         )
           .bind(body.status, completedAt, Number(bookingId[1]), artistId)
           .run();
+        if (bookingForEmail) {
+          if (body.status === 'confirmed') {
+            await sendEmail(
+              env, bookingForEmail.email,
+              'Your Booking is Confirmed — Tonisha Kong Makeup',
+              buildBookingConfirmedEmail(bookingForEmail.name, bookingForEmail.service, bookingForEmail.date, bookingForEmail.start_time ?? '', bookingForEmail.artist_name ?? undefined),
+            );
+          } else if (body.status === 'cancelled') {
+            await sendEmail(
+              env, bookingForEmail.email,
+              'Booking Cancellation — Tonisha Kong Makeup',
+              buildBookingCancelledEmail(bookingForEmail.name, bookingForEmail.service, bookingForEmail.date, bookingForEmail.start_time ?? ''),
+            );
+          }
+        }
         return json({ success: true });
       }
 
