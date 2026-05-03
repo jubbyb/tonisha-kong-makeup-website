@@ -26,54 +26,54 @@ import AuthCallback from './pages/AuthCallback';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />}>
-            <Route index element={<Home />} />
-            <Route path="home" element={<Home />} />
-            <Route path="about" element={<About />} />
-            <Route path="services" element={<Services />} />
-            <Route path="classes" element={<Classes />} />
-            <Route path="bookings" element={<Bookings />} />
-            <Route path="contact" element={<Contact />} />
-            <Route path="login" element={<Login />} />
-            <Route path="artists" element={<Artists />} />
-            <Route path="artists/:id" element={<ArtistProfile />} />
-            <Route
-              path="my-bookings"
-              element={
-                <ProtectedRoute role="user">
-                  <MyBookings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="profile"
-              element={
-                <ProtectedRoute role="user">
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="artist-dashboard"
-              element={
-                <ProtectedRoute role="artist">
-                  <ArtistDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="admin" element={<Admin />} />
-            <Route path="survey/:token" element={<Survey />} />
-            <Route path="auth/callback" element={<AuthCallback />} />
-          </Route>
-          {/* Worker handles /api/* — this route prevents React Router from logging a warning
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<App />}>
+              <Route index element={<Home />} />
+              <Route path="home" element={<Home />} />
+              <Route path="about" element={<About />} />
+              <Route path="services" element={<Services />} />
+              <Route path="classes" element={<Classes />} />
+              <Route path="bookings" element={<Bookings />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="login" element={<Login />} />
+              <Route path="artists" element={<Artists />} />
+              <Route path="artists/:slug" element={<ArtistProfile />} />
+              <Route
+                path="my-bookings"
+                element={
+                  <ProtectedRoute role="user">
+                    <MyBookings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute role="user">
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="artist-dashboard"
+                element={
+                  <ProtectedRoute role="artist">
+                    <ArtistDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="admin" element={<Admin />} />
+              <Route path="survey/:token" element={<Survey />} />
+              <Route path="auth/callback" element={<AuthCallback />} />
+            </Route>
+            {/* Worker handles /api/* — this route prevents React Router from logging a warning
               when the browser briefly sees this URL before the worker redirect fires */}
-          <Route path="api/*" element={null} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            <Route path="api/*" element={null} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   </StrictMode>,
 );

@@ -23,12 +23,7 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-async function sendEmail(
-  env: Env,
-  to: string,
-  subject: string,
-  html: string,
-): Promise<boolean> {
+async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<boolean> {
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -92,6 +87,59 @@ function isAdmin(request: Request, env: Env): boolean {
   return request.headers.get('Authorization') === `Bearer ${env.ADMIN_SECRET}`;
 }
 
+// ─── Slug helpers ────────────────────────────────────────────────────────────
+
+const RESERVED_SLUGS = new Set([
+  'new',
+  'admin',
+  'api',
+  'me',
+  'dashboard',
+  'login',
+  'logout',
+  'signup',
+  'auth',
+  'profile',
+  'about',
+  'home',
+  'contact',
+  'services',
+  'classes',
+  'bookings',
+  'survey',
+  'artist-dashboard',
+  'my-bookings',
+]);
+
+const SLUG_RE = /^[a-z0-9](-?[a-z0-9])*$/;
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50);
+}
+
+async function uniqueSlug(db: D1Database, base: string, excludeArtistId?: number): Promise<string> {
+  const root = base || 'artist';
+  let candidate = root;
+  let n = 2;
+  while (true) {
+    const row = excludeArtistId
+      ? await db
+          .prepare('SELECT id FROM artists WHERE slug = ? AND id != ?')
+          .bind(candidate, excludeArtistId)
+          .first()
+      : await db.prepare('SELECT id FROM artists WHERE slug = ?').bind(candidate).first();
+    if (!row) return candidate;
+    candidate = `${root}-${n++}`;
+    if (n > 1000) return `${root}-${Date.now()}`;
+  }
+}
+
 // ─── Availability computation helpers ────────────────────────────────────────
 
 function timeToMin(t: string): number {
@@ -153,7 +201,8 @@ export default {
     // ── Public: classes ───────────────────────────────────────────────────────
 
     if (pathname === '/api/classes' && method === 'GET') {
-      const { results } = await env.DB.prepare(`
+      const { results } = await env.DB.prepare(
+        `
         SELECT c.*,
           a.name AS host_name,
           CASE WHEN c.total_slots > 0
@@ -167,7 +216,8 @@ export default {
         FROM classes c
         LEFT JOIN artists a ON a.id = c.host_artist_id
         ORDER BY c.date
-      `).all();
+      `,
+      ).all();
       return json(results);
     }
 
@@ -175,18 +225,52 @@ export default {
 
     if (pathname === '/api/artists' && method === 'GET') {
       const { results } = await env.DB.prepare(
-        'SELECT id, name, bio, specialties, photo_url FROM artists WHERE is_active = 1 ORDER BY name'
+        'SELECT id, slug, name, bio, specialties, photo_url, location FROM artists WHERE is_active = 1 ORDER BY name',
       ).all();
       return json(results);
     }
 
-    const artistById = pathname.match(/^\/api\/artists\/(\d+)$/);
-    if (artistById && method === 'GET') {
-      const artist = await env.DB.prepare(
-        'SELECT id, name, bio, specialties, photo_url FROM artists WHERE id = ? AND is_active = 1'
-      ).bind(Number(artistById[1])).first();
+    const artistByIdOrSlug = pathname.match(/^\/api\/artists\/([^/]+)$/);
+    if (artistByIdOrSlug && method === 'GET') {
+      const key = artistByIdOrSlug[1];
+      const isNumeric = /^\d+$/.test(key);
+      const artist = isNumeric
+        ? await env.DB.prepare(
+            `SELECT id, slug, name, bio, specialties, photo_url, about, location, experience,
+                    instagram_url, tiktok_url, facebook_url, website_url
+             FROM artists WHERE id = ? AND is_active = 1`,
+          )
+            .bind(Number(key))
+            .first()
+        : await env.DB.prepare(
+            `SELECT id, slug, name, bio, specialties, photo_url, about, location, experience,
+                    instagram_url, tiktok_url, facebook_url, website_url
+             FROM artists WHERE slug = ? AND is_active = 1`,
+          )
+            .bind(key)
+            .first();
       if (!artist) return json({ error: 'Artist not found' }, 404);
       return json(artist);
+    }
+
+    const artistPortfolio = pathname.match(/^\/api\/artists\/(\d+)\/portfolio$/);
+    if (artistPortfolio && method === 'GET') {
+      const { results } = await env.DB.prepare(
+        'SELECT id, image_url, caption, display_order FROM artist_portfolio WHERE artist_id = ? ORDER BY display_order, id',
+      )
+        .bind(Number(artistPortfolio[1]))
+        .all();
+      return json(results);
+    }
+
+    const artistTestimonials = pathname.match(/^\/api\/artists\/(\d+)\/testimonials$/);
+    if (artistTestimonials && method === 'GET') {
+      const { results } = await env.DB.prepare(
+        'SELECT id, client_name, quote, date, display_order FROM artist_testimonials WHERE artist_id = ? ORDER BY display_order, id',
+      )
+        .bind(Number(artistTestimonials[1]))
+        .all();
+      return json(results);
     }
 
     // ── Public: service catalog (full hierarchy) ─────────────────────────────
@@ -194,16 +278,24 @@ export default {
 
     if (pathname === '/api/service-catalog' && method === 'GET') {
       const { results: cats } = await env.DB.prepare(
-        'SELECT id, name, sort_order FROM service_categories ORDER BY sort_order, name'
+        'SELECT id, name, sort_order FROM service_categories ORDER BY sort_order, name',
       ).all<{ id: number; name: string; sort_order: number }>();
 
       const { results: subs } = await env.DB.prepare(
-        'SELECT id, category_id, name, sort_order FROM service_subcategories ORDER BY sort_order, name'
+        'SELECT id, category_id, name, sort_order FROM service_subcategories ORDER BY sort_order, name',
       ).all<{ id: number; category_id: number; name: string; sort_order: number }>();
 
       const { results: svcs } = await env.DB.prepare(
-        'SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name'
-      ).all<{ id: number; subcategory_id: number; name: string; description: string | null; price: number | null; duration_min: number; sort_order: number }>();
+        'SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name',
+      ).all<{
+        id: number;
+        subcategory_id: number;
+        name: string;
+        description: string | null;
+        price: number | null;
+        duration_min: number;
+        sort_order: number;
+      }>();
 
       const catalog = cats.map((cat) => ({
         ...cat,
@@ -223,8 +315,13 @@ export default {
     const artistServices = pathname.match(/^\/api\/artists\/(\d+)\/services$/);
     if (artistServices && method === 'GET') {
       const artistId = Number(artistServices[1]);
-      const { results } = await env.DB.prepare(`
-        SELECT cs.id, cs.name, cs.description, cs.price, cs.duration_min,
+      const { results } = await env.DB.prepare(
+        `
+        SELECT cs.id, cs.name, cs.description,
+               COALESCE(ar.price_override, cs.price) AS price,
+               ar.price_override,
+               cs.price AS catalog_price,
+               cs.duration_min,
                ss.id AS subcategory_id, ss.name AS subcategory_name,
                sc.id AS category_id, sc.name AS category_name
         FROM artist_services ar
@@ -233,7 +330,10 @@ export default {
         JOIN service_categories sc ON sc.id = ss.category_id
         WHERE ar.artist_id = ?
         ORDER BY sc.sort_order, ss.sort_order, cs.sort_order, cs.name
-      `).bind(artistId).all();
+      `,
+      )
+        .bind(artistId)
+        .all();
       return json(results);
     }
 
@@ -252,8 +352,15 @@ export default {
 
       // Working hours
       const { results: hoursRows } = await env.DB.prepare(
-        'SELECT day_of_week, start_time, end_time, slot_duration FROM artist_hours WHERE artist_id = ?'
-      ).bind(artistId).all<{ day_of_week: number; start_time: string; end_time: string; slot_duration: number }>();
+        'SELECT day_of_week, start_time, end_time, slot_duration FROM artist_hours WHERE artist_id = ?',
+      )
+        .bind(artistId)
+        .all<{
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          slot_duration: number;
+        }>();
 
       if (hoursRows.length === 0) return json([]); // no schedule set yet
 
@@ -261,8 +368,10 @@ export default {
 
       // Blocks in range
       const { results: blockRows } = await env.DB.prepare(
-        'SELECT date, start_time, end_time FROM artist_blocks WHERE artist_id = ? AND date >= ? AND date <= ?'
-      ).bind(artistId, from, to).all<{ date: string; start_time: string | null; end_time: string | null }>();
+        'SELECT date, start_time, end_time FROM artist_blocks WHERE artist_id = ? AND date >= ? AND date <= ?',
+      )
+        .bind(artistId, from, to)
+        .all<{ date: string; start_time: string | null; end_time: string | null }>();
 
       const blocksByDate = new Map<string, typeof blockRows>();
       for (const b of blockRows) {
@@ -274,10 +383,15 @@ export default {
       const { results: bookedRows } = await env.DB.prepare(
         `SELECT date, start_time, end_time FROM bookings
          WHERE artist_id = ? AND date >= ? AND date <= ?
-         AND start_time IS NOT NULL AND status NOT IN ('cancelled')`
-      ).bind(artistId, from, to).all<{ date: string; start_time: string; end_time: string | null }>();
+         AND start_time IS NOT NULL AND status NOT IN ('cancelled')`,
+      )
+        .bind(artistId, from, to)
+        .all<{ date: string; start_time: string; end_time: string | null }>();
 
-      const bookedByDate = new Map<string, Array<{ start_time: string; end_time: string | null }>>();
+      const bookedByDate = new Map<
+        string,
+        Array<{ start_time: string; end_time: string | null }>
+      >();
       for (const b of bookedRows) {
         if (!bookedByDate.has(b.date)) bookedByDate.set(b.date, []);
         bookedByDate.get(b.date)!.push({ start_time: b.start_time, end_time: b.end_time });
@@ -335,9 +449,15 @@ export default {
 
     if (pathname === '/api/bookings' && method === 'POST') {
       const body = await request.json<{
-        name?: string; email?: string; phone?: string;
-        service?: string; date?: string; message?: string;
-        artist_id?: number; start_time?: string; end_time?: string;
+        name?: string;
+        email?: string;
+        phone?: string;
+        service?: string;
+        date?: string;
+        message?: string;
+        artist_id?: number;
+        start_time?: string;
+        end_time?: string;
       }>();
       if (!body.name || !body.email || !body.service || !body.date) {
         return json({ error: 'Missing required fields' }, 400);
@@ -350,16 +470,28 @@ export default {
              AND date = ?
              AND start_time < ?
              AND end_time > ?
-             AND status NOT IN ('cancelled')`
-        ).bind(body.artist_id, body.date, body.end_time, body.start_time).first();
-        if (conflict) return json({ error: 'This slot was just taken — please choose another.' }, 409);
+             AND status NOT IN ('cancelled')`,
+        )
+          .bind(body.artist_id, body.date, body.end_time, body.start_time)
+          .first();
+        if (conflict)
+          return json({ error: 'This slot was just taken — please choose another.' }, 409);
       }
       await env.DB.prepare(
-        'INSERT INTO bookings (name, email, phone, service, date, start_time, end_time, artist_id, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(
-        body.name, body.email, body.phone ?? null, body.service, body.date,
-        body.start_time ?? null, body.end_time ?? null, body.artist_id ?? null, body.message ?? null
-      ).run();
+        'INSERT INTO bookings (name, email, phone, service, date, start_time, end_time, artist_id, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+        .bind(
+          body.name,
+          body.email,
+          body.phone ?? null,
+          body.service,
+          body.date,
+          body.start_time ?? null,
+          body.end_time ?? null,
+          body.artist_id ?? null,
+          body.message ?? null,
+        )
+        .run();
       return json({ success: true }, 201);
     }
 
@@ -367,14 +499,20 @@ export default {
 
     if (pathname === '/api/contact' && method === 'POST') {
       const body = await request.json<{
-        name?: string; email?: string; phone?: string; subject?: string; message?: string;
+        name?: string;
+        email?: string;
+        phone?: string;
+        subject?: string;
+        message?: string;
       }>();
       if (!body.name || !body.email || !body.subject || !body.message) {
         return json({ error: 'Missing required fields' }, 400);
       }
       await env.DB.prepare(
-        'INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)'
-      ).bind(body.name, body.email, body.phone ?? null, body.subject, body.message).run();
+        'INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)',
+      )
+        .bind(body.name, body.email, body.phone ?? null, body.subject, body.message)
+        .run();
       return json({ success: true }, 201);
     }
 
@@ -382,17 +520,29 @@ export default {
 
     if (pathname === '/api/auth/signup' && method === 'POST') {
       const body = await request.json<{ name?: string; email?: string; password?: string }>();
-      if (!body.name || !body.email || !body.password) return json({ error: 'Missing required fields' }, 400);
+      if (!body.name || !body.email || !body.password)
+        return json({ error: 'Missing required fields' }, 400);
       const normalizedEmail = body.email.toLowerCase().trim();
-      const existing = await env.DB.prepare('SELECT id FROM users WHERE LOWER(email) = ?').bind(normalizedEmail).first();
+      const existing = await env.DB.prepare('SELECT id FROM users WHERE LOWER(email) = ?')
+        .bind(normalizedEmail)
+        .first();
       if (existing) return json({ error: 'Email already registered' }, 409);
       const hash = await hashPassword(body.password);
       const result = await env.DB.prepare(
-        'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)'
-      ).bind(body.name, normalizedEmail, hash).run();
+        'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+      )
+        .bind(body.name, normalizedEmail, hash)
+        .run();
       const id = String(result.meta.last_row_id);
       const token = await signJWT(
-        { sub: id, email: body.email, name: body.name, role: 'user', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
+        {
+          sub: id,
+          email: body.email,
+          name: body.name,
+          role: 'user',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+        },
         env.JWT_SECRET,
       );
       return json({ token, user: { id, name: body.name, email: body.email, role: 'user' } }, 201);
@@ -404,51 +554,92 @@ export default {
       const normalizedEmail = body.email.toLowerCase().trim();
 
       // Check users table first
-      const user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?').bind(normalizedEmail)
+      const user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+        .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string; role: string }>();
       if (user && user.password_hash && (await verifyPassword(body.password, user.password_hash))) {
         const role = user.role === 'artist' ? 'artist' : 'user';
         let loginArtistId: string | undefined;
         if (role === 'artist') {
           const linked = await env.DB.prepare(
-            'SELECT id FROM artists WHERE user_id = ? AND is_active = 1'
-          ).bind(user.id).first<{ id: number }>();
+            'SELECT id FROM artists WHERE user_id = ? AND is_active = 1',
+          )
+            .bind(user.id)
+            .first<{ id: number }>();
           loginArtistId = linked ? String(linked.id) : undefined;
         }
         const token = await signJWT(
-          { sub: String(user.id), email: user.email, name: user.name, role, artist_id: loginArtistId, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
+          {
+            sub: String(user.id),
+            email: user.email,
+            name: user.name,
+            role,
+            artist_id: loginArtistId,
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+          },
           env.JWT_SECRET,
         );
-        return json({ token, user: { id: String(user.id), name: user.name, email: user.email, role } });
+        return json({
+          token,
+          user: { id: String(user.id), name: user.name, email: user.email, role },
+        });
       }
 
       // Fallback: check artists table (artist logging in via client screen)
-      const artist = await env.DB.prepare('SELECT * FROM artists WHERE LOWER(email) = ? AND is_active = 1').bind(normalizedEmail)
+      const artist = await env.DB.prepare(
+        'SELECT * FROM artists WHERE LOWER(email) = ? AND is_active = 1',
+      )
+        .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string }>();
       if (!artist || !(await verifyPassword(body.password, artist.password_hash))) {
         return json({ error: 'Invalid email or password' }, 401);
       }
       const token = await signJWT(
-        { sub: String(artist.id), email: artist.email, name: artist.name, role: 'artist', artist_id: String(artist.id), iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
+        {
+          sub: String(artist.id),
+          email: artist.email,
+          name: artist.name,
+          role: 'artist',
+          artist_id: String(artist.id),
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+        },
         env.JWT_SECRET,
       );
-      return json({ token, user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' } });
+      return json({
+        token,
+        user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' },
+      });
     }
 
     if (pathname === '/api/auth/artist-login' && method === 'POST') {
       const body = await request.json<{ email?: string; password?: string }>();
       if (!body.email || !body.password) return json({ error: 'Missing fields' }, 400);
       const normalizedEmail = body.email.toLowerCase().trim();
-      const artist = await env.DB.prepare('SELECT * FROM artists WHERE LOWER(email) = ? AND is_active = 1').bind(normalizedEmail)
+      const artist = await env.DB.prepare(
+        'SELECT * FROM artists WHERE LOWER(email) = ? AND is_active = 1',
+      )
+        .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string }>();
       if (!artist || !(await verifyPassword(body.password, artist.password_hash))) {
         return json({ error: 'Invalid email or password' }, 401);
       }
       const token = await signJWT(
-        { sub: String(artist.id), email: artist.email, name: artist.name, role: 'artist', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 24 * 3600 },
+        {
+          sub: String(artist.id),
+          email: artist.email,
+          name: artist.name,
+          role: 'artist',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 24 * 3600,
+        },
         env.JWT_SECRET,
       );
-      return json({ token, user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' } });
+      return json({
+        token,
+        user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' },
+      });
     }
 
     // ── Google OAuth ──────────────────────────────────────────────────────────
@@ -463,12 +654,15 @@ export default {
         scope: 'openid email profile',
         state,
       });
-      return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`, 302);
+      return Response.redirect(
+        `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+        302,
+      );
     }
 
     if (pathname === '/api/auth/google/callback' && method === 'GET') {
       const url = new URL(request.url);
-      const code  = url.searchParams.get('code');
+      const code = url.searchParams.get('code');
       const state = url.searchParams.get('state');
       const error = url.searchParams.get('error');
 
@@ -480,7 +674,9 @@ export default {
       try {
         const parsed = JSON.parse(atob(state ?? ''));
         if (typeof parsed.returnTo === 'string') returnTo = parsed.returnTo;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
 
       // Exchange code for access token
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -497,7 +693,7 @@ export default {
       if (!tokenRes.ok) {
         return Response.redirect(`${env.SITE_URL}/login?error=oauth_token_exchange`, 302);
       }
-      const tokenData = await tokenRes.json() as { access_token: string };
+      const tokenData = (await tokenRes.json()) as { access_token: string };
 
       // Fetch Google user info
       const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -506,7 +702,7 @@ export default {
       if (!userInfoRes.ok) {
         return Response.redirect(`${env.SITE_URL}/login?error=oauth_userinfo`, 302);
       }
-      const googleUser = await userInfoRes.json() as {
+      const googleUser = (await userInfoRes.json()) as {
         sub: string;
         email: string;
         name: string;
@@ -520,25 +716,30 @@ export default {
       const normalizedEmail = googleUser.email.toLowerCase().trim();
 
       // Upsert user in D1: look up by google_id, then by email
-      let user = await env.DB.prepare(
-        'SELECT id, name, email, role FROM users WHERE google_id = ?'
-      ).bind(googleUser.sub).first<{ id: number; name: string; email: string; role: string }>();
+      let user = await env.DB.prepare('SELECT id, name, email, role FROM users WHERE google_id = ?')
+        .bind(googleUser.sub)
+        .first<{ id: number; name: string; email: string; role: string }>();
 
       if (!user) {
         const existing = await env.DB.prepare(
-          'SELECT id, name, email, role FROM users WHERE LOWER(email) = ?'
-        ).bind(normalizedEmail).first<{ id: number; name: string; email: string; role: string }>();
+          'SELECT id, name, email, role FROM users WHERE LOWER(email) = ?',
+        )
+          .bind(normalizedEmail)
+          .first<{ id: number; name: string; email: string; role: string }>();
 
         if (existing) {
           // Link existing password account to Google
           await env.DB.prepare('UPDATE users SET google_id = ? WHERE id = ?')
-            .bind(googleUser.sub, existing.id).run();
+            .bind(googleUser.sub, existing.id)
+            .run();
           user = existing;
         } else {
           // New user via Google
           const result = await env.DB.prepare(
-            'INSERT INTO users (name, email, password_hash, google_id, role) VALUES (?, ?, ?, ?, ?)'
-          ).bind(googleUser.name, normalizedEmail, '', googleUser.sub, 'user').run();
+            'INSERT INTO users (name, email, password_hash, google_id, role) VALUES (?, ?, ?, ?, ?)',
+          )
+            .bind(googleUser.name, normalizedEmail, '', googleUser.sub, 'user')
+            .run();
           user = {
             id: result.meta.last_row_id as number,
             name: googleUser.name,
@@ -552,13 +753,23 @@ export default {
       let googleArtistId: string | undefined;
       if (user.role === 'artist') {
         const linked = await env.DB.prepare(
-          'SELECT id FROM artists WHERE user_id = ? AND is_active = 1'
-        ).bind(user.id).first<{ id: number }>();
+          'SELECT id FROM artists WHERE user_id = ? AND is_active = 1',
+        )
+          .bind(user.id)
+          .first<{ id: number }>();
         googleArtistId = linked ? String(linked.id) : undefined;
       }
 
       const jwtToken = await signJWT(
-        { sub: String(user.id), email: user.email, name: user.name, role: user.role as 'user' | 'artist', artist_id: googleArtistId, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 },
+        {
+          sub: String(user.id),
+          email: user.email,
+          name: user.name,
+          role: user.role as 'user' | 'artist',
+          artist_id: googleArtistId,
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+        },
         env.JWT_SECRET,
       );
 
@@ -575,8 +786,12 @@ export default {
       if (!auth) return json({ error: 'Authentication required' }, 401);
 
       const body = await request.json<{
-        artist_id?: number; date?: string; start_time?: string; end_time?: string;
-        service?: string; message?: string;
+        artist_id?: number;
+        date?: string;
+        start_time?: string;
+        end_time?: string;
+        service?: string;
+        message?: string;
       }>();
       if (!body.artist_id || !body.date || !body.start_time || !body.end_time || !body.service) {
         return json({ error: 'Missing required fields' }, 400);
@@ -590,7 +805,8 @@ export default {
       if (!auth.artist_id) {
         // Logged in as a regular user (or a user with artist role in users table)
         const user = await env.DB.prepare('SELECT name, email FROM users WHERE id = ?')
-          .bind(Number(auth.sub)).first<{ name: string; email: string }>();
+          .bind(Number(auth.sub))
+          .first<{ name: string; email: string }>();
         if (!user) return json({ error: 'User not found' }, 404);
         clientName = user.name;
         clientEmail = user.email;
@@ -604,16 +820,29 @@ export default {
            AND date = ?
            AND start_time < ?
            AND end_time > ?
-           AND status NOT IN ('cancelled')`
-      ).bind(body.artist_id, body.date, body.end_time, body.start_time).first();
-      if (conflict) return json({ error: 'This slot was just taken — please choose another.' }, 409);
+           AND status NOT IN ('cancelled')`,
+      )
+        .bind(body.artist_id, body.date, body.end_time, body.start_time)
+        .first();
+      if (conflict)
+        return json({ error: 'This slot was just taken — please choose another.' }, 409);
 
       await env.DB.prepare(
-        'INSERT INTO bookings (user_id, artist_id, name, email, service, date, start_time, end_time, message, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(
-        userId, body.artist_id, clientName, clientEmail, body.service,
-        body.date, body.start_time, body.end_time, body.message ?? null, 'pending'
-      ).run();
+        'INSERT INTO bookings (user_id, artist_id, name, email, service, date, start_time, end_time, message, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+        .bind(
+          userId,
+          body.artist_id,
+          clientName,
+          clientEmail,
+          body.service,
+          body.date,
+          body.start_time,
+          body.end_time,
+          body.message ?? null,
+          'pending',
+        )
+        .run();
 
       return json({ success: true }, 201);
     }
@@ -624,7 +853,8 @@ export default {
       let results;
       if (auth.artist_id) {
         // Artist logged in via client tab — find bookings by email
-        ({ results } = await env.DB.prepare(`
+        ({ results } = await env.DB.prepare(
+          `
           SELECT b.id, b.service, b.date, b.start_time, b.end_time,
                  b.status, b.message, b.created_at,
                  a.name as artist_name, a.photo_url as artist_photo
@@ -632,9 +862,13 @@ export default {
           LEFT JOIN artists a ON a.id = b.artist_id
           WHERE b.email = ? AND (b.user_id IS NULL OR b.artist_id != ?)
           ORDER BY b.created_at DESC
-        `).bind(auth.email, Number(auth.artist_id)).all());
+        `,
+        )
+          .bind(auth.email, Number(auth.artist_id))
+          .all());
       } else {
-        ({ results } = await env.DB.prepare(`
+        ({ results } = await env.DB.prepare(
+          `
           SELECT b.id, b.service, b.date, b.start_time, b.end_time,
                  b.status, b.message, b.created_at,
                  a.name as artist_name, a.photo_url as artist_photo
@@ -642,7 +876,10 @@ export default {
           LEFT JOIN artists a ON a.id = b.artist_id
           WHERE b.user_id = ?
           ORDER BY b.created_at DESC
-        `).bind(Number(auth.sub)).all());
+        `,
+        )
+          .bind(Number(auth.sub))
+          .all());
       }
       return json(results);
     }
@@ -653,12 +890,16 @@ export default {
       if (!auth) return json({ error: 'Authentication required' }, 401);
       if (auth.artist_id) {
         await env.DB.prepare(
-          `UPDATE bookings SET status = 'cancelled' WHERE id = ? AND email = ? AND status = 'pending'`
-        ).bind(Number(cancelMine[1]), auth.email).run();
+          `UPDATE bookings SET status = 'cancelled' WHERE id = ? AND email = ? AND status = 'pending'`,
+        )
+          .bind(Number(cancelMine[1]), auth.email)
+          .run();
       } else {
         await env.DB.prepare(
-          `UPDATE bookings SET status = 'cancelled' WHERE id = ? AND user_id = ? AND status = 'pending'`
-        ).bind(Number(cancelMine[1]), Number(auth.sub)).run();
+          `UPDATE bookings SET status = 'cancelled' WHERE id = ? AND user_id = ? AND status = 'pending'`,
+        )
+          .bind(Number(cancelMine[1]), Number(auth.sub))
+          .run();
       }
       return json({ success: true });
     }
@@ -668,9 +909,9 @@ export default {
     if (pathname === '/api/user/profile' && method === 'GET') {
       const auth = await getAuth(request, env);
       if (!auth) return json({ error: 'Authentication required' }, 401);
-      const user = await env.DB.prepare(
-        'SELECT name, email, phone FROM users WHERE id = ?'
-      ).bind(Number(auth.sub)).first<{ name: string; email: string; phone: string | null }>();
+      const user = await env.DB.prepare('SELECT name, email, phone FROM users WHERE id = ?')
+        .bind(Number(auth.sub))
+        .first<{ name: string; email: string; phone: string | null }>();
       if (!user) return json({ error: 'User not found' }, 404);
       return json(user);
     }
@@ -682,12 +923,12 @@ export default {
       const name = body.name?.trim();
       const phone = body.phone?.trim() ?? null;
       if (!name) return json({ error: 'Name is required' }, 400);
-      await env.DB.prepare(
-        'UPDATE users SET name = ?, phone = ? WHERE id = ?'
-      ).bind(name, phone || null, Number(auth.sub)).run();
-      const updated = await env.DB.prepare(
-        'SELECT name, email, phone FROM users WHERE id = ?'
-      ).bind(Number(auth.sub)).first<{ name: string; email: string; phone: string | null }>();
+      await env.DB.prepare('UPDATE users SET name = ?, phone = ? WHERE id = ?')
+        .bind(name, phone || null, Number(auth.sub))
+        .run();
+      const updated = await env.DB.prepare('SELECT name, email, phone FROM users WHERE id = ?')
+        .bind(Number(auth.sub))
+        .first<{ name: string; email: string; phone: string | null }>();
       return json(updated);
     }
 
@@ -695,18 +936,23 @@ export default {
 
     if (pathname.startsWith('/api/artist/')) {
       const auth = await getAuth(request, env);
-      if (!auth || auth.role !== 'artist') return json({ error: 'Artist authentication required' }, 401);
+      if (!auth || auth.role !== 'artist')
+        return json({ error: 'Artist authentication required' }, 401);
       const artistId = auth.artist_id ? Number(auth.artist_id) : Number(auth.sub);
 
       // Bookings
       if (pathname === '/api/artist/bookings' && method === 'GET') {
-        const { results } = await env.DB.prepare(`
+        const { results } = await env.DB.prepare(
+          `
           SELECT b.id, b.name, b.email, b.phone, b.service, b.date,
                  b.start_time, b.end_time, b.message, b.status, b.created_at
           FROM bookings b
           WHERE b.artist_id = ?
           ORDER BY b.date DESC, b.start_time DESC
-        `).bind(artistId).all();
+        `,
+        )
+          .bind(artistId)
+          .all();
         return json(results);
       }
 
@@ -714,38 +960,58 @@ export default {
       if (bookingId && method === 'PUT') {
         const body = await request.json<{ status?: string }>();
         const allowed = ['pending', 'confirmed', 'cancelled', 'completed'];
-        if (!body.status || !allowed.includes(body.status)) return json({ error: 'Invalid status' }, 400);
-        const completedAt = body.status === 'completed'
-          ? new Date().toISOString().replace('T', ' ').slice(0, 19)
-          : null;
+        if (!body.status || !allowed.includes(body.status))
+          return json({ error: 'Invalid status' }, 400);
+        const completedAt =
+          body.status === 'completed'
+            ? new Date().toISOString().replace('T', ' ').slice(0, 19)
+            : null;
         await env.DB.prepare(
-          'UPDATE bookings SET status = ?, completed_at = COALESCE(?, completed_at) WHERE id = ? AND artist_id = ?'
-        ).bind(body.status, completedAt, Number(bookingId[1]), artistId).run();
+          'UPDATE bookings SET status = ?, completed_at = COALESCE(?, completed_at) WHERE id = ? AND artist_id = ?',
+        )
+          .bind(body.status, completedAt, Number(bookingId[1]), artistId)
+          .run();
         return json({ success: true });
       }
 
       // Working hours
       if (pathname === '/api/artist/hours' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT day_of_week, start_time, end_time, slot_duration FROM artist_hours WHERE artist_id = ? ORDER BY day_of_week'
-        ).bind(artistId).all();
+          'SELECT day_of_week, start_time, end_time, slot_duration FROM artist_hours WHERE artist_id = ? ORDER BY day_of_week',
+        )
+          .bind(artistId)
+          .all();
         return json(results);
       }
 
       const hourDay = pathname.match(/^\/api\/artist\/hours\/([0-6])$/);
       if (hourDay && method === 'PUT') {
-        const body = await request.json<{ start_time?: string; end_time?: string; slot_duration?: number; enabled?: boolean }>();
+        const body = await request.json<{
+          start_time?: string;
+          end_time?: string;
+          slot_duration?: number;
+          enabled?: boolean;
+        }>();
         if (body.enabled === false) {
           await env.DB.prepare('DELETE FROM artist_hours WHERE artist_id = ? AND day_of_week = ?')
-            .bind(artistId, Number(hourDay[1])).run();
+            .bind(artistId, Number(hourDay[1]))
+            .run();
         } else {
           if (!body.start_time || !body.end_time) return json({ error: 'Missing times' }, 400);
           await env.DB.prepare(
             `INSERT INTO artist_hours (artist_id, day_of_week, start_time, end_time, slot_duration)
              VALUES (?, ?, ?, ?, ?)
              ON CONFLICT(artist_id, day_of_week)
-             DO UPDATE SET start_time = excluded.start_time, end_time = excluded.end_time, slot_duration = excluded.slot_duration`
-          ).bind(artistId, Number(hourDay[1]), body.start_time, body.end_time, body.slot_duration ?? 60).run();
+             DO UPDATE SET start_time = excluded.start_time, end_time = excluded.end_time, slot_duration = excluded.slot_duration`,
+          )
+            .bind(
+              artistId,
+              Number(hourDay[1]),
+              body.start_time,
+              body.end_time,
+              body.slot_duration ?? 60,
+            )
+            .run();
         }
         return json({ success: true });
       }
@@ -754,19 +1020,27 @@ export default {
       if (pathname === '/api/artist/blocks' && method === 'GET') {
         const today = new Date().toISOString().split('T')[0];
         const { results } = await env.DB.prepare(
-          'SELECT id, date, start_time, end_time FROM artist_blocks WHERE artist_id = ? AND date >= ? ORDER BY date, start_time'
-        ).bind(artistId, today).all();
+          'SELECT id, date, start_time, end_time FROM artist_blocks WHERE artist_id = ? AND date >= ? ORDER BY date, start_time',
+        )
+          .bind(artistId, today)
+          .all();
         return json(results);
       }
 
       if (pathname === '/api/artist/blocks' && method === 'POST') {
-        const body = await request.json<{ date?: string; date_to?: string; start_time?: string; end_time?: string }>();
+        const body = await request.json<{
+          date?: string;
+          date_to?: string;
+          start_time?: string;
+          end_time?: string;
+        }>();
         if (!body.date) return json({ error: 'Date is required' }, 400);
-        const dates = body.date_to && body.date_to >= body.date
-          ? datesInRange(body.date, body.date_to)
-          : [body.date];
+        const dates =
+          body.date_to && body.date_to >= body.date
+            ? datesInRange(body.date, body.date_to)
+            : [body.date];
         const stmt = env.DB.prepare(
-          'INSERT INTO artist_blocks (artist_id, date, start_time, end_time) VALUES (?, ?, ?, ?)'
+          'INSERT INTO artist_blocks (artist_id, date, start_time, end_time) VALUES (?, ?, ?, ?)',
         );
         for (const d of dates) {
           await stmt.bind(artistId, d, body.start_time ?? null, body.end_time ?? null).run();
@@ -777,26 +1051,52 @@ export default {
       const blockId = pathname.match(/^\/api\/artist\/blocks\/(\d+)$/);
       if (blockId && method === 'DELETE') {
         await env.DB.prepare('DELETE FROM artist_blocks WHERE id = ? AND artist_id = ?')
-          .bind(Number(blockId[1]), artistId).run();
+          .bind(Number(blockId[1]), artistId)
+          .run();
         return json({ success: true });
       }
 
       // Artist's offered services
       if (pathname === '/api/artist/services' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT service_id FROM artist_services WHERE artist_id = ?'
-        ).bind(artistId).all<{ service_id: number }>();
-        return json(results.map((r) => r.service_id));
+          'SELECT service_id, price_override FROM artist_services WHERE artist_id = ?',
+        )
+          .bind(artistId)
+          .all<{ service_id: number; price_override: number | null }>();
+        return json(results);
       }
 
       if (pathname === '/api/artist/services' && method === 'PUT') {
-        const body = await request.json<{ service_ids?: number[] }>();
-        if (!Array.isArray(body.service_ids)) return json({ error: 'service_ids must be an array' }, 400);
-        await env.DB.prepare('DELETE FROM artist_services WHERE artist_id = ?').bind(artistId).run();
-        for (const sid of body.service_ids) {
+        const body = await request.json<{
+          services?: Array<{ service_id: number; price_override?: number | null }>;
+          service_ids?: number[];
+        }>();
+        // Accept either the new {services: [...]} shape or legacy {service_ids: [...]}
+        const items: Array<{ service_id: number; price_override: number | null }> = Array.isArray(
+          body.services,
+        )
+          ? body.services.map((s) => ({
+              service_id: Number(s.service_id),
+              price_override:
+                s.price_override == null || isNaN(Number(s.price_override))
+                  ? null
+                  : Number(s.price_override),
+            }))
+          : Array.isArray(body.service_ids)
+            ? body.service_ids.map((id) => ({ service_id: Number(id), price_override: null }))
+            : [];
+        if (!items.every((i) => Number.isInteger(i.service_id) && i.service_id > 0)) {
+          return json({ error: 'Invalid services payload' }, 400);
+        }
+        await env.DB.prepare('DELETE FROM artist_services WHERE artist_id = ?')
+          .bind(artistId)
+          .run();
+        for (const it of items) {
           await env.DB.prepare(
-            'INSERT OR IGNORE INTO artist_services (artist_id, service_id) VALUES (?, ?)'
-          ).bind(artistId, sid).run();
+            'INSERT OR IGNORE INTO artist_services (artist_id, service_id, price_override) VALUES (?, ?, ?)',
+          )
+            .bind(artistId, it.service_id, it.price_override)
+            .run();
         }
         return json({ success: true });
       }
@@ -804,16 +1104,209 @@ export default {
       // Profile
       if (pathname === '/api/artist/profile' && method === 'GET') {
         const artist = await env.DB.prepare(
-          'SELECT id, name, email, bio, specialties, photo_url FROM artists WHERE id = ?'
-        ).bind(artistId).first();
+          `SELECT id, slug, name, email, bio, specialties, photo_url, about, location, experience,
+                  instagram_url, tiktok_url, facebook_url, website_url
+           FROM artists WHERE id = ?`,
+        )
+          .bind(artistId)
+          .first();
         return json(artist);
       }
 
       if (pathname === '/api/artist/profile' && method === 'PUT') {
-        const body = await request.json<{ name?: string; bio?: string; specialties?: string; photo_url?: string }>();
+        const body = await request.json<{
+          name?: string;
+          bio?: string;
+          specialties?: string;
+          photo_url?: string;
+          slug?: string;
+          about?: string;
+          location?: string;
+          experience?: string;
+          instagram_url?: string;
+          tiktok_url?: string;
+          facebook_url?: string;
+          website_url?: string;
+        }>();
+
+        // Slug validation if provided
+        if (body.slug != null) {
+          const slug = body.slug.trim().toLowerCase();
+          if (slug === '') return json({ error: 'Slug cannot be empty' }, 400);
+          if (slug.length < 3 || slug.length > 50)
+            return json({ error: 'Slug must be 3–50 characters' }, 400);
+          if (!SLUG_RE.test(slug))
+            return json(
+              { error: 'Slug may only contain lowercase letters, numbers, and dashes' },
+              400,
+            );
+          if (RESERVED_SLUGS.has(slug)) return json({ error: 'That slug is reserved' }, 409);
+          const existing = await env.DB.prepare('SELECT id FROM artists WHERE slug = ? AND id != ?')
+            .bind(slug, artistId)
+            .first();
+          if (existing) return json({ error: 'That slug is already taken' }, 409);
+          body.slug = slug;
+        }
+
         await env.DB.prepare(
-          'UPDATE artists SET name = COALESCE(?, name), bio = COALESCE(?, bio), specialties = COALESCE(?, specialties), photo_url = COALESCE(?, photo_url) WHERE id = ?'
-        ).bind(body.name ?? null, body.bio ?? null, body.specialties ?? null, body.photo_url ?? null, artistId).run();
+          `UPDATE artists SET
+             name = COALESCE(?, name),
+             bio = COALESCE(?, bio),
+             specialties = COALESCE(?, specialties),
+             photo_url = COALESCE(?, photo_url),
+             slug = COALESCE(?, slug),
+             about = COALESCE(?, about),
+             location = COALESCE(?, location),
+             experience = COALESCE(?, experience),
+             instagram_url = COALESCE(?, instagram_url),
+             tiktok_url = COALESCE(?, tiktok_url),
+             facebook_url = COALESCE(?, facebook_url),
+             website_url = COALESCE(?, website_url)
+           WHERE id = ?`,
+        )
+          .bind(
+            body.name ?? null,
+            body.bio ?? null,
+            body.specialties ?? null,
+            body.photo_url ?? null,
+            body.slug ?? null,
+            body.about ?? null,
+            body.location ?? null,
+            body.experience ?? null,
+            body.instagram_url ?? null,
+            body.tiktok_url ?? null,
+            body.facebook_url ?? null,
+            body.website_url ?? null,
+            artistId,
+          )
+          .run();
+        return json({ success: true });
+      }
+
+      // Portfolio (artist-owned CRUD)
+      if (pathname === '/api/artist/portfolio' && method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, image_url, caption, display_order FROM artist_portfolio WHERE artist_id = ? ORDER BY display_order, id',
+        )
+          .bind(artistId)
+          .all();
+        return json(results);
+      }
+
+      if (pathname === '/api/artist/portfolio' && method === 'POST') {
+        const body = await request.json<{ image_url?: string; caption?: string }>();
+        const imageUrl = body.image_url?.trim();
+        if (!imageUrl) return json({ error: 'image_url is required' }, 400);
+        const maxRow = await env.DB.prepare(
+          'SELECT COALESCE(MAX(display_order), -1) AS max_order FROM artist_portfolio WHERE artist_id = ?',
+        )
+          .bind(artistId)
+          .first<{ max_order: number }>();
+        const nextOrder = (maxRow?.max_order ?? -1) + 1;
+        const result = await env.DB.prepare(
+          'INSERT INTO artist_portfolio (artist_id, image_url, caption, display_order) VALUES (?, ?, ?, ?)',
+        )
+          .bind(artistId, imageUrl, body.caption?.trim() ?? null, nextOrder)
+          .run();
+        return json({ success: true, id: result.meta.last_row_id }, 201);
+      }
+
+      const portfolioItem = pathname.match(/^\/api\/artist\/portfolio\/(\d+)$/);
+      if (portfolioItem && method === 'PUT') {
+        const body = await request.json<{ caption?: string | null; display_order?: number }>();
+        const updated = await env.DB.prepare(
+          `UPDATE artist_portfolio
+           SET caption = COALESCE(?, caption),
+               display_order = COALESCE(?, display_order)
+           WHERE id = ? AND artist_id = ?`,
+        )
+          .bind(
+            body.caption === undefined ? null : body.caption,
+            body.display_order ?? null,
+            Number(portfolioItem[1]),
+            artistId,
+          )
+          .run();
+        if (!updated.meta.changes) return json({ error: 'Not found' }, 404);
+        return json({ success: true });
+      }
+
+      if (portfolioItem && method === 'DELETE') {
+        const result = await env.DB.prepare(
+          'DELETE FROM artist_portfolio WHERE id = ? AND artist_id = ?',
+        )
+          .bind(Number(portfolioItem[1]), artistId)
+          .run();
+        if (!result.meta.changes) return json({ error: 'Not found' }, 404);
+        return json({ success: true });
+      }
+
+      // Testimonials (artist-owned CRUD)
+      if (pathname === '/api/artist/testimonials' && method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, client_name, quote, date, display_order FROM artist_testimonials WHERE artist_id = ? ORDER BY display_order, id',
+        )
+          .bind(artistId)
+          .all();
+        return json(results);
+      }
+
+      if (pathname === '/api/artist/testimonials' && method === 'POST') {
+        const body = await request.json<{ client_name?: string; quote?: string; date?: string }>();
+        const clientName = body.client_name?.trim();
+        const quote = body.quote?.trim();
+        if (!clientName || !quote)
+          return json({ error: 'client_name and quote are required' }, 400);
+        const maxRow = await env.DB.prepare(
+          'SELECT COALESCE(MAX(display_order), -1) AS max_order FROM artist_testimonials WHERE artist_id = ?',
+        )
+          .bind(artistId)
+          .first<{ max_order: number }>();
+        const nextOrder = (maxRow?.max_order ?? -1) + 1;
+        const result = await env.DB.prepare(
+          'INSERT INTO artist_testimonials (artist_id, client_name, quote, date, display_order) VALUES (?, ?, ?, ?, ?)',
+        )
+          .bind(artistId, clientName, quote, body.date?.trim() || null, nextOrder)
+          .run();
+        return json({ success: true, id: result.meta.last_row_id }, 201);
+      }
+
+      const testimonialItem = pathname.match(/^\/api\/artist\/testimonials\/(\d+)$/);
+      if (testimonialItem && method === 'PUT') {
+        const body = await request.json<{
+          client_name?: string;
+          quote?: string;
+          date?: string | null;
+          display_order?: number;
+        }>();
+        const updated = await env.DB.prepare(
+          `UPDATE artist_testimonials
+           SET client_name = COALESCE(?, client_name),
+               quote = COALESCE(?, quote),
+               date = COALESCE(?, date),
+               display_order = COALESCE(?, display_order)
+           WHERE id = ? AND artist_id = ?`,
+        )
+          .bind(
+            body.client_name?.trim() ?? null,
+            body.quote?.trim() ?? null,
+            body.date === undefined ? null : body.date?.trim() || null,
+            body.display_order ?? null,
+            Number(testimonialItem[1]),
+            artistId,
+          )
+          .run();
+        if (!updated.meta.changes) return json({ error: 'Not found' }, 404);
+        return json({ success: true });
+      }
+
+      if (testimonialItem && method === 'DELETE') {
+        const result = await env.DB.prepare(
+          'DELETE FROM artist_testimonials WHERE id = ? AND artist_id = ?',
+        )
+          .bind(Number(testimonialItem[1]), artistId)
+          .run();
+        if (!result.meta.changes) return json({ error: 'Not found' }, 404);
         return json({ success: true });
       }
     }
@@ -822,7 +1315,8 @@ export default {
 
     if (pathname === '/api/admin/login' && method === 'POST') {
       const body = await request.json<{ password?: string }>();
-      if (!body.password || body.password !== env.ADMIN_SECRET) return json({ error: 'Invalid password' }, 401);
+      if (!body.password || body.password !== env.ADMIN_SECRET)
+        return json({ error: 'Invalid password' }, 401);
       return json({ success: true });
     }
 
@@ -830,12 +1324,16 @@ export default {
       if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401);
 
       if (pathname === '/api/admin/bookings' && method === 'GET') {
-        const { results } = await env.DB.prepare('SELECT * FROM bookings ORDER BY created_at DESC').all();
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM bookings ORDER BY created_at DESC',
+        ).all();
         return json(results);
       }
       const adminBooking = pathname.match(/^\/api\/admin\/bookings\/(\d+)$/);
       if (adminBooking && method === 'DELETE') {
-        await env.DB.prepare('DELETE FROM bookings WHERE id = ?').bind(Number(adminBooking[1])).run();
+        await env.DB.prepare('DELETE FROM bookings WHERE id = ?')
+          .bind(Number(adminBooking[1]))
+          .run();
         return json({ success: true });
       }
 
@@ -844,20 +1342,67 @@ export default {
         return json(results);
       }
       if (pathname === '/api/admin/classes' && method === 'POST') {
-        const body = await request.json<{ name?: string; description?: string; date?: string; price?: number; certificate?: boolean; mentoring?: boolean; host_artist_id?: number | null; total_slots?: number; duration_min?: number }>();
-        if (!body.name || !body.description || !body.date || body.price == null) return json({ error: 'Missing required fields' }, 400);
+        const body = await request.json<{
+          name?: string;
+          description?: string;
+          date?: string;
+          price?: number;
+          certificate?: boolean;
+          mentoring?: boolean;
+          host_artist_id?: number | null;
+          total_slots?: number;
+          duration_min?: number;
+        }>();
+        if (!body.name || !body.description || !body.date || body.price == null)
+          return json({ error: 'Missing required fields' }, 400);
         const result = await env.DB.prepare(
-          'INSERT INTO classes (name, description, date, price, certificate, mentoring, host_artist_id, total_slots, duration_min) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(body.name, body.description, body.date, body.price, body.certificate ? 1 : 0, body.mentoring ? 1 : 0, body.host_artist_id ?? null, body.total_slots ?? 0, body.duration_min ?? 60).run();
+          'INSERT INTO classes (name, description, date, price, certificate, mentoring, host_artist_id, total_slots, duration_min) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        )
+          .bind(
+            body.name,
+            body.description,
+            body.date,
+            body.price,
+            body.certificate ? 1 : 0,
+            body.mentoring ? 1 : 0,
+            body.host_artist_id ?? null,
+            body.total_slots ?? 0,
+            body.duration_min ?? 60,
+          )
+          .run();
         return json({ success: true, id: result.meta.last_row_id }, 201);
       }
       const adminClass = pathname.match(/^\/api\/admin\/classes\/(\d+)$/);
       if (adminClass && method === 'PUT') {
-        const body = await request.json<{ name?: string; description?: string; date?: string; price?: number; certificate?: boolean; mentoring?: boolean; host_artist_id?: number | null; total_slots?: number; duration_min?: number }>();
-        if (!body.name || !body.description || !body.date || body.price == null) return json({ error: 'Missing required fields' }, 400);
+        const body = await request.json<{
+          name?: string;
+          description?: string;
+          date?: string;
+          price?: number;
+          certificate?: boolean;
+          mentoring?: boolean;
+          host_artist_id?: number | null;
+          total_slots?: number;
+          duration_min?: number;
+        }>();
+        if (!body.name || !body.description || !body.date || body.price == null)
+          return json({ error: 'Missing required fields' }, 400);
         await env.DB.prepare(
-          'UPDATE classes SET name=?, description=?, date=?, price=?, certificate=?, mentoring=?, host_artist_id=?, total_slots=?, duration_min=? WHERE id=?'
-        ).bind(body.name, body.description, body.date, body.price, body.certificate ? 1 : 0, body.mentoring ? 1 : 0, body.host_artist_id ?? null, body.total_slots ?? 0, body.duration_min ?? 60, Number(adminClass[1])).run();
+          'UPDATE classes SET name=?, description=?, date=?, price=?, certificate=?, mentoring=?, host_artist_id=?, total_slots=?, duration_min=? WHERE id=?',
+        )
+          .bind(
+            body.name,
+            body.description,
+            body.date,
+            body.price,
+            body.certificate ? 1 : 0,
+            body.mentoring ? 1 : 0,
+            body.host_artist_id ?? null,
+            body.total_slots ?? 0,
+            body.duration_min ?? 60,
+            Number(adminClass[1]),
+          )
+          .run();
         return json({ success: true });
       }
       if (adminClass && method === 'DELETE') {
@@ -867,28 +1412,64 @@ export default {
 
       if (pathname === '/api/admin/artists' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, name, email, bio, specialties, photo_url, is_active, user_id, created_at FROM artists ORDER BY name'
+          'SELECT id, name, email, bio, specialties, photo_url, is_active, user_id, created_at FROM artists ORDER BY name',
         ).all();
         return json(results);
       }
       if (pathname === '/api/admin/artists' && method === 'POST') {
-        const body = await request.json<{ name?: string; email?: string; password?: string; bio?: string; specialties?: string; photo_url?: string }>();
-        if (!body.name || !body.email || !body.password) return json({ error: 'Missing required fields' }, 400);
+        const body = await request.json<{
+          name?: string;
+          email?: string;
+          password?: string;
+          bio?: string;
+          specialties?: string;
+          photo_url?: string;
+        }>();
+        if (!body.name || !body.email || !body.password)
+          return json({ error: 'Missing required fields' }, 400);
         const normalizedEmail = body.email.toLowerCase().trim();
-        const existing = await env.DB.prepare('SELECT id FROM artists WHERE LOWER(email) = ?').bind(normalizedEmail).first();
+        const existing = await env.DB.prepare('SELECT id FROM artists WHERE LOWER(email) = ?')
+          .bind(normalizedEmail)
+          .first();
         if (existing) return json({ error: 'Email already registered' }, 409);
         const hash = await hashPassword(body.password);
+        const slug = await uniqueSlug(env.DB, slugify(body.name));
         const result = await env.DB.prepare(
-          'INSERT INTO artists (name, email, password_hash, bio, specialties, photo_url) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(body.name, normalizedEmail, hash, body.bio ?? null, body.specialties ?? null, body.photo_url ?? null).run();
-        return json({ success: true, id: result.meta.last_row_id }, 201);
+          'INSERT INTO artists (name, email, password_hash, bio, specialties, photo_url, slug) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        )
+          .bind(
+            body.name,
+            normalizedEmail,
+            hash,
+            body.bio ?? null,
+            body.specialties ?? null,
+            body.photo_url ?? null,
+            slug,
+          )
+          .run();
+        return json({ success: true, id: result.meta.last_row_id, slug }, 201);
       }
       const adminArtist = pathname.match(/^\/api\/admin\/artists\/(\d+)$/);
       if (adminArtist && method === 'PUT') {
-        const body = await request.json<{ name?: string; bio?: string; specialties?: string; photo_url?: string; is_active?: boolean }>();
+        const body = await request.json<{
+          name?: string;
+          bio?: string;
+          specialties?: string;
+          photo_url?: string;
+          is_active?: boolean;
+        }>();
         await env.DB.prepare(
-          'UPDATE artists SET name=COALESCE(?,name), bio=COALESCE(?,bio), specialties=COALESCE(?,specialties), photo_url=COALESCE(?,photo_url), is_active=COALESCE(?,is_active) WHERE id=?'
-        ).bind(body.name ?? null, body.bio ?? null, body.specialties ?? null, body.photo_url ?? null, body.is_active != null ? (body.is_active ? 1 : 0) : null, Number(adminArtist[1])).run();
+          'UPDATE artists SET name=COALESCE(?,name), bio=COALESCE(?,bio), specialties=COALESCE(?,specialties), photo_url=COALESCE(?,photo_url), is_active=COALESCE(?,is_active) WHERE id=?',
+        )
+          .bind(
+            body.name ?? null,
+            body.bio ?? null,
+            body.specialties ?? null,
+            body.photo_url ?? null,
+            body.is_active != null ? (body.is_active ? 1 : 0) : null,
+            Number(adminArtist[1]),
+          )
+          .run();
         return json({ success: true });
       }
       if (adminArtist && method === 'DELETE') {
@@ -899,7 +1480,7 @@ export default {
       // Users management
       if (pathname === '/api/admin/users' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC'
+          'SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC',
         ).all();
         return json(results);
       }
@@ -908,50 +1489,88 @@ export default {
       const adminUserPromote = pathname.match(/^\/api\/admin\/users\/(\d+)\/promote$/);
       if (adminUserPromote && method === 'POST') {
         const userId = Number(adminUserPromote[1]);
-        const body = await request.json<{ bio?: string; specialties?: string; photo_url?: string }>();
+        const body = await request.json<{
+          bio?: string;
+          specialties?: string;
+          photo_url?: string;
+        }>();
 
         const targetUser = await env.DB.prepare(
-          'SELECT id, name, email, role FROM users WHERE id = ?'
-        ).bind(userId).first<{ id: number; name: string; email: string; role: string }>();
+          'SELECT id, name, email, role FROM users WHERE id = ?',
+        )
+          .bind(userId)
+          .first<{ id: number; name: string; email: string; role: string }>();
         if (!targetUser) return json({ error: 'User not found' }, 404);
         if (targetUser.role === 'artist') return json({ error: 'User is already an artist' }, 409);
 
         // If a linked artist record already exists but is inactive, reactivate it
         const existingLinked = await env.DB.prepare(
-          'SELECT id, is_active FROM artists WHERE user_id = ?'
-        ).bind(userId).first<{ id: number; is_active: number }>();
+          'SELECT id, is_active, slug FROM artists WHERE user_id = ?',
+        )
+          .bind(userId)
+          .first<{ id: number; is_active: number; slug: string | null }>();
         if (existingLinked) {
-          await env.DB.prepare('UPDATE artists SET is_active = 1 WHERE id = ?').bind(existingLinked.id).run();
-          await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?').bind('artist', userId).run();
+          // Backfill slug if missing
+          if (!existingLinked.slug) {
+            const slug = await uniqueSlug(env.DB, slugify(targetUser.name), existingLinked.id);
+            await env.DB.prepare('UPDATE artists SET slug = ?, is_active = 1 WHERE id = ?')
+              .bind(slug, existingLinked.id)
+              .run();
+          } else {
+            await env.DB.prepare('UPDATE artists SET is_active = 1 WHERE id = ?')
+              .bind(existingLinked.id)
+              .run();
+          }
+          await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?')
+            .bind('artist', userId)
+            .run();
           return json({ success: true, artist_id: existingLinked.id });
         }
 
         // If a standalone artist shares the same email, link it instead of creating a duplicate
         const normalizedEmail = targetUser.email.toLowerCase().trim();
         const standaloneByEmail = await env.DB.prepare(
-          'SELECT id FROM artists WHERE LOWER(email) = ? AND user_id IS NULL'
-        ).bind(normalizedEmail).first<{ id: number }>();
+          'SELECT id, slug FROM artists WHERE LOWER(email) = ? AND user_id IS NULL',
+        )
+          .bind(normalizedEmail)
+          .first<{ id: number; slug: string | null }>();
         if (standaloneByEmail) {
-          await env.DB.prepare('UPDATE artists SET user_id = ?, is_active = 1 WHERE id = ?')
-            .bind(userId, standaloneByEmail.id).run();
-          await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?').bind('artist', userId).run();
+          if (!standaloneByEmail.slug) {
+            const slug = await uniqueSlug(env.DB, slugify(targetUser.name), standaloneByEmail.id);
+            await env.DB.prepare(
+              'UPDATE artists SET user_id = ?, is_active = 1, slug = ? WHERE id = ?',
+            )
+              .bind(userId, slug, standaloneByEmail.id)
+              .run();
+          } else {
+            await env.DB.prepare('UPDATE artists SET user_id = ?, is_active = 1 WHERE id = ?')
+              .bind(userId, standaloneByEmail.id)
+              .run();
+          }
+          await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?')
+            .bind('artist', userId)
+            .run();
           return json({ success: true, artist_id: standaloneByEmail.id, linked_existing: true });
         }
 
         // Create a new artist record linked to this user
+        const slug = await uniqueSlug(env.DB, slugify(targetUser.name));
         const result = await env.DB.prepare(
-          'INSERT INTO artists (name, email, password_hash, bio, specialties, photo_url, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        ).bind(
-          targetUser.name,
-          normalizedEmail,
-          '', // auth goes through users table; no standalone password needed
-          body.bio ?? null,
-          body.specialties ?? null,
-          body.photo_url ?? null,
-          userId,
-        ).run();
+          'INSERT INTO artists (name, email, password_hash, bio, specialties, photo_url, user_id, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        )
+          .bind(
+            targetUser.name,
+            normalizedEmail,
+            '', // auth goes through users table; no standalone password needed
+            body.bio ?? null,
+            body.specialties ?? null,
+            body.photo_url ?? null,
+            userId,
+            slug,
+          )
+          .run();
         await env.DB.prepare('UPDATE users SET role = ? WHERE id = ?').bind('artist', userId).run();
-        return json({ success: true, artist_id: result.meta.last_row_id }, 201);
+        return json({ success: true, artist_id: result.meta.last_row_id, slug }, 201);
       }
 
       const adminUser = pathname.match(/^\/api\/admin\/users\/(\d+)$/);
@@ -960,12 +1579,15 @@ export default {
         const allowed = ['user', 'artist'];
         if (body.role && !allowed.includes(body.role)) return json({ error: 'Invalid role' }, 400);
         await env.DB.prepare(
-          'UPDATE users SET name = COALESCE(?, name), role = COALESCE(?, role) WHERE id = ?'
-        ).bind(body.name ?? null, body.role ?? null, Number(adminUser[1])).run();
+          'UPDATE users SET name = COALESCE(?, name), role = COALESCE(?, role) WHERE id = ?',
+        )
+          .bind(body.name ?? null, body.role ?? null, Number(adminUser[1]))
+          .run();
         // On demotion to regular user, soft-deactivate the linked artist profile
         if (body.role === 'user') {
           await env.DB.prepare('UPDATE artists SET is_active = 0 WHERE user_id = ?')
-            .bind(Number(adminUser[1])).run();
+            .bind(Number(adminUser[1]))
+            .run();
         }
         return json({ success: true });
       }
@@ -980,7 +1602,7 @@ export default {
       // Categories
       if (pathname === '/api/admin/service-catalog/categories' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, name, sort_order FROM service_categories ORDER BY sort_order, name'
+          'SELECT id, name, sort_order FROM service_categories ORDER BY sort_order, name',
         ).all();
         return json(results);
       }
@@ -988,20 +1610,26 @@ export default {
         const body = await request.json<{ name?: string; sort_order?: number }>();
         if (!body.name) return json({ error: 'name is required' }, 400);
         const r = await env.DB.prepare(
-          'INSERT INTO service_categories (name, sort_order) VALUES (?, ?)'
-        ).bind(body.name, body.sort_order ?? 0).run();
+          'INSERT INTO service_categories (name, sort_order) VALUES (?, ?)',
+        )
+          .bind(body.name, body.sort_order ?? 0)
+          .run();
         return json({ success: true, id: r.meta.last_row_id }, 201);
       }
       const adminCat = pathname.match(/^\/api\/admin\/service-catalog\/categories\/(\d+)$/);
       if (adminCat && method === 'PUT') {
         const body = await request.json<{ name?: string; sort_order?: number }>();
         await env.DB.prepare(
-          'UPDATE service_categories SET name=COALESCE(?,name), sort_order=COALESCE(?,sort_order) WHERE id=?'
-        ).bind(body.name ?? null, body.sort_order ?? null, Number(adminCat[1])).run();
+          'UPDATE service_categories SET name=COALESCE(?,name), sort_order=COALESCE(?,sort_order) WHERE id=?',
+        )
+          .bind(body.name ?? null, body.sort_order ?? null, Number(adminCat[1]))
+          .run();
         return json({ success: true });
       }
       if (adminCat && method === 'DELETE') {
-        await env.DB.prepare('DELETE FROM service_categories WHERE id=?').bind(Number(adminCat[1])).run();
+        await env.DB.prepare('DELETE FROM service_categories WHERE id=?')
+          .bind(Number(adminCat[1]))
+          .run();
         return json({ success: true });
       }
 
@@ -1010,28 +1638,54 @@ export default {
         const url2 = new URL(request.url);
         const catId = url2.searchParams.get('category_id');
         const { results } = catId
-          ? await env.DB.prepare('SELECT id, category_id, name, sort_order FROM service_subcategories WHERE category_id=? ORDER BY sort_order, name').bind(Number(catId)).all()
-          : await env.DB.prepare('SELECT id, category_id, name, sort_order FROM service_subcategories ORDER BY sort_order, name').all();
+          ? await env.DB.prepare(
+              'SELECT id, category_id, name, sort_order FROM service_subcategories WHERE category_id=? ORDER BY sort_order, name',
+            )
+              .bind(Number(catId))
+              .all()
+          : await env.DB.prepare(
+              'SELECT id, category_id, name, sort_order FROM service_subcategories ORDER BY sort_order, name',
+            ).all();
         return json(results);
       }
       if (pathname === '/api/admin/service-catalog/subcategories' && method === 'POST') {
-        const body = await request.json<{ category_id?: number; name?: string; sort_order?: number }>();
-        if (!body.category_id || !body.name) return json({ error: 'category_id and name are required' }, 400);
+        const body = await request.json<{
+          category_id?: number;
+          name?: string;
+          sort_order?: number;
+        }>();
+        if (!body.category_id || !body.name)
+          return json({ error: 'category_id and name are required' }, 400);
         const r = await env.DB.prepare(
-          'INSERT INTO service_subcategories (category_id, name, sort_order) VALUES (?, ?, ?)'
-        ).bind(body.category_id, body.name, body.sort_order ?? 0).run();
+          'INSERT INTO service_subcategories (category_id, name, sort_order) VALUES (?, ?, ?)',
+        )
+          .bind(body.category_id, body.name, body.sort_order ?? 0)
+          .run();
         return json({ success: true, id: r.meta.last_row_id }, 201);
       }
       const adminSub = pathname.match(/^\/api\/admin\/service-catalog\/subcategories\/(\d+)$/);
       if (adminSub && method === 'PUT') {
-        const body = await request.json<{ name?: string; sort_order?: number; category_id?: number }>();
+        const body = await request.json<{
+          name?: string;
+          sort_order?: number;
+          category_id?: number;
+        }>();
         await env.DB.prepare(
-          'UPDATE service_subcategories SET name=COALESCE(?,name), sort_order=COALESCE(?,sort_order), category_id=COALESCE(?,category_id) WHERE id=?'
-        ).bind(body.name ?? null, body.sort_order ?? null, body.category_id ?? null, Number(adminSub[1])).run();
+          'UPDATE service_subcategories SET name=COALESCE(?,name), sort_order=COALESCE(?,sort_order), category_id=COALESCE(?,category_id) WHERE id=?',
+        )
+          .bind(
+            body.name ?? null,
+            body.sort_order ?? null,
+            body.category_id ?? null,
+            Number(adminSub[1]),
+          )
+          .run();
         return json({ success: true });
       }
       if (adminSub && method === 'DELETE') {
-        await env.DB.prepare('DELETE FROM service_subcategories WHERE id=?').bind(Number(adminSub[1])).run();
+        await env.DB.prepare('DELETE FROM service_subcategories WHERE id=?')
+          .bind(Number(adminSub[1]))
+          .run();
         return json({ success: true });
       }
 
@@ -1040,29 +1694,71 @@ export default {
         const url3 = new URL(request.url);
         const subId = url3.searchParams.get('subcategory_id');
         const { results } = subId
-          ? await env.DB.prepare('SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services WHERE subcategory_id=? ORDER BY sort_order, name').bind(Number(subId)).all()
-          : await env.DB.prepare('SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name').all();
+          ? await env.DB.prepare(
+              'SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services WHERE subcategory_id=? ORDER BY sort_order, name',
+            )
+              .bind(Number(subId))
+              .all()
+          : await env.DB.prepare(
+              'SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name',
+            ).all();
         return json(results);
       }
       if (pathname === '/api/admin/service-catalog/services' && method === 'POST') {
-        const body = await request.json<{ subcategory_id?: number; name?: string; description?: string; price?: number; duration_min?: number; sort_order?: number }>();
-        if (!body.subcategory_id || !body.name) return json({ error: 'subcategory_id and name are required' }, 400);
+        const body = await request.json<{
+          subcategory_id?: number;
+          name?: string;
+          description?: string;
+          price?: number;
+          duration_min?: number;
+          sort_order?: number;
+        }>();
+        if (!body.subcategory_id || !body.name)
+          return json({ error: 'subcategory_id and name are required' }, 400);
         const r = await env.DB.prepare(
-          'INSERT INTO catalog_services (subcategory_id, name, description, price, duration_min, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(body.subcategory_id, body.name, body.description ?? null, body.price ?? null, body.duration_min ?? 60, body.sort_order ?? 0).run();
+          'INSERT INTO catalog_services (subcategory_id, name, description, price, duration_min, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
+        )
+          .bind(
+            body.subcategory_id,
+            body.name,
+            body.description ?? null,
+            body.price ?? null,
+            body.duration_min ?? 60,
+            body.sort_order ?? 0,
+          )
+          .run();
         return json({ success: true, id: r.meta.last_row_id }, 201);
       }
       const adminSvc = pathname.match(/^\/api\/admin\/service-catalog\/services\/(\d+)$/);
       if (adminSvc && method === 'PUT') {
-        const body = await request.json<{ name?: string; description?: string; price?: number; duration_min?: number; sort_order?: number; subcategory_id?: number }>();
+        const body = await request.json<{
+          name?: string;
+          description?: string;
+          price?: number;
+          duration_min?: number;
+          sort_order?: number;
+          subcategory_id?: number;
+        }>();
         if (!body.name) return json({ error: 'name is required' }, 400);
         await env.DB.prepare(
-          'UPDATE catalog_services SET name=?, description=?, price=?, duration_min=?, sort_order=?, subcategory_id=COALESCE(?,subcategory_id) WHERE id=?'
-        ).bind(body.name, body.description ?? null, body.price ?? null, body.duration_min ?? 60, body.sort_order ?? 0, body.subcategory_id ?? null, Number(adminSvc[1])).run();
+          'UPDATE catalog_services SET name=?, description=?, price=?, duration_min=?, sort_order=?, subcategory_id=COALESCE(?,subcategory_id) WHERE id=?',
+        )
+          .bind(
+            body.name,
+            body.description ?? null,
+            body.price ?? null,
+            body.duration_min ?? 60,
+            body.sort_order ?? 0,
+            body.subcategory_id ?? null,
+            Number(adminSvc[1]),
+          )
+          .run();
         return json({ success: true });
       }
       if (adminSvc && method === 'DELETE') {
-        await env.DB.prepare('DELETE FROM catalog_services WHERE id=?').bind(Number(adminSvc[1])).run();
+        await env.DB.prepare('DELETE FROM catalog_services WHERE id=?')
+          .bind(Number(adminSvc[1]))
+          .run();
         return json({ success: true });
       }
     }
@@ -1073,7 +1769,7 @@ export default {
       const { results } = await env.DB.prepare(
         `SELECT id, name, service, rating, body, created_at
          FROM reviews WHERE approved = 1
-         ORDER BY created_at DESC`
+         ORDER BY created_at DESC`,
       ).all();
       return json(results);
     }
@@ -1089,8 +1785,16 @@ export default {
           `SELECT s.id, s.submitted_at, b.name, b.service, b.date
            FROM surveys s
            JOIN bookings b ON b.id = s.booking_id
-           WHERE s.token = ?`
-        ).bind(token).first<{ id: number; submitted_at: string | null; name: string; service: string; date: string }>();
+           WHERE s.token = ?`,
+        )
+          .bind(token)
+          .first<{
+            id: number;
+            submitted_at: string | null;
+            name: string;
+            service: string;
+            date: string;
+          }>();
         if (!survey) return json({ error: 'Survey not found' }, 404);
         return json({
           already_submitted: !!survey.submitted_at,
@@ -1109,30 +1813,47 @@ export default {
           `SELECT s.id, s.submitted_at, s.booking_id, b.email, b.name, b.service
            FROM surveys s
            JOIN bookings b ON b.id = s.booking_id
-           WHERE s.token = ?`
-        ).bind(token).first<{
-          id: number; submitted_at: string | null; booking_id: number;
-          email: string; name: string; service: string;
-        }>();
+           WHERE s.token = ?`,
+        )
+          .bind(token)
+          .first<{
+            id: number;
+            submitted_at: string | null;
+            booking_id: number;
+            email: string;
+            name: string;
+            service: string;
+          }>();
         if (!survey) return json({ error: 'Survey not found' }, 404);
         if (survey.submitted_at) return json({ error: 'Already submitted' }, 409);
 
         const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
         await env.DB.prepare(
-          'UPDATE surveys SET submitted_at = ?, rating = ?, body = ? WHERE id = ?'
-        ).bind(now, body.rating, body.body ?? null, survey.id).run();
+          'UPDATE surveys SET submitted_at = ?, rating = ?, body = ? WHERE id = ?',
+        )
+          .bind(now, body.rating, body.body ?? null, survey.id)
+          .run();
 
         await env.DB.prepare(
-          `INSERT INTO reviews (booking_id, name, service, rating, body, approved) VALUES (?, ?, ?, ?, ?, 0)`
-        ).bind(survey.booking_id, survey.name, survey.service, body.rating, body.body ?? '').run();
+          `INSERT INTO reviews (booking_id, name, service, rating, body, approved) VALUES (?, ?, ?, ?, ?, 0)`,
+        )
+          .bind(survey.booking_id, survey.name, survey.service, body.rating, body.body ?? '')
+          .run();
 
         if (body.rating >= 4) {
           const html = buildReviewRequestEmail(survey.name, env.GOOGLE_REVIEW_URL);
-          const sent = await sendEmail(env, survey.email, 'Share Your Experience — Thank You!', html);
+          const sent = await sendEmail(
+            env,
+            survey.email,
+            'Share Your Experience — Thank You!',
+            html,
+          );
           if (sent) {
             await env.DB.prepare(
-              'UPDATE surveys SET review_requested = 1, review_request_sent_at = ? WHERE id = ?'
-            ).bind(now, survey.id).run();
+              'UPDATE surveys SET review_requested = 1, review_request_sent_at = ? WHERE id = ?',
+            )
+              .bind(now, survey.id)
+              .run();
           }
         }
 
@@ -1156,15 +1877,25 @@ export default {
            FROM reviews r
            LEFT JOIN bookings b ON b.id = r.booking_id
            ORDER BY r.created_at DESC
-           LIMIT ? OFFSET ?`
-        ).bind(limit, offset).all();
-        const countRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM reviews').first<{ total: number }>();
+           LIMIT ? OFFSET ?`,
+        )
+          .bind(limit, offset)
+          .all();
+        const countRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM reviews').first<{
+          total: number;
+        }>();
         return json({ results, total: countRow?.total ?? 0, page, limit });
       }
 
       const adminReview = pathname.match(/^\/api\/admin\/reviews\/(\d+)$/);
       if (adminReview && method === 'PUT') {
-        const body = await request.json<{ approved?: number; name?: string; service?: string; body?: string; rating?: number }>();
+        const body = await request.json<{
+          approved?: number;
+          name?: string;
+          service?: string;
+          body?: string;
+          rating?: number;
+        }>();
         await env.DB.prepare(
           `UPDATE reviews
            SET approved = COALESCE(?, approved),
@@ -1172,15 +1903,17 @@ export default {
                service  = COALESCE(?, service),
                body     = COALESCE(?, body),
                rating   = COALESCE(?, rating)
-           WHERE id = ?`
-        ).bind(
-          body.approved ?? null,
-          body.name ?? null,
-          body.service ?? null,
-          body.body ?? null,
-          body.rating ?? null,
-          Number(adminReview[1])
-        ).run();
+           WHERE id = ?`,
+        )
+          .bind(
+            body.approved ?? null,
+            body.name ?? null,
+            body.service ?? null,
+            body.body ?? null,
+            body.rating ?? null,
+            Number(adminReview[1]),
+          )
+          .run();
         return json({ success: true });
       }
 
@@ -1198,7 +1931,7 @@ export default {
                   b.id AS booking_id, b.name, b.email, b.service, b.date
            FROM surveys s
            JOIN bookings b ON b.id = s.booking_id
-           ORDER BY s.sent_at DESC`
+           ORDER BY s.sent_at DESC`,
         ).all();
         return json(results);
       }
@@ -1208,17 +1941,24 @@ export default {
         const survey = await env.DB.prepare(
           `SELECT s.id, s.token, b.email, b.name, b.service
            FROM surveys s JOIN bookings b ON b.id = s.booking_id
-           WHERE s.id = ?`
-        ).bind(Number(adminSurveyResend[1])).first<{
-          id: number; token: string; email: string; name: string; service: string;
-        }>();
+           WHERE s.id = ?`,
+        )
+          .bind(Number(adminSurveyResend[1]))
+          .first<{
+            id: number;
+            token: string;
+            email: string;
+            name: string;
+            service: string;
+          }>();
         if (!survey) return json({ error: 'Survey not found' }, 404);
         const surveyUrl = `${env.SITE_URL}/survey/${survey.token}`;
         const html = buildSurveyEmail(survey.name, survey.service, surveyUrl);
         const sent = await sendEmail(env, survey.email, 'We would love your feedback', html);
         if (!sent) return json({ error: 'Failed to send email' }, 500);
         await env.DB.prepare('UPDATE surveys SET sent_at = ? WHERE id = ?')
-          .bind(new Date().toISOString().replace('T', ' ').slice(0, 19), survey.id).run();
+          .bind(new Date().toISOString().replace('T', ' ').slice(0, 19), survey.id)
+          .run();
         return json({ success: true });
       }
 
@@ -1227,16 +1967,20 @@ export default {
         const survey = await env.DB.prepare(
           `SELECT s.id, b.email, b.name FROM surveys s
            JOIN bookings b ON b.id = s.booking_id
-           WHERE s.id = ?`
-        ).bind(Number(adminSurveyReviewReq[1])).first<{ id: number; email: string; name: string }>();
+           WHERE s.id = ?`,
+        )
+          .bind(Number(adminSurveyReviewReq[1]))
+          .first<{ id: number; email: string; name: string }>();
         if (!survey) return json({ error: 'Survey not found' }, 404);
         const html = buildReviewRequestEmail(survey.name, env.GOOGLE_REVIEW_URL);
         const sent = await sendEmail(env, survey.email, 'Share Your Experience!', html);
         if (!sent) return json({ error: 'Failed to send email' }, 500);
         const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
         await env.DB.prepare(
-          'UPDATE surveys SET review_requested = 1, review_request_sent_at = ? WHERE id = ?'
-        ).bind(ts, survey.id).run();
+          'UPDATE surveys SET review_requested = 1, review_request_sent_at = ? WHERE id = ?',
+        )
+          .bind(ts, survey.id)
+          .run();
         return json({ success: true });
       }
     }
@@ -1244,13 +1988,21 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    _ctx: ExecutionContext,
+  ): Promise<void> {
     // Find bookings completed 55–75 minutes ago that haven't had a survey sent yet
     const now = new Date();
     const windowEnd = new Date(now.getTime() - 55 * 60 * 1000)
-      .toISOString().replace('T', ' ').slice(0, 19);
+      .toISOString()
+      .replace('T', ' ')
+      .slice(0, 19);
     const windowStart = new Date(now.getTime() - 75 * 60 * 1000)
-      .toISOString().replace('T', ' ').slice(0, 19);
+      .toISOString()
+      .replace('T', ' ')
+      .slice(0, 19);
 
     const { results } = await env.DB.prepare(
       `SELECT b.id, b.email, b.name, b.service
@@ -1259,15 +2011,19 @@ export default {
          AND b.survey_sent = 0
          AND b.completed_at >= ?
          AND b.completed_at <= ?
-       LIMIT 50`
-    ).bind(windowStart, windowEnd).all<{ id: number; email: string; name: string; service: string }>();
+       LIMIT 50`,
+    )
+      .bind(windowStart, windowEnd)
+      .all<{ id: number; email: string; name: string; service: string }>();
 
     for (const booking of results) {
       const token = generateToken();
       try {
         await env.DB.prepare(
-          `INSERT OR IGNORE INTO surveys (booking_id, token, sent_at) VALUES (?, ?, datetime('now'))`
-        ).bind(booking.id, token).run();
+          `INSERT OR IGNORE INTO surveys (booking_id, token, sent_at) VALUES (?, ?, datetime('now'))`,
+        )
+          .bind(booking.id, token)
+          .run();
 
         const surveyUrl = `${env.SITE_URL}/survey/${token}`;
         const html = buildSurveyEmail(booking.name, booking.service, surveyUrl);
@@ -1275,7 +2031,8 @@ export default {
 
         if (sent) {
           await env.DB.prepare('UPDATE bookings SET survey_sent = 1 WHERE id = ?')
-            .bind(booking.id).run();
+            .bind(booking.id)
+            .run();
         }
       } catch {
         // Continue processing others if one fails

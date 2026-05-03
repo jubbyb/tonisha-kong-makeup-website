@@ -44,9 +44,18 @@ CREATE TABLE IF NOT EXISTS artists (
   photo_url TEXT,
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  user_id INTEGER REFERENCES users(id)
+  user_id INTEGER REFERENCES users(id),
+  slug TEXT UNIQUE,
+  about TEXT,
+  location TEXT,
+  experience TEXT,
+  instagram_url TEXT,
+  tiktok_url TEXT,
+  facebook_url TEXT,
+  website_url TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_artists_user_id ON artists(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_slug ON artists(slug);
 
 -- Artist weekly working hours (one row per working day; if no row, that day is unavailable)
 -- day_of_week: 0=Monday ... 6=Sunday
@@ -109,10 +118,32 @@ CREATE TABLE IF NOT EXISTS catalog_services (
 );
 
 CREATE TABLE IF NOT EXISTS artist_services (
-  artist_id  INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
-  service_id INTEGER NOT NULL REFERENCES catalog_services(id) ON DELETE CASCADE,
+  artist_id      INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+  service_id     INTEGER NOT NULL REFERENCES catalog_services(id) ON DELETE CASCADE,
+  price_override REAL,
   PRIMARY KEY (artist_id, service_id)
 );
+
+CREATE TABLE IF NOT EXISTS artist_portfolio (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  artist_id     INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+  image_url     TEXT NOT NULL,
+  caption       TEXT,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_artist_portfolio_artist ON artist_portfolio(artist_id, display_order);
+
+CREATE TABLE IF NOT EXISTS artist_testimonials (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  artist_id     INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+  client_name   TEXT NOT NULL,
+  quote         TEXT NOT NULL,
+  date          TEXT,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_artist_testimonials_artist ON artist_testimonials(artist_id, display_order);
 
 CREATE TABLE IF NOT EXISTS contact_messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
