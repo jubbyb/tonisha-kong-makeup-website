@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { BRAND } from '../constants/brand';
 
 interface SurveyMeta {
   already_submitted: boolean;
@@ -124,7 +125,7 @@ export default function Survey() {
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
-          <p style={labelStyle}>Tonisha Kong Makeup</p>
+          <p style={labelStyle}>{BRAND.name}</p>
           <h1 className="font-display" style={headingStyle}>Link Not Found</h1>
           <p style={{ color: 'var(--tk-text-dim)', lineHeight: 1.7 }}>
             This survey link is invalid or has expired.
@@ -161,7 +162,7 @@ export default function Survey() {
   return (
     <div style={containerStyle}>
       <div style={cardStyle}>
-        <p style={labelStyle}>Tonisha Kong Makeup</p>
+        <p style={labelStyle}>{BRAND.name}</p>
         <h1 className="font-display" style={headingStyle}>
           How did we do?
         </h1>

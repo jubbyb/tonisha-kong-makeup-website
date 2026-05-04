@@ -1,10 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { BRAND } from '../constants/brand';
 
-const milestones = [
-  { year: 'Early Life', text: 'Self-taught pianist at age four, excelling in art — creativity was always the constant.' },
-  { year: 'University', text: 'Studied Zoology, discovered a love for makeup while experimenting on friends and herself.' },
-  { year: 'Manhattan', text: 'Attended makeup school in New York City, training under renowned artists including Rihanna\'s makeup artist.' },
-  { year: 'Today', text: 'Running a thriving artistry practice in Jamaica — teaching, transforming, and empowering clients.' },
+const pillars = [
+  { year: 'The Idea', text: 'We noticed that booking beauty and style professionals was fragmented. Every discipline had its own apps, every artist their own DMs. We built one home for all of it.' },
+  { year: 'The Platform', text: 'Styleja connects clients with independent artists across makeup, hair, nails, barber, styling, and tailoring — a single place to discover, book, and build a relationship.' },
+  { year: 'The Artists', text: 'Every artist on Styleja runs their own profile — real pricing, real availability, real portfolio. No middlemen, no markups. Just craft.' },
+  { year: 'The Vision', text: 'We believe self-expression should be accessible. Whether it\'s a wedding day or a Tuesday, the right artist is here.' },
 ];
 
 const About: React.FC = () => {
@@ -38,7 +40,7 @@ const About: React.FC = () => {
               marginBottom: '1.5rem',
             }}
           >
-            The Artist
+            The Platform
           </p>
 
           <h1
@@ -53,7 +55,7 @@ const About: React.FC = () => {
           >
             About
             <br />
-            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Tonisha Kong</span>
+            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>{BRAND.name}</span>
           </h1>
 
           <div className="divider-gold anim-fade-in delay-2" />
@@ -69,8 +71,8 @@ const About: React.FC = () => {
               marginBottom: '2rem',
             }}
           >
-            Hi, I'm Tonisha Kong, a passionate makeup artist based in Jamaica. My creative journey
-            began in childhood, surrounded by a supportive family who encouraged my artistic side.
+            Styleja is a multi-artist booking platform built for the beauty and style industries.
+            We connect clients with independent professionals across six disciplines — all in one place.
           </p>
 
           <p
@@ -83,10 +85,8 @@ const About: React.FC = () => {
               marginBottom: '2rem',
             }}
           >
-            While I initially pursued Zoology at university with plans to become a veterinarian,
-            my love for creativity never faded. During university, I discovered my passion for
-            makeup — experimenting with bold looks on myself and friends. What started as a hobby
-            soon became a calling.
+            Our artists set their own availability, prices, and portfolios. You browse, choose, and book
+            — no DMs required.
           </p>
 
           <p
@@ -98,9 +98,8 @@ const About: React.FC = () => {
               maxWidth: '500px',
             }}
           >
-            My sister sent me to makeup school in Manhattan, where I had the privilege of training
-            with renowned artists — including Rihanna's makeup artist. Today, my mission is to
-            help every client feel beautiful without hiding who they are.
+            Based in {BRAND.location}, Styleja launched with a curated roster of talent and a commitment
+            to making world-class artistry accessible to everyone.
           </p>
         </div>
 
@@ -110,8 +109,8 @@ const About: React.FC = () => {
           className="about-photo"
         >
           <img
-            src="https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-PersonalTonishaKong__IMG0118_1697819890726.jpeg"
-            alt="Tonisha Kong portrait"
+            src="https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/f1a18aab-5b90-49a9-b8a3-c46ce92de646-BYDC18.jpg"
+            alt="Styleja artist at work"
             className="anim-fade-in delay-1"
             style={{
               width: '100%',
@@ -157,7 +156,7 @@ const About: React.FC = () => {
             lineHeight: 1.4,
           }}
         >
-          "Makeup is more than a mask — it's a tool for confidence and self-expression."
+          "Style is personal. The right artist makes the difference."
         </blockquote>
         <div
           style={{
@@ -169,7 +168,7 @@ const About: React.FC = () => {
         />
       </section>
 
-      {/* ── Journey Timeline ──────────────────────────────────────────── */}
+      {/* ── Pillars ───────────────────────────────────────────────────── */}
       <section
         style={{
           maxWidth: '1280px',
@@ -187,7 +186,7 @@ const About: React.FC = () => {
               color: 'var(--tk-text-dim)',
             }}
           >
-            The Journey
+            Why Styleja
           </h2>
         </div>
 
@@ -198,14 +197,13 @@ const About: React.FC = () => {
             gap: '0',
           }}
         >
-          {milestones.map((m, i) => (
+          {pillars.map((m, i) => (
             <div
               key={i}
               className={`anim-fade-up delay-${i + 1}`}
               style={{
                 padding: '2.5rem',
                 borderLeft: '1px solid var(--tk-border)',
-                borderBottom: i < 2 ? 'none' : undefined,
               }}
             >
               <p
@@ -234,7 +232,7 @@ const About: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Gratitude ─────────────────────────────────────────────────── */}
+      {/* ── Featured Artist ───────────────────────────────────────────── */}
       <section
         style={{
           borderTop: '1px solid var(--tk-border)',
@@ -253,18 +251,26 @@ const About: React.FC = () => {
             marginBottom: '1.5rem',
           }}
         >
-          With Gratitude
+          Featured Artist
         </p>
         <p
           style={{
             fontSize: '1rem',
             lineHeight: 1.8,
             color: 'var(--tk-text-body)',
+            marginBottom: '2rem',
           }}
         >
-          Special thanks to my mom and big sister for their constant encouragement and love.
-          I wouldn't be where I am today without them.
+          Styleja was founded alongside Tonisha Kong — makeup artist, educator, and the creative
+          force behind some of Jamaica's most celebrated looks. Her profile is where it all began.
         </p>
+        <Link
+          to="/artists/tonisha-kong"
+          className="btn-gold"
+          style={{ display: 'inline-block', textDecoration: 'none' }}
+        >
+          View Tonisha's Profile
+        </Link>
       </section>
 
       <style>{`

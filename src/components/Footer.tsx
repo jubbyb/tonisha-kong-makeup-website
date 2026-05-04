@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { BRAND } from '../constants/brand';
 
 const Footer = () => {
   return (
@@ -34,7 +35,7 @@ const Footer = () => {
               marginBottom: '1rem',
             }}
           >
-            Tonisha Kong
+            {BRAND.name}
           </p>
           <p
             style={{
@@ -44,13 +45,13 @@ const Footer = () => {
               maxWidth: '320px',
             }}
           >
-            Professional makeup artist based in Kingston, Jamaica. Specializing in bridal, editorial, and beauty education.
+            {BRAND.tagline}
           </p>
 
           {/* Social icons */}
           <div style={{ display: 'flex', gap: '1.25rem', marginTop: '1.5rem', alignItems: 'center' }}>
             <a
-              href="https://www.instagram.com/tonishakong"
+              href={BRAND.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -63,7 +64,7 @@ const Footer = () => {
               </svg>
             </a>
             <a
-              href="https://www.facebook.com/p/Tonisha-Kong-Makeup-100064895590278/"
+              href={BRAND.facebook}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
@@ -76,7 +77,7 @@ const Footer = () => {
               </svg>
             </a>
             <a
-              href="https://www.tiktok.com/@tonishakong"
+              href={BRAND.tiktok}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"
@@ -121,9 +122,10 @@ const Footer = () => {
             {[
               { to: '/', label: 'Home' },
               { to: '/about', label: 'About' },
+              { to: '/industries', label: 'Industries' },
+              { to: '/artists', label: 'Artists' },
               { to: '/services', label: 'Services' },
               { to: '/classes', label: 'Classes' },
-              { to: '/artists', label: 'Artists' },
             ].map(({ to, label }) => (
               <Link
                 key={to}
@@ -201,7 +203,7 @@ const Footer = () => {
             letterSpacing: '0.05em',
           }}
         >
-          © {new Date().getFullYear()} Tonisha Kong Makeup Ltd. All rights reserved.
+          {BRAND.copyright}
         </p>
 
         <p

@@ -50,7 +50,7 @@ function generateToken(): string {
 function buildSurveyEmail(clientName: string, service: string, surveyUrl: string): string {
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
-  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Thank you, ${clientName}</h1>
   <p style="color:#a09890;line-height:1.7;margin-bottom:8px;">Your <em>${service}</em> session is complete. We hope you loved your look!</p>
   <p style="color:#a09890;line-height:1.7;">We would appreciate 2 minutes of your time to share your experience.</p>
@@ -66,7 +66,7 @@ function buildSurveyEmail(clientName: string, service: string, surveyUrl: string
 function buildReviewRequestEmail(clientName: string, googleUrl: string): string {
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
-  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">We're glad you loved it, ${clientName}!</h1>
   <p style="color:#a09890;line-height:1.7;">Your kind words mean the world. Would you mind sharing your experience on Google? It helps other clients discover us.</p>
   <div style="margin:32px 0;">
@@ -77,12 +77,27 @@ function buildReviewRequestEmail(clientName: string, googleUrl: string): string 
 </div>`;
 }
 
+function buildPasswordResetEmail(resetUrl: string): string {
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Reset Your Password</h1>
+  <p style="color:#a09890;line-height:1.7;">We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.</p>
+  <div style="margin:32px 0;">
+    <a href="${resetUrl}" style="display:inline-block;padding:14px 40px;border:1px solid #c9a96e;color:#c9a96e;text-decoration:none;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">
+      Reset Password
+    </a>
+  </div>
+  <p style="font-size:11px;color:#4a4540;">If you didn't request this, you can safely ignore this email. Your password will not change.</p>
+</div>`;
+}
+
 function buildBookingReceivedEmail(name: string, service: string, date: string, startTime: string, artistName?: string): string {
   const withArtist = artistName ? ` with ${artistName}` : '';
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
-  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Thank you, ${name}</h1>
   <p style="color:#a09890;line-height:1.7;">Your booking request for <em>${service}</em>${withArtist} on <strong style="color:#ede8e0;">${date}</strong>${atTime} has been received.</p>
   <p style="color:#a09890;line-height:1.7;margin-top:12px;">We'll be in touch shortly to confirm your appointment.</p>
@@ -95,7 +110,7 @@ function buildBookingConfirmedEmail(name: string, service: string, date: string,
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
-  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">You're confirmed, ${name}!</h1>
   <p style="color:#a09890;line-height:1.7;">Your booking for <em>${service}</em>${withArtist} on <strong style="color:#ede8e0;">${date}</strong>${atTime} is confirmed.</p>
   <p style="color:#a09890;line-height:1.7;margin-top:12px;">We look forward to seeing you!</p>
@@ -107,7 +122,7 @@ function buildBookingCancelledEmail(name: string, service: string, date: string,
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
-  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Booking Cancelled</h1>
   <p style="color:#a09890;line-height:1.7;">Hi ${name}, your booking for <em>${service}</em> on <strong style="color:#ede8e0;">${date}</strong>${atTime} has been cancelled.</p>
   <p style="color:#a09890;line-height:1.7;margin-top:12px;">If you'd like to rebook or have any questions, please don't hesitate to get in touch.</p>
@@ -119,7 +134,7 @@ function buildArtistNewBookingEmail(clientName: string, clientEmail: string, ser
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
-  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">New Booking Request</h1>
   <p style="color:#a09890;line-height:1.7;"><strong style="color:#ede8e0;">${clientName}</strong> has requested a booking for <em>${service}</em> on <strong style="color:#ede8e0;">${date}</strong>${atTime}.</p>
   <p style="color:#a09890;line-height:1.7;margin-top:12px;">Client email: <a href="mailto:${clientEmail}" style="color:#c9a96e;">${clientEmail}</a></p>
@@ -131,7 +146,7 @@ function buildArtistClientCancelledEmail(clientName: string, service: string, da
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
-  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Tonisha Kong Makeup</p>
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Booking Cancelled by Client</h1>
   <p style="color:#a09890;line-height:1.7;"><strong style="color:#ede8e0;">${clientName}</strong> has cancelled their booking for <em>${service}</em> on <strong style="color:#ede8e0;">${date}</strong>${atTime}.</p>
   <p style="color:#a09890;line-height:1.7;margin-top:12px;">This time slot is now available again.</p>
@@ -170,6 +185,13 @@ const RESERVED_SLUGS = new Set([
   'survey',
   'artist-dashboard',
   'my-bookings',
+  'industries',
+  'makeup',
+  'hair',
+  'nails',
+  'barber',
+  'stylist',
+  'tailoring',
 ]);
 
 const SLUG_RE = /^[a-z0-9](-?[a-z0-9])*$/;
@@ -256,7 +278,8 @@ function datesInRange(from: string, to: string): string[] {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
+    const { pathname } = url;
     const method = request.method;
 
     // ── Public: classes ───────────────────────────────────────────────────────
@@ -282,13 +305,70 @@ export default {
       return json(results);
     }
 
+    // ── Public: industries ────────────────────────────────────────────────────
+
+    if (pathname === '/api/industries' && method === 'GET') {
+      const { results } = await env.DB.prepare(
+        'SELECT id, slug, name, tagline, icon, sort_order FROM industries WHERE is_active = 1 ORDER BY sort_order',
+      ).all();
+      return json(results);
+    }
+
+    const industryBySlug = pathname.match(/^\/api\/industries\/([^/]+)$/);
+    if (industryBySlug && method === 'GET') {
+      const slug = industryBySlug[1];
+      const industry = await env.DB.prepare(
+        'SELECT id, slug, name, tagline, icon, sort_order FROM industries WHERE slug = ? AND is_active = 1',
+      ).bind(slug).first<{ id: number; slug: string; name: string; tagline: string | null; icon: string | null; sort_order: number }>();
+      if (!industry) return json({ error: 'Industry not found' }, 404);
+      const { results: countRows } = await env.DB.prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM artist_industries WHERE industry_id = ?) AS artist_count,
+           (SELECT COUNT(*) FROM category_industries WHERE industry_id = ?) AS category_count`,
+      ).bind(industry.id, industry.id).all<{ artist_count: number; category_count: number }>();
+      return json({ ...industry, ...countRows[0] });
+    }
+
     // ── Public: artists directory ─────────────────────────────────────────────
 
     if (pathname === '/api/artists' && method === 'GET') {
-      const { results } = await env.DB.prepare(
-        'SELECT id, slug, name, bio, specialties, photo_url, location FROM artists WHERE is_active = 1 ORDER BY name',
-      ).all();
-      return json(results);
+      const industryFilter = url.searchParams.get('industry');
+      let artistRows: Record<string, unknown>[];
+      if (industryFilter) {
+        const { results } = await env.DB.prepare(
+          `SELECT a.id, a.slug, a.name, a.bio, a.specialties, a.photo_url, a.location, a.whatsapp_number
+           FROM artists a
+           JOIN artist_industries ai ON ai.artist_id = a.id
+           JOIN industries i ON i.id = ai.industry_id
+           WHERE a.is_active = 1 AND i.slug = ?
+           ORDER BY a.name`,
+        ).bind(industryFilter).all();
+        artistRows = results as Record<string, unknown>[];
+      } else {
+        const { results } = await env.DB.prepare(
+          'SELECT id, slug, name, bio, specialties, photo_url, location, whatsapp_number FROM artists WHERE is_active = 1 ORDER BY name',
+        ).all();
+        artistRows = results as Record<string, unknown>[];
+      }
+      if (artistRows.length === 0) return json([]);
+      const artistIds = artistRows.map((a) => a.id as number);
+      const placeholders = artistIds.map(() => '?').join(',');
+      const { results: indRows } = await env.DB.prepare(
+        `SELECT ai.artist_id, i.slug, i.name FROM artist_industries ai
+         JOIN industries i ON i.id = ai.industry_id
+         WHERE ai.artist_id IN (${placeholders})`,
+      ).bind(...artistIds).all<{ artist_id: number; slug: string; name: string }>();
+      const indByArtist = new Map<number, { slug: string; name: string }[]>();
+      for (const row of indRows) {
+        const list = indByArtist.get(row.artist_id) ?? [];
+        list.push({ slug: row.slug, name: row.name });
+        indByArtist.set(row.artist_id, list);
+      }
+      const enriched = artistRows.map((a) => ({
+        ...a,
+        industries: indByArtist.get(a.id as number) ?? [],
+      }));
+      return json(enriched);
     }
 
     const artistByIdOrSlug = pathname.match(/^\/api\/artists\/([^/]+)$/);
@@ -298,20 +378,24 @@ export default {
       const artist = isNumeric
         ? await env.DB.prepare(
             `SELECT id, slug, name, bio, specialties, photo_url, about, location, experience,
-                    instagram_url, tiktok_url, facebook_url, website_url
+                    instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number
              FROM artists WHERE id = ? AND is_active = 1`,
           )
             .bind(Number(key))
-            .first()
+            .first<Record<string, unknown>>()
         : await env.DB.prepare(
             `SELECT id, slug, name, bio, specialties, photo_url, about, location, experience,
-                    instagram_url, tiktok_url, facebook_url, website_url
+                    instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number
              FROM artists WHERE slug = ? AND is_active = 1`,
           )
             .bind(key)
-            .first();
+            .first<Record<string, unknown>>();
       if (!artist) return json({ error: 'Artist not found' }, 404);
-      return json(artist);
+      const { results: indRows } = await env.DB.prepare(
+        `SELECT i.slug, i.name FROM artist_industries ai
+         JOIN industries i ON i.id = ai.industry_id WHERE ai.artist_id = ?`,
+      ).bind(artist.id).all<{ slug: string; name: string }>();
+      return json({ ...artist, industries: indRows });
     }
 
     const artistPortfolio = pathname.match(/^\/api\/artists\/(\d+)\/portfolio$/);
@@ -338,9 +422,22 @@ export default {
     // GET /api/service-catalog
 
     if (pathname === '/api/service-catalog' && method === 'GET') {
-      const { results: cats } = await env.DB.prepare(
-        'SELECT id, name, sort_order FROM service_categories ORDER BY sort_order, name',
-      ).all<{ id: number; name: string; sort_order: number }>();
+      const industrySlug = url.searchParams.get('industry');
+      let cats: { id: number; name: string; sort_order: number }[];
+      if (industrySlug) {
+        const { results } = await env.DB.prepare(
+          `SELECT sc.id, sc.name, sc.sort_order FROM service_categories sc
+           JOIN category_industries ci ON ci.category_id = sc.id
+           JOIN industries i ON i.id = ci.industry_id
+           WHERE i.slug = ? ORDER BY sc.sort_order, sc.name`,
+        ).bind(industrySlug).all<{ id: number; name: string; sort_order: number }>();
+        cats = results;
+      } else {
+        const { results } = await env.DB.prepare(
+          'SELECT id, name, sort_order FROM service_categories ORDER BY sort_order, name',
+        ).all<{ id: number; name: string; sort_order: number }>();
+        cats = results;
+      }
 
       const { results: subs } = await env.DB.prepare(
         'SELECT id, category_id, name, sort_order FROM service_subcategories ORDER BY sort_order, name',
@@ -509,6 +606,8 @@ export default {
     // ── Public: legacy anonymous booking ─────────────────────────────────────
 
     if (pathname === '/api/bookings' && method === 'POST') {
+      const bookingAuth = await getAuth(request, env);
+      const bookingUserId = (bookingAuth && !bookingAuth.artist_id) ? Number(bookingAuth.sub) : null;
       const body = await request.json<{
         name?: string;
         email?: string;
@@ -519,6 +618,7 @@ export default {
         artist_id?: number;
         start_time?: string;
         end_time?: string;
+        contact_method?: 'email' | 'whatsapp';
       }>();
       if (!body.name || !body.email || !body.service || !body.date) {
         return json({ error: 'Missing required fields' }, 400);
@@ -539,9 +639,10 @@ export default {
           return json({ error: 'This slot was just taken — please choose another.' }, 409);
       }
       await env.DB.prepare(
-        'INSERT INTO bookings (name, email, phone, service, date, start_time, end_time, artist_id, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO bookings (user_id, name, email, phone, service, date, start_time, end_time, artist_id, message, contact_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       )
         .bind(
+          bookingUserId,
           body.name,
           body.email,
           body.phone ?? null,
@@ -551,6 +652,7 @@ export default {
           body.end_time ?? null,
           body.artist_id ?? null,
           body.message ?? null,
+          body.contact_method ?? 'email',
         )
         .run();
       let anonArtistName: string | undefined;
@@ -563,13 +665,13 @@ export default {
       }
       await sendEmail(
         env, body.email,
-        'Booking Request Received — Tonisha Kong Makeup',
+        'Booking Request Received — Styleja',
         buildBookingReceivedEmail(body.name, body.service, body.date, body.start_time ?? '', anonArtistName),
       );
       if (anonArtistEmail) {
         await sendEmail(
           env, anonArtistEmail,
-          'New Booking Request — Tonisha Kong Makeup',
+          'New Booking Request — Styleja',
           buildArtistNewBookingEmail(body.name, body.email, body.service, body.date, body.start_time ?? ''),
         );
       }
@@ -638,6 +740,9 @@ export default {
       const user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
         .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string; role: string }>();
+      if (user && user.password_hash && !(await verifyPassword(body.password, user.password_hash))) {
+        return json({ error: 'Incorrect password. Forgot your password?' }, 401);
+      }
       if (user && user.password_hash && (await verifyPassword(body.password, user.password_hash))) {
         const role = user.role === 'artist' ? 'artist' : 'user';
         let loginArtistId: string | undefined;
@@ -673,8 +778,11 @@ export default {
       )
         .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string }>();
-      if (!artist || !(await verifyPassword(body.password, artist.password_hash))) {
-        return json({ error: 'Invalid email or password' }, 401);
+      if (!artist) {
+        return json({ error: 'No account found with that email. Try signing up.' }, 401);
+      }
+      if (!(await verifyPassword(body.password, artist.password_hash))) {
+        return json({ error: 'Incorrect password.' }, 401);
       }
       const token = await signJWT(
         {
@@ -712,6 +820,7 @@ export default {
           email: artist.email,
           name: artist.name,
           role: 'artist',
+          artist_id: String(artist.id),
           iat: Math.floor(Date.now() / 1000),
           exp: Math.floor(Date.now() / 1000) + 24 * 3600,
         },
@@ -721,6 +830,43 @@ export default {
         token,
         user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' },
       });
+    }
+
+    if (pathname === '/api/auth/forgot-password' && method === 'POST') {
+      const body = await request.json<{ email?: string }>();
+      const normalizedEmail = body.email?.toLowerCase().trim() ?? '';
+      const user = await env.DB.prepare('SELECT id FROM users WHERE LOWER(email) = ?')
+        .bind(normalizedEmail)
+        .first<{ id: number }>();
+      if (user) {
+        const resetToken = generateToken();
+        const expiresAt = new Date(Date.now() + 3_600_000).toISOString();
+        await env.DB.prepare('DELETE FROM password_reset_tokens WHERE user_id = ? AND used = 0')
+          .bind(user.id).run();
+        await env.DB.prepare(
+          'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+        ).bind(user.id, resetToken, expiresAt).run();
+        const resetUrl = `${env.SITE_URL}/reset-password?token=${resetToken}`;
+        await sendEmail(env, normalizedEmail, 'Reset Your Password — Styleja', buildPasswordResetEmail(resetUrl));
+      }
+      return json({ success: true });
+    }
+
+    if (pathname === '/api/auth/reset-password' && method === 'POST') {
+      const body = await request.json<{ token?: string; password?: string }>();
+      if (!body.token || !body.password) return json({ error: 'Missing required fields' }, 400);
+      if (body.password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400);
+      const row = await env.DB.prepare(
+        `SELECT id, user_id FROM password_reset_tokens
+         WHERE token = ? AND used = 0 AND expires_at > datetime('now')`,
+      ).bind(body.token).first<{ id: number; user_id: number }>();
+      if (!row) return json({ error: 'Invalid or expired reset link' }, 400);
+      const newHash = await hashPassword(body.password);
+      await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+        .bind(newHash, row.user_id).run();
+      await env.DB.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?')
+        .bind(row.id).run();
+      return json({ success: true });
     }
 
     // ── Google OAuth ──────────────────────────────────────────────────────────
@@ -929,13 +1075,13 @@ export default {
         .bind(body.artist_id).first<{ name: string; email: string }>();
       await sendEmail(
         env, clientEmail,
-        'Booking Request Received — Tonisha Kong Makeup',
+        'Booking Request Received — Styleja',
         buildBookingReceivedEmail(clientName, body.service, body.date, body.start_time, artistRow?.name),
       );
       if (artistRow?.email) {
         await sendEmail(
           env, artistRow.email,
-          'New Booking Request — Tonisha Kong Makeup',
+          'New Booking Request — Styleja',
           buildArtistNewBookingEmail(clientName, clientEmail, body.service, body.date, body.start_time),
         );
       }
@@ -1002,7 +1148,7 @@ export default {
       if (cancelled) {
         await sendEmail(
           env, cancelled.email,
-          'Booking Cancellation — Tonisha Kong Makeup',
+          'Booking Cancellation — Styleja',
           buildBookingCancelledEmail(cancelled.name, cancelled.service, cancelled.date, cancelled.start_time ?? ''),
         );
         if (cancelled.artist_id) {
@@ -1011,7 +1157,7 @@ export default {
           if (artist?.email) {
             await sendEmail(
               env, artist.email,
-              'Booking Cancelled by Client — Tonisha Kong Makeup',
+              'Booking Cancelled by Client — Styleja',
               buildArtistClientCancelledEmail(cancelled.name, cancelled.service, cancelled.date, cancelled.start_time ?? ''),
             );
           }
@@ -1096,13 +1242,13 @@ export default {
           if (body.status === 'confirmed') {
             await sendEmail(
               env, bookingForEmail.email,
-              'Your Booking is Confirmed — Tonisha Kong Makeup',
+              'Your Booking is Confirmed — Styleja',
               buildBookingConfirmedEmail(bookingForEmail.name, bookingForEmail.service, bookingForEmail.date, bookingForEmail.start_time ?? '', bookingForEmail.artist_name ?? undefined),
             );
           } else if (body.status === 'cancelled') {
             await sendEmail(
               env, bookingForEmail.email,
-              'Booking Cancellation — Tonisha Kong Makeup',
+              'Booking Cancellation — Styleja',
               buildBookingCancelledEmail(bookingForEmail.name, bookingForEmail.service, bookingForEmail.date, bookingForEmail.start_time ?? ''),
             );
           }
@@ -1241,12 +1387,16 @@ export default {
       if (pathname === '/api/artist/profile' && method === 'GET') {
         const artist = await env.DB.prepare(
           `SELECT id, slug, name, email, bio, specialties, photo_url, about, location, experience,
-                  instagram_url, tiktok_url, facebook_url, website_url
+                  instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number
            FROM artists WHERE id = ?`,
         )
           .bind(artistId)
-          .first();
-        return json(artist);
+          .first<Record<string, unknown>>();
+        if (!artist) return json({ error: 'Artist not found' }, 404);
+        const { results: indRows } = await env.DB.prepare(
+          'SELECT industry_id FROM artist_industries WHERE artist_id = ?',
+        ).bind(artistId).all<{ industry_id: number }>();
+        return json({ ...artist, industry_ids: indRows.map((r) => r.industry_id) });
       }
 
       if (pathname === '/api/artist/profile' && method === 'PUT') {
@@ -1263,6 +1413,8 @@ export default {
           tiktok_url?: string;
           facebook_url?: string;
           website_url?: string;
+          whatsapp_number?: string | null;
+          industry_ids?: number[];
         }>();
 
         // Slug validation if provided
@@ -1297,7 +1449,8 @@ export default {
              instagram_url = COALESCE(?, instagram_url),
              tiktok_url = COALESCE(?, tiktok_url),
              facebook_url = COALESCE(?, facebook_url),
-             website_url = COALESCE(?, website_url)
+             website_url = COALESCE(?, website_url),
+             whatsapp_number = CASE WHEN ? IS NOT NULL THEN ? ELSE whatsapp_number END
            WHERE id = ?`,
         )
           .bind(
@@ -1313,9 +1466,20 @@ export default {
             body.tiktok_url ?? null,
             body.facebook_url ?? null,
             body.website_url ?? null,
+            'whatsapp_number' in body ? (body.whatsapp_number ?? null) : null,
+            body.whatsapp_number ?? null,
             artistId,
           )
           .run();
+
+        if (body.industry_ids !== undefined) {
+          const delStmt = env.DB.prepare('DELETE FROM artist_industries WHERE artist_id = ?').bind(artistId);
+          const insStmts = body.industry_ids.map((iid) =>
+            env.DB.prepare('INSERT OR IGNORE INTO artist_industries (artist_id, industry_id) VALUES (?, ?)').bind(artistId, iid),
+          );
+          await env.DB.batch([delStmt, ...insStmts]);
+        }
+
         return json({ success: true });
       }
 
@@ -1593,9 +1757,16 @@ export default {
           specialties?: string;
           photo_url?: string;
           is_active?: boolean;
+          whatsapp_number?: string | null;
+          industry_ids?: number[];
         }>();
+        const adminArtistId = Number(adminArtist[1]);
         await env.DB.prepare(
-          'UPDATE artists SET name=COALESCE(?,name), bio=COALESCE(?,bio), specialties=COALESCE(?,specialties), photo_url=COALESCE(?,photo_url), is_active=COALESCE(?,is_active) WHERE id=?',
+          `UPDATE artists SET
+             name=COALESCE(?,name), bio=COALESCE(?,bio), specialties=COALESCE(?,specialties),
+             photo_url=COALESCE(?,photo_url), is_active=COALESCE(?,is_active),
+             whatsapp_number = CASE WHEN ? IS NOT NULL THEN ? ELSE whatsapp_number END
+           WHERE id=?`,
         )
           .bind(
             body.name ?? null,
@@ -1603,9 +1774,20 @@ export default {
             body.specialties ?? null,
             body.photo_url ?? null,
             body.is_active != null ? (body.is_active ? 1 : 0) : null,
-            Number(adminArtist[1]),
+            'whatsapp_number' in body ? (body.whatsapp_number ?? null) : null,
+            body.whatsapp_number ?? null,
+            adminArtistId,
           )
           .run();
+
+        if (body.industry_ids !== undefined) {
+          const delStmt = env.DB.prepare('DELETE FROM artist_industries WHERE artist_id = ?').bind(adminArtistId);
+          const insStmts = body.industry_ids.map((iid) =>
+            env.DB.prepare('INSERT OR IGNORE INTO artist_industries (artist_id, industry_id) VALUES (?, ?)').bind(adminArtistId, iid),
+          );
+          await env.DB.batch([delStmt, ...insStmts]);
+        }
+
         return json({ success: true });
       }
       if (adminArtist && method === 'DELETE') {

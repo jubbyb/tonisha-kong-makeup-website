@@ -1,5 +1,5 @@
 {
-	"name": "tonisha-kong-makeup-website",
+	"name": "styleja-website",
 	"compatibility_date": "2025-07-05",
 	"assets": {
 		"binding": "ASSETS",
@@ -10,7 +10,7 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "tonisha-kong-db",
+			"database_name": "tonisha-kong-db", // keep original Cloudflare D1 resource name
 			"database_id": "76796839-90f1-43dc-9615-e215cf8246dd"
 			// "remote": true
 		}
@@ -24,10 +24,10 @@
 	],
 	// "triggers": { "crons": ["0 * * * *"] },  // uncomment before deploying to production
 	"vars": {
-		"SITE_URL": "https://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev",
+		"SITE_URL": "https://refractor-to-styleja-tonisha-kong-makeup-website.jubbyb.workers.dev/",
 		"FROM_EMAIL": "tonisha@askjubi.com",
 		"GOOGLE_REVIEW_URL": "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK",
 		// "GOOGLE_REDIRECT_URI": "http://localhost:5173/api/auth/google/callback"
-		"GOOGLE_REDIRECT_URI": "https://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev/api/auth/google/callback"
+		"GOOGLE_REDIRECT_URI": "https://refractor-to-styleja-tonisha-kong-makeup-website.jubbyb.workers.dev/api/auth/google/callback"
 	}
 }

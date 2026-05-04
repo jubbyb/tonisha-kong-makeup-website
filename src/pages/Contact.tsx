@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BRAND } from '../constants/brand';
 
 const Contact: React.FC = () => {
   const [name, setName] = useState('');
@@ -129,8 +130,8 @@ const Contact: React.FC = () => {
               maxWidth: '400px',
             }}
           >
-            Whether you're planning a wedding, an editorial shoot, or simply want to look your best —
-            reach out and let's talk about your vision.
+            Whether you're booking an artist, exploring our services, or have a general enquiry —
+            reach out and we'll get back to you.
           </p>
 
           {/* Contact details */}
@@ -139,9 +140,9 @@ const Contact: React.FC = () => {
             style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
           >
             {[
-              { label: 'Based in', value: 'Kingston, Jamaica' },
-              { label: 'Instagram', value: '@tonishakong' },
-              { label: 'Facebook', value: 'Tonisha Kong Makeup' },
+              { label: 'Based in', value: BRAND.location },
+              { label: 'Instagram', value: '@styleja' },
+              { label: 'Platform', value: BRAND.name },
             ].map(({ label, value }) => (
               <div key={label}>
                 <p

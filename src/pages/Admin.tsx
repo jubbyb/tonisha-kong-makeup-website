@@ -459,16 +459,33 @@ interface ArtistRecord {
   user_id: number | null;
 }
 
+interface AdminIndustry { id: number; slug: string; name: string; }
+
 type ArtistForm = { name: string; email: string; password: string; bio: string; specialties: string; photo_url: string };
 const emptyArtistForm = (): ArtistForm => ({ name: '', email: '', password: '', bio: '', specialties: '', photo_url: '' });
 
+type ArtistEditForm = { name: string; bio: string; specialties: string; photo_url: string; whatsapp_number: string; industry_ids: number[] };
+const emptyArtistEditForm = (a: ArtistRecord): ArtistEditForm => ({
+  name: a.name,
+  bio: a.bio ?? '',
+  specialties: a.specialties ?? '',
+  photo_url: a.photo_url ?? '',
+  whatsapp_number: '',
+  industry_ids: [],
+});
+
 function ArtistsTab({ token }: { token: string }) {
   const [artists, setArtists] = useState<ArtistRecord[]>([]);
+  const [adminIndustries, setAdminIndustries] = useState<AdminIndustry[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<ArtistForm>(emptyArtistForm());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [editArtist, setEditArtist] = useState<ArtistRecord | null>(null);
+  const [editForm, setEditForm] = useState<ArtistEditForm | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const fetchArtists = useCallback(async () => {
     setLoading(true);
@@ -478,6 +495,12 @@ function ArtistsTab({ token }: { token: string }) {
   }, [token]);
 
   useEffect(() => { fetchArtists(); }, [fetchArtists]);
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json() as Promise<AdminIndustry[]>)
+      .then(setAdminIndustries)
+      .catch(() => {});
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -515,6 +538,41 @@ function ArtistsTab({ token }: { token: string }) {
     setArtists((prev) => prev.filter((a) => a.id !== id));
   };
 
+  const openEdit = (a: ArtistRecord) => {
+    setEditArtist(a);
+    setEditForm(emptyArtistEditForm(a));
+    setEditError(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editArtist || !editForm) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/admin/artists/${editArtist.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: editForm.name || undefined,
+          bio: editForm.bio || undefined,
+          specialties: editForm.specialties || undefined,
+          photo_url: editForm.photo_url || undefined,
+          whatsapp_number: editForm.whatsapp_number || null,
+          industry_ids: editForm.industry_ids,
+        }),
+      });
+      if (!res.ok) { const d = (await res.json()) as { error: string }; throw new Error(d.error); }
+      await fetchArtists();
+      setEditArtist(null);
+      setEditForm(null);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
 
   return (
@@ -549,7 +607,8 @@ function ArtistsTab({ token }: { token: string }) {
                       {a.is_active ? 'Active' : 'Inactive'}
                     </button>
                   </td>
-                  <td>
+                  <td className="flex gap-1">
+                    <button className="btn btn-ghost btn-xs" onClick={() => openEdit(a)}>Edit</button>
                     <button className="btn btn-error btn-xs" onClick={() => handleDelete(a.id)}>Delete</button>
                   </td>
                 </tr>
@@ -557,6 +616,65 @@ function ArtistsTab({ token }: { token: string }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {editArtist && editForm && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <button type="button" className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => { setEditArtist(null); setEditForm(null); }}>✕</button>
+            <h3 className="font-bold text-lg mb-4">Edit Artist — {editArtist.name}</h3>
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-28">Name</span>
+                <input type="text" className="grow" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+              </label>
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-28">Specialties</span>
+                <input type="text" className="grow" placeholder="Bridal, Editorial" value={editForm.specialties} onChange={(e) => setEditForm({ ...editForm, specialties: e.target.value })} />
+              </label>
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-28">Photo URL</span>
+                <input type="url" className="grow" value={editForm.photo_url} onChange={(e) => setEditForm({ ...editForm, photo_url: e.target.value })} />
+              </label>
+              <label className="input input-bordered flex items-center gap-2">
+                <span className="label w-28">WhatsApp</span>
+                <input type="tel" className="grow" placeholder="18765551234 (digits only)" value={editForm.whatsapp_number} onChange={(e) => setEditForm({ ...editForm, whatsapp_number: e.target.value.replace(/\D/g, '') })} />
+              </label>
+              {adminIndustries.length > 0 && (
+                <div className="form-control">
+                  <label className="label"><span className="label-text text-sm">Industries</span></label>
+                  <div className="flex flex-wrap gap-3">
+                    {adminIndustries.map((ind) => (
+                      <label key={ind.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm"
+                          checked={editForm.industry_ids.includes(ind.id)}
+                          onChange={(e) => {
+                            const ids = e.target.checked
+                              ? [...editForm.industry_ids, ind.id]
+                              : editForm.industry_ids.filter((id) => id !== ind.id);
+                            setEditForm({ ...editForm, industry_ids: ids });
+                          }}
+                        />
+                        <span className="text-sm">{ind.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <label className="textarea textarea-bordered flex items-start gap-2 pt-2">
+                <span className="label w-28 mt-1">Bio</span>
+                <textarea className="grow" value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} rows={3} />
+              </label>
+              {editError && <div className="alert alert-error py-2 text-sm">{editError}</div>}
+              <div className="modal-action">
+                <button type="button" className="btn btn-ghost" onClick={() => { setEditArtist(null); setEditForm(null); }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={editSaving}>{editSaving ? 'Saving...' : 'Save Changes'}</button>
+              </div>
+            </form>
+          </div>
+        </dialog>
       )}
 
       {modalOpen && (

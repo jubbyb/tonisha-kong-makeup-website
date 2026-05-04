@@ -45,6 +45,14 @@ interface ArtistProfile {
   tiktok_url: string | null;
   facebook_url: string | null;
   website_url: string | null;
+  whatsapp_number: string | null;
+  industry_ids: number[];
+}
+
+interface IndustryOption {
+  id: number;
+  slug: string;
+  name: string;
 }
 
 interface PortfolioItem {
@@ -830,15 +838,20 @@ function ServicesTab() {
 
 function ProfileTab() {
   const [profile, setProfile] = useState<ArtistProfile | null>(null);
+  const [industries, setIndustries] = useState<IndustryOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json() as Promise<IndustryOption[]>)
+      .then(setIndustries)
+      .catch(() => {});
     apiFetch<ArtistProfile>('/api/artist/profile')
       .then((d) => {
-        setProfile(d);
+        setProfile({ ...d, industry_ids: d.industry_ids ?? [] });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -865,6 +878,8 @@ function ProfileTab() {
           tiktok_url: profile.tiktok_url,
           facebook_url: profile.facebook_url,
           website_url: profile.website_url,
+          whatsapp_number: profile.whatsapp_number,
+          industry_ids: profile.industry_ids,
         }),
       });
       setSaved(true);
@@ -987,6 +1002,41 @@ function ProfileTab() {
             onChange={(e) => setProfile({ ...profile, about: e.target.value || null })}
           />
         </div>
+
+        <div className="divider text-sm">Booking &amp; Industries</div>
+        <label className="input input-bordered flex items-center gap-2">
+          <span className="label w-32">WhatsApp</span>
+          <input
+            type="tel"
+            className="grow"
+            placeholder="18765551234 (digits only)"
+            value={profile.whatsapp_number ?? ''}
+            onChange={(e) => setProfile({ ...profile, whatsapp_number: e.target.value.replace(/\D/g, '') || null })}
+          />
+        </label>
+        {industries.length > 0 && (
+          <div className="form-control">
+            <label className="label"><span className="label-text">Industries</span></label>
+            <div className="flex flex-wrap gap-3">
+              {industries.map((ind) => (
+                <label key={ind.id} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm"
+                    checked={profile.industry_ids.includes(ind.id)}
+                    onChange={(e) => {
+                      const ids = e.target.checked
+                        ? [...profile.industry_ids, ind.id]
+                        : profile.industry_ids.filter((id) => id !== ind.id);
+                      setProfile({ ...profile, industry_ids: ids });
+                    }}
+                  />
+                  <span className="text-sm">{ind.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="divider text-sm">Social links</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
