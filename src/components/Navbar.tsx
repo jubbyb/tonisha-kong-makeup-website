@@ -150,9 +150,7 @@ export default function Navbar() {
                 <Link to="/artist-dashboard" style={authLinkStyle}>Dashboard</Link>
               )}
               <Link to="/my-bookings" style={authLinkStyle}>My Bookings</Link>
-              {user.role === 'user' && (
-                <Link to="/profile" style={authLinkStyle}>Profile</Link>
-              )}
+              <Link to="/profile" style={authLinkStyle}>Profile</Link>
               <button
                 onClick={handleLogout}
                 className="btn-gold"
@@ -268,15 +266,13 @@ export default function Navbar() {
                 >
                   My Bookings
                 </Link>
-                {user.role === 'user' && (
-                  <Link
-                    to="/profile"
-                    onClick={() => setMenuOpen(false)}
-                    style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none', display: 'block', marginBottom: '1rem' }}
-                  >
-                    Profile
-                  </Link>
-                )}
+                <Link
+                  to="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none', display: 'block', marginBottom: '1rem' }}
+                >
+                  Profile
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="btn-gold"

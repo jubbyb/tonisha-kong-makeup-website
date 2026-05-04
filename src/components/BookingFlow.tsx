@@ -305,7 +305,10 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           name, email, phone,
           service: selectedService.name,

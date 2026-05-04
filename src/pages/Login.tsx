@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-type Mode = 'login' | 'signup' | 'artist';
+type Mode = 'login' | 'signup';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -64,8 +64,6 @@ export default function Login() {
       if (mode === 'signup') {
         endpoint = '/api/auth/signup';
         body = { name, email, password };
-      } else if (mode === 'artist') {
-        endpoint = '/api/auth/artist-login';
       }
 
       const res = await fetch(endpoint, {
@@ -82,7 +80,8 @@ export default function Login() {
       if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Invalid email or password. Please try again.');
 
       setAuth(data.token!, data.user!);
-      navigate(mode === 'artist' ? '/artist-dashboard' : returnTo, { replace: true });
+      const isArtist = data.user?.role === 'artist';
+      navigate(isArtist ? '/artist-dashboard' : returnTo, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -95,14 +94,13 @@ export default function Login() {
       <div className="card w-full max-w-md bg-base-100 shadow-xl">
         <div className="card-body">
           <h1 className="text-2xl font-bold text-center mb-2">
-            {mode === 'signup' ? 'Create Account' : mode === 'artist' ? 'Artist Sign In' : 'Sign In'}
+            {mode === 'signup' ? 'Create Account' : 'Sign In'}
           </h1>
 
           {/* Mode tabs */}
           <div role="tablist" className="tabs tabs-bordered mb-4">
-            <button role="tab" className={`tab ${mode === 'login' ? 'tab-active' : ''}`} onClick={() => setMode('login')}>Client</button>
+            <button role="tab" className={`tab ${mode === 'login' ? 'tab-active' : ''}`} onClick={() => setMode('login')}>Sign In</button>
             <button role="tab" className={`tab ${mode === 'signup' ? 'tab-active' : ''}`} onClick={() => setMode('signup')}>Sign Up</button>
-            <button role="tab" className={`tab ${mode === 'artist' ? 'tab-active' : ''}`} onClick={() => setMode('artist')}>Artist</button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -132,15 +130,23 @@ export default function Login() {
               <input type="password" className="grow" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
             </label>
 
+            {mode === 'login' && (
+              <div className="text-right -mt-2">
+                <Link to="/reset-password" className="text-sm link link-primary">Forgot password?</Link>
+              </div>
+            )}
+
             {error && <div className="alert alert-error py-2 text-sm">{error}</div>}
 
             <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-              {loading ? 'Please wait...' : mode === 'signup' ? 'Create Account' : 'Sign In'}
+              {loading
+                ? <span className="loading loading-spinner loading-sm" />
+                : mode === 'signup' ? 'Create Account' : 'Sign In'
+              }
             </button>
           </form>
 
-          {mode !== 'artist' && (
-            <>
+          <>
               <div className="divider text-xs text-base-content/40">or</div>
               <button
                 type="button"
@@ -155,8 +161,7 @@ export default function Login() {
                 </svg>
                 Continue with Google
               </button>
-            </>
-          )}
+          </>
 
           {mode === 'login' && (
             <p className="text-center text-sm mt-2 text-base-content/60">
@@ -172,12 +177,6 @@ export default function Login() {
             </p>
           )}
 
-          {mode === 'artist' && (
-            <p className="text-center text-xs mt-2 text-base-content/40">
-              Artist accounts are created by the admin.{' '}
-              <Link to="/contact" className="link">Contact us</Link> to get set up.
-            </p>
-          )}
         </div>
       </div>
     </div>

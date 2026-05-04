@@ -77,6 +77,21 @@ function buildReviewRequestEmail(clientName: string, googleUrl: string): string 
 </div>`;
 }
 
+function buildPasswordResetEmail(resetUrl: string): string {
+  return `
+<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
+  <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
+  <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Reset Your Password</h1>
+  <p style="color:#a09890;line-height:1.7;">We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.</p>
+  <div style="margin:32px 0;">
+    <a href="${resetUrl}" style="display:inline-block;padding:14px 40px;border:1px solid #c9a96e;color:#c9a96e;text-decoration:none;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">
+      Reset Password
+    </a>
+  </div>
+  <p style="font-size:11px;color:#4a4540;">If you didn't request this, you can safely ignore this email. Your password will not change.</p>
+</div>`;
+}
+
 function buildBookingReceivedEmail(name: string, service: string, date: string, startTime: string, artistName?: string): string {
   const withArtist = artistName ? ` with ${artistName}` : '';
   const atTime = startTime ? ` at ${startTime}` : '';
@@ -591,6 +606,8 @@ export default {
     // ── Public: legacy anonymous booking ─────────────────────────────────────
 
     if (pathname === '/api/bookings' && method === 'POST') {
+      const bookingAuth = await getAuth(request, env);
+      const bookingUserId = (bookingAuth && !bookingAuth.artist_id) ? Number(bookingAuth.sub) : null;
       const body = await request.json<{
         name?: string;
         email?: string;
@@ -622,9 +639,10 @@ export default {
           return json({ error: 'This slot was just taken — please choose another.' }, 409);
       }
       await env.DB.prepare(
-        'INSERT INTO bookings (name, email, phone, service, date, start_time, end_time, artist_id, message, contact_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO bookings (user_id, name, email, phone, service, date, start_time, end_time, artist_id, message, contact_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       )
         .bind(
+          bookingUserId,
           body.name,
           body.email,
           body.phone ?? null,
@@ -722,6 +740,9 @@ export default {
       const user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
         .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string; role: string }>();
+      if (user && user.password_hash && !(await verifyPassword(body.password, user.password_hash))) {
+        return json({ error: 'Incorrect password. Forgot your password?' }, 401);
+      }
       if (user && user.password_hash && (await verifyPassword(body.password, user.password_hash))) {
         const role = user.role === 'artist' ? 'artist' : 'user';
         let loginArtistId: string | undefined;
@@ -757,8 +778,11 @@ export default {
       )
         .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string }>();
-      if (!artist || !(await verifyPassword(body.password, artist.password_hash))) {
-        return json({ error: 'Invalid email or password' }, 401);
+      if (!artist) {
+        return json({ error: 'No account found with that email. Try signing up.' }, 401);
+      }
+      if (!(await verifyPassword(body.password, artist.password_hash))) {
+        return json({ error: 'Incorrect password.' }, 401);
       }
       const token = await signJWT(
         {
@@ -796,6 +820,7 @@ export default {
           email: artist.email,
           name: artist.name,
           role: 'artist',
+          artist_id: String(artist.id),
           iat: Math.floor(Date.now() / 1000),
           exp: Math.floor(Date.now() / 1000) + 24 * 3600,
         },
@@ -805,6 +830,43 @@ export default {
         token,
         user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' },
       });
+    }
+
+    if (pathname === '/api/auth/forgot-password' && method === 'POST') {
+      const body = await request.json<{ email?: string }>();
+      const normalizedEmail = body.email?.toLowerCase().trim() ?? '';
+      const user = await env.DB.prepare('SELECT id FROM users WHERE LOWER(email) = ?')
+        .bind(normalizedEmail)
+        .first<{ id: number }>();
+      if (user) {
+        const resetToken = generateToken();
+        const expiresAt = new Date(Date.now() + 3_600_000).toISOString();
+        await env.DB.prepare('DELETE FROM password_reset_tokens WHERE user_id = ? AND used = 0')
+          .bind(user.id).run();
+        await env.DB.prepare(
+          'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+        ).bind(user.id, resetToken, expiresAt).run();
+        const resetUrl = `${env.SITE_URL}/reset-password?token=${resetToken}`;
+        await sendEmail(env, normalizedEmail, 'Reset Your Password — Styleja', buildPasswordResetEmail(resetUrl));
+      }
+      return json({ success: true });
+    }
+
+    if (pathname === '/api/auth/reset-password' && method === 'POST') {
+      const body = await request.json<{ token?: string; password?: string }>();
+      if (!body.token || !body.password) return json({ error: 'Missing required fields' }, 400);
+      if (body.password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400);
+      const row = await env.DB.prepare(
+        `SELECT id, user_id FROM password_reset_tokens
+         WHERE token = ? AND used = 0 AND expires_at > datetime('now')`,
+      ).bind(body.token).first<{ id: number; user_id: number }>();
+      if (!row) return json({ error: 'Invalid or expired reset link' }, 400);
+      const newHash = await hashPassword(body.password);
+      await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+        .bind(newHash, row.user_id).run();
+      await env.DB.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?')
+        .bind(row.id).run();
+      return json({ success: true });
     }
 
     // ── Google OAuth ──────────────────────────────────────────────────────────

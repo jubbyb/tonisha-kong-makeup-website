@@ -533,15 +533,24 @@ export default function ArtistProfile() {
                 <p className="text-sm text-base-content/60 mt-1">
                   The artist will confirm your appointment shortly.
                 </p>
-                <button
-                  className="btn btn-primary mt-4"
-                  onClick={() => {
-                    setBookingSlot(null);
-                    navigate('/my-bookings');
-                  }}
-                >
-                  View my bookings
-                </button>
+                {user ? (
+                  <button
+                    className="btn btn-primary mt-4"
+                    onClick={() => {
+                      setBookingSlot(null);
+                      navigate('/my-bookings');
+                    }}
+                  >
+                    View my bookings
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-ghost mt-4"
+                    onClick={() => setBookingSlot(null)}
+                  >
+                    Back to profile
+                  </button>
+                )}
               </div>
             ) : (
               <form onSubmit={handleBook} className="space-y-4">

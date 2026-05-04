@@ -14,7 +14,7 @@ export default function ProtectedRoute({ role, children }: ProtectedRouteProps) 
     return <Navigate to={`/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  if (user.role !== role) {
+  if (role === 'artist' && user.role !== 'artist') {
     return <Navigate to="/" replace />;
   }
 
