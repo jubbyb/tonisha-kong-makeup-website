@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
 import CalendarView from '../components/CalendarView';
+import { buildWhatsAppUrl, defaultBookingMessage } from '../lib/whatsapp';
 
 interface Artist {
   id: number;
@@ -18,6 +19,8 @@ interface Artist {
   tiktok_url: string | null;
   facebook_url: string | null;
   website_url: string | null;
+  whatsapp_number: string | null;
+  industries: { slug: string; name: string }[];
 }
 
 interface Slot {
@@ -199,6 +202,25 @@ export default function ArtistProfile() {
         <div className="flex-1">
           <h1 className="text-4xl font-bold mb-2">{artist.name}</h1>
           {artist.location && <p className="text-base-content/60 mb-2">📍 {artist.location}</p>}
+          {artist.industries && artist.industries.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+              {artist.industries.map((ind) => (
+                <span
+                  key={ind.slug}
+                  style={{
+                    fontSize: '0.55rem',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    border: '1px solid var(--tk-gold)',
+                    color: 'var(--tk-gold)',
+                    padding: '0.2rem 0.55rem',
+                  }}
+                >
+                  {ind.name}
+                </span>
+              ))}
+            </div>
+          )}
           {artist.specialties && (
             <div className="flex flex-wrap gap-1 mb-3">
               {artist.specialties.split(',').map((s) => (
@@ -229,6 +251,38 @@ export default function ArtistProfile() {
                   <span className="text-xs font-semibold">{s.icon}</span>
                 </a>
               ))}
+            </div>
+          )}
+          {buildWhatsAppUrl(artist.whatsapp_number, defaultBookingMessage(artist.name)) && (
+            <div className="mt-3">
+              <a
+                href={buildWhatsAppUrl(artist.whatsapp_number, defaultBookingMessage(artist.name))!}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  color: '#25d366',
+                  border: '1px solid #25d366',
+                  padding: '0.4rem 1rem',
+                  textDecoration: 'none',
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = '#25d366';
+                  (e.currentTarget as HTMLElement).style.color = '#fff';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  (e.currentTarget as HTMLElement).style.color = '#25d366';
+                }}
+              >
+                Book on WhatsApp
+              </a>
             </div>
           )}
         </div>
@@ -275,20 +329,36 @@ export default function ArtistProfile() {
         <section className="mb-10">
           <div className="divider">Services</div>
           <ul className="divide-y divide-base-300 border border-base-300 rounded-lg">
-            {services.map((s) => (
-              <li key={s.id} className="px-4 py-3 flex items-baseline justify-between gap-3">
-                <div>
-                  <div className="font-medium">{s.name}</div>
-                  {s.description && (
-                    <div className="text-sm text-base-content/60">{s.description}</div>
-                  )}
-                </div>
-                <div className="text-right whitespace-nowrap">
-                  {s.price != null && <div className="font-semibold">${s.price}</div>}
-                  <div className="text-xs text-base-content/60">{s.duration_min} min</div>
-                </div>
-              </li>
-            ))}
+            {services.map((s) => {
+              const waUrl = buildWhatsAppUrl(
+                artist.whatsapp_number,
+                defaultBookingMessage(artist.name, s.name),
+              );
+              return (
+                <li key={s.id} className="px-4 py-3 flex items-baseline justify-between gap-3">
+                  <div>
+                    <div className="font-medium">{s.name}</div>
+                    {s.description && (
+                      <div className="text-sm text-base-content/60">{s.description}</div>
+                    )}
+                    {waUrl && (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '0.65rem', color: '#25d366', letterSpacing: '0.1em', textDecoration: 'none', display: 'inline-block', marginTop: '0.3rem' }}
+                      >
+                        Book on WhatsApp →
+                      </a>
+                    )}
+                  </div>
+                  <div className="text-right whitespace-nowrap">
+                    {s.price != null && <div className="font-semibold">${s.price}</div>}
+                    <div className="text-xs text-base-content/60">{s.duration_min} min</div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BRAND } from '../constants/brand';
 
 // ── Testimonials ──────────────────────────────────────────────────────────────
 
@@ -202,8 +203,8 @@ const Home: React.FC = () => {
       >
         {/* Background photo */}
         <img
-          src="https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-PersonalTonishaKong__IMG0118_1697819890726.jpeg"
-          alt="Tonisha Kong"
+          src="https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/e889690c-deae-484d-876f-fd818921bd96-20190806_143114-01.jpeg"
+          alt="Styleja — beauty and style platform"
           style={{
             position: 'absolute',
             inset: 0,
@@ -248,7 +249,7 @@ const Home: React.FC = () => {
               marginBottom: '1rem',
             }}
           >
-            Makeup Artist · Kingston, Jamaica
+            Beauty · Hair · Nails · Barber · Styling · Tailoring
           </p>
 
           {/* Main title */}
@@ -263,9 +264,7 @@ const Home: React.FC = () => {
               marginBottom: '1.5rem',
             }}
           >
-            Tonisha
-            <br />
-            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Kong</span>
+            Styleja
           </h1>
 
           {/* Tagline */}
@@ -276,25 +275,25 @@ const Home: React.FC = () => {
               fontSize: '0.95rem',
               fontWeight: 300,
               color: 'var(--tk-text-muted)',
-              maxWidth: '380px',
+              maxWidth: '420px',
               lineHeight: 1.6,
               marginBottom: '2.5rem',
             }}
           >
-            Enhancing natural beauty through artistry — for weddings, editorial, and every occasion.
+            {BRAND.tagline}
           </p>
 
           {/* CTA */}
           <div className="anim-fade-up delay-4" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button className="btn-gold" onClick={() => navigate('/services')}>
-              Book a Session
+            <button className="btn-gold" onClick={() => navigate('/industries')}>
+              Explore Industries
             </button>
             <button
               className="btn-gold"
-              onClick={() => navigate('/about')}
+              onClick={() => navigate('/artists')}
               style={{ borderColor: 'var(--tk-border-soft)', color: 'var(--tk-text-muted)' }}
             >
-              My Story
+              Find an Artist
             </button>
           </div>
         </div>
@@ -357,7 +356,7 @@ const Home: React.FC = () => {
               marginBottom: '1.5rem',
             }}
           >
-            "My makeup style is all about enhancing natural beauty — not masking it."
+            "Every artist here is chosen for their craft — book the one who speaks to your vision."
           </blockquote>
           <p
             style={{
@@ -367,7 +366,7 @@ const Home: React.FC = () => {
               color: 'var(--tk-gold)',
             }}
           >
-            — Tonisha Kong
+            — {BRAND.name}
           </p>
         </div>
       </section>
@@ -465,7 +464,7 @@ const Home: React.FC = () => {
             marginBottom: '1.5rem',
           }}
         >
-          Professional Services
+          Six Disciplines
         </p>
         <h2
           className="font-display"
@@ -476,7 +475,7 @@ const Home: React.FC = () => {
             marginBottom: '1rem',
           }}
         >
-          From Bridal to Editorial
+          Discover artists across six industries
         </h2>
         <p
           style={{
@@ -487,10 +486,10 @@ const Home: React.FC = () => {
             lineHeight: 1.7,
           }}
         >
-          Specializing in weddings, photoshoots, fashion, and master makeup classes.
+          Makeup, hair, nails, barber, personal styling, and tailoring — all on one platform.
         </p>
-        <button className="btn-gold" onClick={() => navigate('/services')}>
-          View Services
+        <button className="btn-gold" onClick={() => navigate('/industries')}>
+          Explore Industries
         </button>
       </section>
     </div>

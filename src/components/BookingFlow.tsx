@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
+import { buildWhatsAppUrl, defaultBookingMessage } from '../lib/whatsapp';
 
 interface Artist {
   id: number;
@@ -8,6 +9,8 @@ interface Artist {
   bio: string | null;
   specialties: string | null;
   photo_url: string | null;
+  whatsapp_number: string | null;
+  industries: { slug: string; name: string }[];
 }
 
 interface Slot {
@@ -85,6 +88,8 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
   const [artists, setArtists] = useState<Artist[]>([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+  const [artistIndustryFilter, setArtistIndustryFilter] = useState('');
+  const [bookingIndustries, setBookingIndustries] = useState<{ slug: string; name: string }[]>([]);
 
   // ── Service ──────────────────────────────────────────────────────────────────
   const [artistCatalog, setArtistCatalog] = useState<CatalogService[]>([]);
@@ -150,8 +155,12 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
     return errs;
   };
 
-  // ── Fetch artists on mount ───────────────────────────────────────────────────
+  // ── Fetch artists + industries on mount ─────────────────────────────────────
   useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json() as Promise<{ slug: string; name: string }[]>)
+      .then(setBookingIndustries)
+      .catch(() => {});
     fetch('/api/artists')
       .then((r) => r.json() as Promise<Artist[]>)
       .then((data) => {
@@ -405,6 +414,45 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
           Select Your Artist
         </h3>
 
+        {/* Industry filter pills */}
+        {bookingIndustries.length > 0 && !artistsLoading && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+            <button
+              onClick={() => setArtistIndustryFilter('')}
+              style={{
+                padding: '0.3rem 0.75rem',
+                fontSize: '0.6rem',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                border: `1px solid ${!artistIndustryFilter ? 'var(--tk-gold)' : 'var(--tk-border)'}`,
+                background: !artistIndustryFilter ? 'var(--tk-gold)' : 'transparent',
+                color: !artistIndustryFilter ? 'var(--tk-bg)' : 'var(--tk-text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              All
+            </button>
+            {bookingIndustries.map((ind) => (
+              <button
+                key={ind.slug}
+                onClick={() => setArtistIndustryFilter(ind.slug)}
+                style={{
+                  padding: '0.3rem 0.75rem',
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  border: `1px solid ${artistIndustryFilter === ind.slug ? 'var(--tk-gold)' : 'var(--tk-border)'}`,
+                  background: artistIndustryFilter === ind.slug ? 'var(--tk-gold)' : 'transparent',
+                  color: artistIndustryFilter === ind.slug ? 'var(--tk-bg)' : 'var(--tk-text-muted)',
+                  cursor: 'pointer',
+                }}
+              >
+                {ind.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {artistsLoading ? (
           <p style={{ color: 'var(--tk-text-dim)', fontSize: '0.82rem', letterSpacing: '0.08em' }}>Loading artists...</p>
         ) : artists.length === 0 ? (
@@ -413,7 +461,10 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {artists.map((artist) => (
+            {artists.filter((a) =>
+              !artistIndustryFilter ||
+              a.industries.some((i) => i.slug === artistIndustryFilter)
+            ).map((artist) => (
               <button
                 key={artist.id}
                 onClick={() => { setSelectedArtist(artist); setStep('service'); }}
@@ -870,11 +921,34 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ preselectedService, preselect
       <p style={{ fontSize: '0.88rem', color: 'var(--tk-text-dim)', lineHeight: 1.75, marginBottom: '2rem', maxWidth: '360px', margin: '0 auto 2rem' }}>
         Your booking request has been received.{selectedArtist ? ` ${selectedArtist.name} will confirm your appointment shortly.` : ''}
       </p>
-      {onClose && (
-        <button className="btn-gold" onClick={onClose}>
-          Close
-        </button>
-      )}
+      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        {selectedArtist && buildWhatsAppUrl(
+          selectedArtist.whatsapp_number,
+          defaultBookingMessage(selectedArtist.name, selectedService?.name),
+        ) && (
+          <a
+            href={buildWhatsAppUrl(selectedArtist.whatsapp_number, defaultBookingMessage(selectedArtist.name, selectedService?.name))!}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              color: '#25d366',
+              border: '1px solid #25d366',
+              padding: '0.5rem 1.25rem',
+              textDecoration: 'none',
+            }}
+          >
+            Follow up on WhatsApp
+          </a>
+        )}
+        {onClose && (
+          <button className="btn-gold" onClick={onClose}>
+            Close
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { BRAND } from '../constants/brand';
 
 function SunIcon() {
   return (
@@ -42,6 +43,7 @@ export default function Navbar() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/about', label: 'About' },
+    { to: '/industries', label: 'Industries' },
     { to: '/artists', label: 'Artists' },
     { to: '/services', label: 'Services' },
     { to: '/classes', label: 'Classes' },
@@ -92,7 +94,7 @@ export default function Navbar() {
             textTransform: 'uppercase',
           }}
         >
-          Tonisha Kong
+          {BRAND.name}
         </Link>
 
         {/* Desktop links */}

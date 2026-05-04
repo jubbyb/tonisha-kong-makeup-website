@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import BookingFlow from '../components/BookingFlow';
 
 interface CatalogService {
@@ -27,16 +28,37 @@ interface CatalogResponse {
   }[];
 }
 
+interface Industry {
+  id: number;
+  slug: string;
+  name: string;
+}
+
 const Services: React.FC = () => {
-  const [services, setServices] = useState<CatalogService[]>([]);
+  const [allServices, setAllServices] = useState<CatalogService[]>([]);
+  const [industries, setIndustries] = useState<Industry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [showModal, setShowModal] = useState(false);
   const [selectedService, setSelectedService] = useState<CatalogService | null>(null);
 
+  const activeIndustry = searchParams.get('industry') ?? '';
+
   useEffect(() => {
-    fetch('/api/service-catalog')
+    fetch('/api/industries')
+      .then((r) => r.json() as Promise<Industry[]>)
+      .then(setIndustries)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    const url = activeIndustry
+      ? `/api/service-catalog?industry=${activeIndustry}`
+      : '/api/service-catalog';
+    fetch(url)
       .then((res) => res.json() as Promise<CatalogResponse[]>)
       .then((catalog) => {
         const flat: CatalogService[] = [];
@@ -48,14 +70,19 @@ const Services: React.FC = () => {
             }
           }
         }
-        setServices(flat);
+        setAllServices(flat);
         setLoading(false);
       })
       .catch(() => {
         setError('Failed to load services.');
         setLoading(false);
       });
-  }, []);
+  }, [activeIndustry]);
+
+  const setIndustry = (slug: string) => {
+    if (slug) setSearchParams({ industry: slug });
+    else setSearchParams({});
+  };
 
   const handleBookNow = (service: CatalogService) => {
     setSelectedService(service);
@@ -67,185 +94,183 @@ const Services: React.FC = () => {
     setSelectedService(null);
   };
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '60vh',
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: '0.75rem',
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          color: 'var(--tk-text-dim)',
-        }}
-      >
-        Loading Services...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '60vh',
-          color: 'var(--color-error)',
-        }}
-      >
-        {error}
-      </div>
-    );
-  }
+  // Group services by category
+  const grouped = allServices.reduce<Record<string, CatalogService[]>>((acc, svc) => {
+    if (!acc[svc.category]) acc[svc.category] = [];
+    acc[svc.category].push(svc);
+    return acc;
+  }, {});
+  const groupKeys = Object.keys(grouped);
 
   return (
     <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
       {/* Header */}
-      <div
-        style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '5rem 2rem 3rem',
-        }}
-      >
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '5rem 2rem 2rem' }}>
         <p
           className="anim-slide-right"
-          style={{
-            fontSize: '0.65rem',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: 'var(--tk-gold)',
-            marginBottom: '1rem',
-          }}
+          style={{ fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: 'var(--tk-gold)', marginBottom: '1rem' }}
         >
-          What I Offer
+          What We Offer
         </p>
         <h1
           className="anim-fade-up delay-1 font-display"
-          style={{
-            fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-            fontWeight: 300,
-            lineHeight: 1.05,
-            color: 'var(--tk-text)',
-          }}
+          style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', fontWeight: 300, lineHeight: 1.05, color: 'var(--tk-text)', marginBottom: '2rem' }}
         >
           Services
         </h1>
-      </div>
 
-      {/* Services grid */}
-      <div
-        style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '0 2rem 6rem',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '1px',
-          background: 'var(--tk-border)',
-          border: '1px solid var(--tk-border)',
-        }}
-      >
-        {services.map((service, i) => (
+        {/* Industry filter pills */}
+        {industries.length > 0 && (
           <div
-            key={service.id}
-            className={`anim-fade-up delay-${Math.min(i + 1, 8)} lux-card`}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              background: 'var(--tk-bg)',
-            }}
+            className="anim-fade-up delay-2"
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '3rem' }}
           >
-            <div
+            <button
+              onClick={() => setIndustry('')}
               style={{
-                padding: '2rem',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
+                padding: '0.4rem 1rem',
+                fontSize: '0.65rem',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                border: `1px solid ${!activeIndustry ? 'var(--tk-gold)' : 'var(--tk-border)'}`,
+                background: !activeIndustry ? 'var(--tk-gold)' : 'transparent',
+                color: !activeIndustry ? 'var(--tk-bg)' : 'var(--tk-text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
               }}
             >
-              <p
+              All
+            </button>
+            {industries.map((ind) => (
+              <button
+                key={ind.slug}
+                onClick={() => setIndustry(ind.slug)}
                 style={{
-                  fontSize: '0.6rem',
-                  letterSpacing: '0.25em',
+                  padding: '0.4rem 1rem',
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.15em',
                   textTransform: 'uppercase',
-                  color: 'var(--tk-gold)',
-                  margin: 0,
+                  border: `1px solid ${activeIndustry === ind.slug ? 'var(--tk-gold)' : 'var(--tk-border)'}`,
+                  background: activeIndustry === ind.slug ? 'var(--tk-gold)' : 'transparent',
+                  color: activeIndustry === ind.slug ? 'var(--tk-bg)' : 'var(--tk-text-muted)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
                 }}
               >
-                {service.category}
-              </p>
+                {ind.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '40vh',
+            fontSize: '0.75rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--tk-text-dim)',
+          }}
+        >
+          Loading Services...
+        </div>
+      ) : error ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', color: 'var(--color-error)' }}>
+          {error}
+        </div>
+      ) : groupKeys.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--tk-text-dim)' }}>
+          No services available{activeIndustry ? ` for ${activeIndustry}` : ''}.
+        </div>
+      ) : (
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 2rem 6rem' }}>
+          {groupKeys.map((category) => (
+            <div key={category} style={{ marginBottom: '4rem' }}>
+              {/* Category heading */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                <div className="divider-gold" />
+                <h2 style={{ fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: 'var(--tk-text-dim)', whiteSpace: 'nowrap' }}>
+                  {category}
+                </h2>
+              </div>
 
               <div
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gap: '1px',
+                  background: 'var(--tk-border)',
+                  border: '1px solid var(--tk-border)',
                 }}
               >
-                <h2
-                  className="font-display"
-                  style={{
-                    fontSize: '1.4rem',
-                    fontWeight: 400,
-                    color: 'var(--tk-text)',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {service.name}
-                </h2>
-                {service.price != null && (
-                  <span
-                    style={{
-                      fontFamily: "'Cormorant Garamond', serif",
-                      fontSize: '1.2rem',
-                      fontWeight: 300,
-                      color: 'var(--tk-gold)',
-                      whiteSpace: 'nowrap',
-                      marginLeft: '1rem',
-                    }}
+                {grouped[category].map((service, i) => (
+                  <div
+                    key={service.id}
+                    className={`anim-fade-up delay-${Math.min(i + 1, 8)} lux-card`}
+                    style={{ display: 'flex', flexDirection: 'column', background: 'var(--tk-bg)' }}
                   >
-                    ${service.price}
-                  </span>
-                )}
+                    <div
+                      style={{ padding: '2rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+                    >
+                      <p style={{ fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--tk-gold)', margin: 0 }}>
+                        {service.subcategory}
+                      </p>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <h3
+                          className="font-display"
+                          style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--tk-text)', lineHeight: 1.2 }}
+                        >
+                          {service.name}
+                        </h3>
+                        {service.price != null && (
+                          <span
+                            style={{
+                              fontFamily: "'Cormorant Garamond', serif",
+                              fontSize: '1.2rem',
+                              fontWeight: 300,
+                              color: 'var(--tk-gold)',
+                              whiteSpace: 'nowrap',
+                              marginLeft: '1rem',
+                            }}
+                          >
+                            ${service.price}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
+
+                      {service.description && (
+                        <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--tk-text-dim)', flex: 1 }}>
+                          {service.description}
+                        </p>
+                      )}
+
+                      <p style={{ fontSize: '0.75rem', color: 'var(--tk-text-dim)', margin: 0 }}>
+                        {service.duration_min} min
+                      </p>
+
+                      <button
+                        className="btn-gold"
+                        onClick={() => handleBookNow(service)}
+                        style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
+                      >
+                        Book Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
-
-              {service.description && (
-                <p
-                  style={{
-                    fontSize: '0.88rem',
-                    lineHeight: 1.7,
-                    color: 'var(--tk-text-dim)',
-                    flex: 1,
-                  }}
-                >
-                  {service.description}
-                </p>
-              )}
-
-              <p style={{ fontSize: '0.75rem', color: 'var(--tk-text-dim)', margin: 0 }}>
-                {service.duration_min} min
-              </p>
-
-              <button
-                className="btn-gold"
-                onClick={() => handleBookNow(service)}
-                style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
-              >
-                Book Now
-              </button>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Booking Modal */}
       {showModal && (
@@ -261,9 +286,7 @@ const Services: React.FC = () => {
             backdropFilter: 'blur(8px)',
             padding: '1rem',
           }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) handleCloseModal();
-          }}
+          onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}
         >
           <div
             style={{
@@ -278,7 +301,6 @@ const Services: React.FC = () => {
             }}
             className="anim-fade-up"
           >
-            {/* Close */}
             <button
               onClick={handleCloseModal}
               style={{

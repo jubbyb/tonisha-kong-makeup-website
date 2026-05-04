@@ -17,6 +17,8 @@ import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Artists from './pages/Artists';
 import ArtistProfile from './pages/ArtistProfile';
+import Industries from './pages/Industries';
+import IndustryHub from './pages/IndustryHub';
 import MyBookings from './pages/MyBookings';
 import Profile from './pages/Profile';
 import ArtistDashboard from './pages/ArtistDashboard';
@@ -40,6 +42,8 @@ createRoot(document.getElementById('root')!).render(
               <Route path="login" element={<Login />} />
               <Route path="artists" element={<Artists />} />
               <Route path="artists/:slug" element={<ArtistProfile />} />
+              <Route path="industries" element={<Industries />} />
+              <Route path="industries/:slug" element={<IndustryHub />} />
               <Route
                 path="my-bookings"
                 element={
