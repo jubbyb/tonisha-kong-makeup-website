@@ -1,17 +1,33 @@
-// name = "tonisha-kong-makeup-worker"
-// // main = "./src/worker.ts"
-// compatibility_date = "2024-07-07"
-// assets = { not_found_handling = "single-page-application" }
-
-// [site]
-// bucket = "./dist" 
-
 {
-  "name": "tonisha-kong-makeup-website",
-  "compatibility_date": "2025-07-05",
-  "assets": {
-    "not_found_handling": "single-page-application"
-  },
-  "main": "./worker/index.ts"
+	"name": "tonisha-kong-makeup-website",
+	"compatibility_date": "2025-07-05",
+	"assets": {
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": true
+	},
+	"main": "./worker/index.ts",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "tonisha-kong-db",
+			"database_id": "76796839-90f1-43dc-9615-e215cf8246dd"
+			// "remote": true
+		}
+		// ,
+		// {
+		// 	"binding": "tonisha_kong_db",
+		// 	"database_name": "tonisha-kong-db",
+		// 	"database_id": "76796839-90f1-43dc-9615-e215cf8246dd",
+		// 	"remote": true
+		// }
+	],
+	// "triggers": { "crons": ["0 * * * *"] },  // uncomment before deploying to production
+	"vars": {
+		"SITE_URL": "https://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev",
+		"FROM_EMAIL": "tonisha@askjubi.com",
+		"GOOGLE_REVIEW_URL": "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK",
+		// "GOOGLE_REDIRECT_URI": "http://localhost:5173/api/auth/google/callback"
+		"GOOGLE_REDIRECT_URI": "https://claude-changes-tonisha-kong-makeup-website.jubbyb.workers.dev/api/auth/google/callback"
+	}
 }
-

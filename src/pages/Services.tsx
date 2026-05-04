@@ -1,96 +1,65 @@
 import React, { useEffect, useState } from 'react';
-// import { collection, getDocs } from 'firebase/firestore';
-// import { db } from '../firebase';
-// import { useNavigate } from "react-router-dom";
+import BookingFlow from '../components/BookingFlow';
 
-interface Service {
-  id: string;
+interface CatalogService {
+  id: number;
   name: string;
-  description: string;
-  price: number;
+  description: string | null;
+  price: number | null;
+  duration_min: number;
+  category: string;
+  subcategory: string;
 }
 
-// 1. Add your dummy data here ...remove after you have your Firestore data working
-const dummyServices: Service[] = [
-  {
-    id: '1',
-    name: 'Bridal Makeup',
-    description: 'Professional bridal makeup for your special day, including trial session.',
-    price: 250,
-  },
-  {
-    id: '2',
-    name: 'Event Glam',
-    description: 'Full-face makeup for parties, proms, and special occasions.',
-    price: 120,
-  },
-  {
-    id: '3',
-    name: 'Makeup Lesson',
-    description: 'One-on-one makeup lesson tailored to your needs and skill level.',
-    price: 90,
-  },
-  {
-    id: '4',
-    name: 'Photoshoot Makeup',
-    description: 'Camera-ready makeup for photoshoots and media appearances.',
-    price: 150,
-  },
-  {
-    id: '5',
-    name: 'Natural Look',
-    description: 'Subtle, natural makeup for everyday confidence.',
-    price: 70,
-  },
-  {
-    id: '6',
-    name: 'Group Class',
-    description: 'Group makeup class for friends or team building events.',
-    price: 200,
-  },
-];
+interface CatalogResponse {
+  id: number;
+  name: string;
+  subcategories: {
+    id: number;
+    name: string;
+    services: {
+      id: number;
+      name: string;
+      description: string | null;
+      price: number | null;
+      duration_min: number;
+    }[];
+  }[];
+}
 
 const Services: React.FC = () => {
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<CatalogService[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [showModal, setShowModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState(''); // <-- Add phone state
-  const [date, setDate] = useState('');
-  const [message, setMessage] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [selectedService, setSelectedService] = useState<CatalogService | null>(null);
 
-  // // Uncomment the following code to fetch data from Firestore
-  // useEffect(() => {
-  //   const fetchServices = async () => {
-  //     const servicesCollectionRef = collection(db, 'services');
-  //     const data = await getDocs(servicesCollectionRef);
-  //     setServices(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })) as Service[]);
-  //     setLoading(false);
-  //   };
-
-  //   fetchServices();
-  // }, []);
-
-  // 2. Use dummy data instead of Firestore
   useEffect(() => {
-    setTimeout(() => {
-      setServices(dummyServices);
-      setLoading(false);
-    }, 500); // simulate loading
+    fetch('/api/service-catalog')
+      .then((res) => res.json() as Promise<CatalogResponse[]>)
+      .then((catalog) => {
+        const flat: CatalogService[] = [];
+        for (const cat of catalog) {
+          if (cat.name === 'Lessons & Education') continue;
+          for (const sub of cat.subcategories) {
+            for (const svc of sub.services) {
+              flat.push({ ...svc, category: cat.name, subcategory: sub.name });
+            }
+          }
+        }
+        setServices(flat);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load services.');
+        setLoading(false);
+      });
   }, []);
 
-  const handleBookNow = (service: Service) => {
+  const handleBookNow = (service: CatalogService) => {
     setSelectedService(service);
     setShowModal(true);
-    setSuccess(false);
-    setName('');
-    setEmail('');
-    setPhone(''); // <-- Reset phone
-    setDate('');
-    setMessage('');
   };
 
   const handleCloseModal = () => {
@@ -98,159 +67,244 @@ const Services: React.FC = () => {
     setSelectedService(null);
   };
 
-  const handleBookingSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Here you would send booking data to Firestore or your backend
-    setSuccess(true);
-    setTimeout(() => {
-      setShowModal(false);
-    }, 1500);
-  };
-
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Loading Services...</div>;
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: '0.75rem',
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'var(--tk-text-dim)',
+        }}
+      >
+        Loading Services...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          color: 'var(--color-error)',
+        }}
+      >
+        {error}
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold text-center mb-8">Our Services</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {services.map((service) => (
-          <div key={service.id} className="card bg-base-100 w-96 shadow-sm">
-            <figure>
-              <img
-                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                alt={service.name}
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">
-                {service.name} - ${service.price}
-              </h2>
-              <p>{service.description}</p>
-              <div className="card-actions justify-end">
-                <button className="btn btn-primary" onClick={() => handleBookNow(service)}>
-                  Book Now
-                </button>
+    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
+      {/* Header */}
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '5rem 2rem 3rem',
+        }}
+      >
+        <p
+          className="anim-slide-right"
+          style={{
+            fontSize: '0.65rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--tk-gold)',
+            marginBottom: '1rem',
+          }}
+        >
+          What I Offer
+        </p>
+        <h1
+          className="anim-fade-up delay-1 font-display"
+          style={{
+            fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+            fontWeight: 300,
+            lineHeight: 1.05,
+            color: 'var(--tk-text)',
+          }}
+        >
+          Services
+        </h1>
+      </div>
+
+      {/* Services grid */}
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 2rem 6rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+          gap: '1px',
+          background: 'var(--tk-border)',
+          border: '1px solid var(--tk-border)',
+        }}
+      >
+        {services.map((service, i) => (
+          <div
+            key={service.id}
+            className={`anim-fade-up delay-${Math.min(i + 1, 8)} lux-card`}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--tk-bg)',
+            }}
+          >
+            <div
+              style={{
+                padding: '2rem',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  color: 'var(--tk-gold)',
+                  margin: 0,
+                }}
+              >
+                {service.category}
+              </p>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <h2
+                  className="font-display"
+                  style={{
+                    fontSize: '1.4rem',
+                    fontWeight: 400,
+                    color: 'var(--tk-text)',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {service.name}
+                </h2>
+                {service.price != null && (
+                  <span
+                    style={{
+                      fontFamily: "'Cormorant Garamond', serif",
+                      fontSize: '1.2rem',
+                      fontWeight: 300,
+                      color: 'var(--tk-gold)',
+                      whiteSpace: 'nowrap',
+                      marginLeft: '1rem',
+                    }}
+                  >
+                    ${service.price}
+                  </span>
+                )}
               </div>
+
+              <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
+
+              {service.description && (
+                <p
+                  style={{
+                    fontSize: '0.88rem',
+                    lineHeight: 1.7,
+                    color: 'var(--tk-text-dim)',
+                    flex: 1,
+                  }}
+                >
+                  {service.description}
+                </p>
+              )}
+
+              <p style={{ fontSize: '0.75rem', color: 'var(--tk-text-dim)', margin: 0 }}>
+                {service.duration_min} min
+              </p>
+
+              <button
+                className="btn-gold"
+                onClick={() => handleBookNow(service)}
+                style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
+              >
+                Book Now
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Booking Modal */}
       {showModal && (
-        <dialog open className="modal modal-open">
-          <div className="modal-box">
-            <form method="dialog">
-              <button
-                type="button"
-                className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                onClick={handleCloseModal}
-              >
-                ✕
-              </button>
-            </form>
-            <h3 className="font-bold text-lg mb-4 text-center">Book {selectedService?.name}</h3>
-            <form onSubmit={handleBookingSubmit} className="space-y-4">
-              <div className="form-control">
-                <label className="input w-full input-bordered flex items-center gap-2">
-                  <span className="label">Name</span>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'oklch(5% 0 0 / 0.85)',
+            backdropFilter: 'blur(8px)',
+            padding: '1rem',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCloseModal();
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--tk-bg-raised)',
+              border: '1px solid var(--tk-border)',
+              padding: '2.5rem',
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+            }}
+            className="anim-fade-up"
+          >
+            {/* Close */}
+            <button
+              onClick={handleCloseModal}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--tk-text-faint)',
+                fontSize: '1.2rem',
+                lineHeight: 1,
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text-faint)')}
+            >
+              ✕
+            </button>
 
-                  <input
-                    type="text"
-                    className="grow"
-                    placeholder=""
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className="form-control mb-4">
-                <label className="input w-full input-bordered flex items-center gap-2">
-                  <span className="label">Email</span>
-
-                  <input
-                    type="email"
-                    className="grow"
-                    placeholder=""
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className="form-control mb-4">
-                <label className="input w-full input-bordered flex items-center gap-2">
-                  <span className="label">Phone</span>
-                  <input
-                    type="tel"
-                    className="tabular-nums"
-                    placeholder=""
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    pattern="[0-9]*"
-                    minLength={10}
-                    maxLength={10}
-                    title="Must be 10 digits"
-                  />
-                </label>
-              </div>
-
-              <div className="form-control">
-                <label className="input w-full input-bordered flex items-center gap-2">
-                  <span className="label">Service</span>
-
-                  <input
-                    type="text"
-                    className="grow"
-                    value={selectedService?.name || ''}
-                    disabled
-                    readOnly
-                  />
-                </label>
-              </div>
-
-              <div className="form-control">
-                <label className="input w-full input-bordered flex items-center gap-2">
-                  <span className="label">Date</span>
-
-                  <input
-                    type="datetime-local"
-                    className="grow"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-              <div className="form-control">
-                <label className="textarea w-full input-bordered flex items-center gap-2">
-                  <span className="label">Message</span>
-
-                  <textarea
-                    className="grow"
-                    placeholder="Additional details (optional)"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                  ></textarea>
-                </label>
-              </div>
-              <div className="form-control flex justify-center mt-4">
-                <button type="submit" className="btn btn-primary">
-                  Confirm Booking
-                </button>
-              </div>
-              {success && (
-                <div className="alert alert-success mt-4 text-center">Booking submitted!</div>
-              )}
-            </form>
+            <BookingFlow
+              preselectedService={selectedService?.name}
+              onClose={handleCloseModal}
+            />
           </div>
-        </dialog>
+        </div>
       )}
     </div>
   );

@@ -1,190 +1,376 @@
 import React, { useEffect, useState } from 'react';
-// import { collection, getDocs } from 'firebase/firestore';
-// import { db } from '../firebase';
+import BookingFlow from '../components/BookingFlow';
 
 interface ClassItem {
-  id: string;
+  id: number;
   name: string;
   description: string;
   date: string;
   price: number;
-  certificate?: boolean;
-  mentoring?: boolean; // add flag for 1-on-1 Mentoring
+  certificate: number;
+  mentoring: number;
+  host_artist_id: number | null;
+  host_name: string | null;
+  total_slots: number;
+  slots_remaining: number | null;
+  duration_min: number;
 }
-
-// 1. Add your dummy data here ...remove after you have your Firestore data working
-const dummyClasses: ClassItem[] = [
-  {
-    id: '1',
-    name: 'Beginner Makeup Basics',
-    description:
-      'Learn the fundamentals of makeup application, including skin prep, foundation, and natural looks.',
-    date: '2025-08-10T14:00',
-    price: 60,
-    certificate: true,
-    mentoring: false,
-  },
-  {
-    id: '2',
-    name: 'Smokey Eye Masterclass',
-    description:
-      'Master the art of the smokey eye with step-by-step guidance and hands-on practice.',
-    date: '2025-08-17T16:00',
-    price: 75,
-    certificate: false,
-    mentoring: true,
-  },
-  {
-    id: '3',
-    name: 'Bridal Makeup Workshop',
-    description:
-      'Perfect for aspiring bridal artists or brides-to-be. Covers long-lasting, flawless bridal looks.',
-    date: '2025-08-24T13:00',
-    price: 100,
-    certificate: true,
-    mentoring: true,
-  },
-  {
-    id: '4',
-    name: 'Contouring & Highlighting',
-    description: 'Learn advanced contouring and highlighting techniques for all face shapes.',
-    date: '2025-09-01T15:00',
-    price: 80,
-    certificate: false,
-    mentoring: false,
-  },
-  {
-    id: '5',
-    name: 'Makeup for Photography',
-    description:
-      'Discover tips and tricks for makeup that looks great on camera and under studio lights.',
-    date: '2025-09-08T17:00',
-    price: 90,
-    certificate: true,
-    mentoring: false,
-  },
-];
 
 const Classes: React.FC = () => {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
-  // useEffect(() => {
-  //   const fetchClasses = async () => {
-  //     const classesCollectionRef = collection(db, 'classes');
-  //     const data = await getDocs(classesCollectionRef);
-  //     setClasses(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })) as ClassItem[]);
-  //     setLoading(false);
-  //   };
-
-  //   fetchClasses();
-  // }, []);
+  const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
 
   useEffect(() => {
-    // For local testing, load dummy data
-    setClasses(dummyClasses);
-    setLoading(false);
+    fetch('/api/classes')
+      .then((res) => res.json() as Promise<ClassItem[]>)
+      .then((data) => {
+        setClasses(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load classes.');
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Loading Classes...</div>;
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          fontSize: '0.75rem',
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'var(--tk-text-dim)',
+        }}
+      >
+        Loading Classes...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          color: 'var(--color-error)',
+        }}
+      >
+        {error}
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold text-center mb-8">Our Classes</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {classes.map((classItem, idx) => (
-          <div key={classItem.id} className="card w-96 bg-base-100 shadow-sm">
-            <div className="card-body">
-              {idx === 0 && <span className="badge badge-xs badge-warning">Most Popular</span>}
-              <div className="flex justify-between">
-                <h2 className="text-3xl font-bold">{classItem.name}</h2>
-                <span className="text-xl">${classItem.price}</span>
-              </div>
-              <ul className="mt-6 flex flex-col gap-2 text-xs">
-                <li>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="size-4 me-2 inline-block text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>{classItem.description}</span>
-                </li>
-                <li>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="size-4 me-2 inline-block text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Date: {new Date(classItem.date).toLocaleString()}</span>
-                </li>
-                <li className={classItem.certificate ? '' : 'opacity-50'}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`size-4 me-2 inline-block ${classItem.certificate ? 'text-success' : 'text-base-content/50'}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className={classItem.certificate ? '' : 'line-through'}>
-                    Certificate Included
-                  </span>
-                </li>
-                <li className={classItem.mentoring ? '' : 'opacity-50'}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`size-4 me-2 inline-block ${classItem.mentoring ? 'text-success' : 'text-base-content/50'}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className={classItem.mentoring ? '' : 'line-through'}>
-                    1-on-1 Mentoring
-                  </span>
-                </li>
-              </ul>
-              <div className="mt-6">
-                <button className="btn btn-primary btn-block">Enquire</button>
-              </div>
-            </div>
-          </div>
-        ))}
+    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
+      {/* Header */}
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '5rem 2rem 3rem',
+        }}
+      >
+        <p
+          className="anim-slide-right"
+          style={{
+            fontSize: '0.65rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--tk-gold)',
+            marginBottom: '1rem',
+          }}
+        >
+          Learn the Craft
+        </p>
+        <h1
+          className="anim-fade-up delay-1 font-display"
+          style={{
+            fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+            fontWeight: 300,
+            lineHeight: 1.05,
+            color: 'var(--tk-text)',
+            marginBottom: '1rem',
+          }}
+        >
+          Master Classes
+        </h1>
+        <p
+          className="anim-fade-up delay-2"
+          style={{
+            fontSize: '0.9rem',
+            color: 'var(--tk-text-dim)',
+            maxWidth: '500px',
+            lineHeight: 1.7,
+          }}
+        >
+          Hands-on training sessions for aspiring makeup artists and beauty enthusiasts.
+        </p>
       </div>
+
+      {/* Classes grid */}
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '2rem 2rem 6rem',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: '1px',
+          background: 'var(--tk-border)',
+          border: '1px solid var(--tk-border)',
+        }}
+      >
+        {classes.map((classItem, i) => {
+          const hasCertificate = !!classItem.certificate;
+          const hasMentoring = !!classItem.mentoring;
+
+          return (
+            <div
+              key={classItem.id}
+              className={`anim-fade-up delay-${Math.min(i + 1, 8)}`}
+              style={{
+                background: 'var(--tk-bg)',
+                padding: '2.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.25rem',
+                transition: 'background-color 0.3s ease',
+              }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--tk-bg-raised)')
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--tk-bg)')
+              }
+            >
+              {/* Name + price */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <h2
+                    className="font-display"
+                    style={{
+                      fontSize: '1.6rem',
+                      fontWeight: 400,
+                      color: 'var(--tk-text)',
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {classItem.name}
+                  </h2>
+                  {classItem.host_name && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--tk-text-dim)', marginTop: '0.25rem', letterSpacing: '0.06em' }}>
+                      with {classItem.host_name}
+                    </p>
+                  )}
+                </div>
+                <span
+                  className="font-display"
+                  style={{
+                    fontSize: '1.4rem',
+                    fontWeight: 300,
+                    color: 'var(--tk-gold)',
+                    marginLeft: '1rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  ${classItem.price}
+                </span>
+              </div>
+
+              {/* Divider */}
+              <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
+
+              {/* Description */}
+              <p
+                style={{
+                  fontSize: '0.88rem',
+                  lineHeight: 1.7,
+                  color: 'var(--tk-text-dim)',
+                }}
+              >
+                {classItem.description}
+              </p>
+
+              {/* Date */}
+              <p
+                style={{
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.12em',
+                  color: 'var(--tk-text-faint)',
+                }}
+              >
+                {new Date(classItem.date).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                {' · '}
+                {new Date(classItem.date).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+
+              {/* Slots remaining */}
+              {classItem.slots_remaining !== null && (
+                <p
+                  style={{
+                    fontSize: '0.72rem',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color:
+                      classItem.slots_remaining <= 0
+                        ? 'var(--color-error, #c0392b)'
+                        : classItem.slots_remaining <= 3
+                        ? 'var(--color-warning, #d97706)'
+                        : 'var(--tk-gold)',
+                  }}
+                >
+                  {classItem.slots_remaining <= 0
+                    ? 'Fully Booked'
+                    : classItem.slots_remaining <= 3
+                    ? `Only ${classItem.slots_remaining} spot${classItem.slots_remaining === 1 ? '' : 's'} left`
+                    : `${classItem.slots_remaining} spots remaining`}
+                </p>
+              )}
+
+              {/* Features */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Feature active={true} label="Hands-on Training" />
+                <Feature active={hasCertificate} label="Certificate Included" />
+                <Feature active={hasMentoring} label="1-on-1 Mentoring" />
+              </div>
+
+              {/* CTA */}
+              <button
+                className="btn-gold"
+                style={{
+                  marginTop: '0.75rem',
+                  alignSelf: 'flex-start',
+                  opacity: classItem.slots_remaining !== null && classItem.slots_remaining <= 0 ? 0.45 : 1,
+                  cursor: classItem.slots_remaining !== null && classItem.slots_remaining <= 0 ? 'not-allowed' : 'pointer',
+                }}
+                disabled={classItem.slots_remaining !== null && classItem.slots_remaining <= 0}
+                onClick={() => { setSelectedClass(classItem); setShowModal(true); }}
+              >
+                {classItem.slots_remaining !== null && classItem.slots_remaining <= 0 ? 'Fully Booked' : 'Book Class'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Booking Modal */}
+      {showModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'oklch(5% 0 0 / 0.85)',
+            backdropFilter: 'blur(8px)',
+            padding: '1rem',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+        >
+          <div
+            style={{
+              background: 'var(--tk-bg-raised)',
+              border: '1px solid var(--tk-border)',
+              padding: '2.5rem',
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+            }}
+            className="anim-fade-up"
+          >
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--tk-text-faint)',
+                fontSize: '1.2rem',
+                lineHeight: 1,
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text-faint)')}
+            >
+              ✕
+            </button>
+            <BookingFlow
+              preselectedService={selectedClass?.name}
+              preselectedArtistId={selectedClass?.host_artist_id ?? undefined}
+              classDatetime={selectedClass?.host_artist_id ? selectedClass.date : undefined}
+              classDuration={selectedClass?.host_artist_id ? selectedClass.duration_min : undefined}
+              onClose={() => setShowModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+function Feature({ active, label }: { active: boolean; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div
+        style={{
+          width: '16px',
+          height: '16px',
+          border: `1px solid ${active ? 'var(--tk-gold)' : 'var(--tk-text-footer-dimmer)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {active && (
+          <svg width="8" height="6" viewBox="0 0 8 6" fill="none" style={{ color: 'var(--tk-gold)' }}>
+            <path
+              d="M1 3L3 5L7 1"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </div>
+      <span
+        style={{
+          fontSize: '0.8rem',
+          color: active ? 'var(--tk-text-muted)' : 'var(--tk-text-footer-dimmer)',
+          textDecoration: active ? 'none' : 'line-through',
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export default Classes;

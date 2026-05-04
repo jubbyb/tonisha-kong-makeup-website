@@ -1,62 +1,282 @@
 import React from 'react';
 
+const milestones = [
+  { year: 'Early Life', text: 'Self-taught pianist at age four, excelling in art — creativity was always the constant.' },
+  { year: 'University', text: 'Studied Zoology, discovered a love for makeup while experimenting on friends and herself.' },
+  { year: 'Manhattan', text: 'Attended makeup school in New York City, training under renowned artists including Rihanna\'s makeup artist.' },
+  { year: 'Today', text: 'Running a thriving artistry practice in Jamaica — teaching, transforming, and empowering clients.' },
+];
+
 const About: React.FC = () => {
   return (
-    <div className="hero min-h-screen bg-base-200">
-      <div className="hero-content flex flex-col items-center text-center">
-        <div className="max-w-xl w-full">
-          <h1 className="text-5xl font-bold mb-6">About Tonisha Kong</h1>
-          <div className="flex flex-col items-center gap-4">
-            {/* Main Portrait */}
-            <div className="avatar">
-              <div className="w-40 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 mx-auto">
-                <img
-                  src="https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-PersonalTonishaKong__IMG0118_1697819890726.jpeg"
-                  alt="Tonisha Kong"
-                />
-              </div>
-            </div>
-            {/* About Text */}
-            <p className="py-4 text-base leading-relaxed">
-              Hi, I'm Tonisha Kong, a passionate makeup artist based in Jamaica.
-              <br />
-              <br />
-              My creative journey began in childhood, surrounded by a supportive family who
-              encouraged my artistic side. I was always drawn to art and music, teaching myself
-              piano at age four and excelling in art classes. While I initially pursued Zoology at
-              university with plans to become a veterinarian, my love for creativity never faded.
-              <br />
-              <br />
-              During university, I discovered my passion for makeup—experimenting with bold looks on
-              myself and friends. What started as a hobby soon became a calling. After university, I
-              decided to follow my heart and pursue makeup artistry professionally. My family,
-              especially my mother and big sister, supported me every step of the way. My sister
-              even sent me to makeup school in Manhattan, and I've had the privilege of training
-              with renowned artists, including Rihanna's makeup artist.
-              <br />
-              <br />
-              My makeup style is all about enhancing natural beauty, not masking it. I believe in
-              making people feel confident and comfortable in their own skin. It's a privilege to
-              help clients see their own beauty and to be trusted with their transformation.
-              <br />
-              <br />
-              The journey hasn't always been easy—there were long days, sleepless nights, and
-              moments of self-doubt. But I've learned that the only real obstacle is yourself. With
-              positivity and perseverance, you can achieve what you truly want.
-              <br />
-              <br />
-              Today, my mission is to help every client feel beautiful without hiding who they are.
-              Makeup is more than a mask—it's a tool for confidence and self-expression. I'm
-              grateful for the trust my clients place in me and for the unwavering support of my
-              family.
-              <br />
-              <br />
-              <strong>Special thanks</strong> to my mom and big sister for their constant
-              encouragement and love. I wouldn't be where I am today without them.
-            </p>
-          </div>
+    <div style={{ background: 'var(--tk-bg)', transition: 'background-color 0.35s ease' }}>
+      {/* ── Split Hero ────────────────────────────────────────────────── */}
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          minHeight: '90vh',
+        }}
+        className="about-hero"
+      >
+        {/* Left — text */}
+        <div
+          style={{
+            padding: 'clamp(3rem, 8vw, 7rem) clamp(2rem, 5vw, 5rem)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
+          <p
+            className="anim-slide-right delay-1"
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: 'var(--tk-gold)',
+              marginBottom: '1.5rem',
+            }}
+          >
+            The Artist
+          </p>
+
+          <h1
+            className="anim-fade-up delay-2 font-display"
+            style={{
+              fontSize: 'clamp(2.5rem, 6vw, 5.5rem)',
+              fontWeight: 300,
+              lineHeight: 1.05,
+              color: 'var(--tk-text)',
+              marginBottom: '2.5rem',
+            }}
+          >
+            About
+            <br />
+            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Tonisha Kong</span>
+          </h1>
+
+          <div className="divider-gold anim-fade-in delay-2" />
+
+          <p
+            className="anim-fade-up delay-3"
+            style={{
+              fontSize: '0.95rem',
+              lineHeight: 1.85,
+              color: 'var(--tk-text-body)',
+              maxWidth: '500px',
+              marginTop: '1.5rem',
+              marginBottom: '2rem',
+            }}
+          >
+            Hi, I'm Tonisha Kong, a passionate makeup artist based in Jamaica. My creative journey
+            began in childhood, surrounded by a supportive family who encouraged my artistic side.
+          </p>
+
+          <p
+            className="anim-fade-up delay-4"
+            style={{
+              fontSize: '0.95rem',
+              lineHeight: 1.85,
+              color: 'var(--tk-text-body)',
+              maxWidth: '500px',
+              marginBottom: '2rem',
+            }}
+          >
+            While I initially pursued Zoology at university with plans to become a veterinarian,
+            my love for creativity never faded. During university, I discovered my passion for
+            makeup — experimenting with bold looks on myself and friends. What started as a hobby
+            soon became a calling.
+          </p>
+
+          <p
+            className="anim-fade-up delay-5"
+            style={{
+              fontSize: '0.95rem',
+              lineHeight: 1.85,
+              color: 'var(--tk-text-body)',
+              maxWidth: '500px',
+            }}
+          >
+            My sister sent me to makeup school in Manhattan, where I had the privilege of training
+            with renowned artists — including Rihanna's makeup artist. Today, my mission is to
+            help every client feel beautiful without hiding who they are.
+          </p>
         </div>
-      </div>
+
+        {/* Right — photo */}
+        <div
+          style={{ position: 'relative', overflow: 'hidden', background: 'var(--tk-bg-raised)' }}
+          className="about-photo"
+        >
+          <img
+            src="https://cdn.shoutoutmiami.com/wp-content/uploads/2023/11/c-PersonalTonishaKong__IMG0118_1697819890726.jpeg"
+            alt="Tonisha Kong portrait"
+            className="anim-fade-in delay-1"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center top',
+            }}
+          />
+          {/* Gold corner accent */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: '80px',
+              height: '80px',
+              borderLeft: '1px solid var(--tk-gold)',
+              borderBottom: '1px solid var(--tk-gold)',
+            }}
+          />
+        </div>
+      </section>
+
+      {/* ── Philosophy ────────────────────────────────────────────────── */}
+      <section
+        style={{
+          background: 'var(--tk-bg-raised)',
+          borderTop: '1px solid var(--tk-border)',
+          padding: '5rem 2rem',
+          textAlign: 'center',
+          transition: 'background-color 0.35s ease, border-color 0.35s ease',
+        }}
+      >
+        <blockquote
+          className="font-display"
+          style={{
+            fontSize: 'clamp(1.5rem, 3.5vw, 2.8rem)',
+            fontWeight: 300,
+            fontStyle: 'italic',
+            color: 'var(--tk-text-sub)',
+            maxWidth: '800px',
+            margin: '0 auto 2rem',
+            lineHeight: 1.4,
+          }}
+        >
+          "Makeup is more than a mask — it's a tool for confidence and self-expression."
+        </blockquote>
+        <div
+          style={{
+            width: '40px',
+            height: '1px',
+            background: 'var(--tk-gold)',
+            margin: '0 auto',
+          }}
+        />
+      </section>
+
+      {/* ── Journey Timeline ──────────────────────────────────────────── */}
+      <section
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '6rem 2rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '4rem' }}>
+          <div className="divider-gold" />
+          <h2
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: 'var(--tk-text-dim)',
+            }}
+          >
+            The Journey
+          </h2>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '0',
+          }}
+        >
+          {milestones.map((m, i) => (
+            <div
+              key={i}
+              className={`anim-fade-up delay-${i + 1}`}
+              style={{
+                padding: '2.5rem',
+                borderLeft: '1px solid var(--tk-border)',
+                borderBottom: i < 2 ? 'none' : undefined,
+              }}
+            >
+              <p
+                className="font-display"
+                style={{
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  color: 'var(--tk-gold)',
+                  marginBottom: '1rem',
+                }}
+              >
+                {m.year}
+              </p>
+              <p
+                style={{
+                  fontSize: '0.9rem',
+                  lineHeight: 1.7,
+                  color: 'var(--tk-text-body)',
+                }}
+              >
+                {m.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Gratitude ─────────────────────────────────────────────────── */}
+      <section
+        style={{
+          borderTop: '1px solid var(--tk-border)',
+          padding: '5rem 2rem',
+          maxWidth: '700px',
+          margin: '0 auto',
+          textAlign: 'center',
+        }}
+      >
+        <p
+          style={{
+            fontSize: '0.65rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--tk-gold)',
+            marginBottom: '1.5rem',
+          }}
+        >
+          With Gratitude
+        </p>
+        <p
+          style={{
+            fontSize: '1rem',
+            lineHeight: 1.8,
+            color: 'var(--tk-text-body)',
+          }}
+        >
+          Special thanks to my mom and big sister for their constant encouragement and love.
+          I wouldn't be where I am today without them.
+        </p>
+      </section>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .about-hero {
+            grid-template-columns: 1fr !important;
+          }
+          .about-photo {
+            height: 400px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
