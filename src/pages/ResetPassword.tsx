@@ -68,7 +68,9 @@ export default function ResetPassword() {
               {done ? (
                 <div className="text-center space-y-4">
                   <p className="text-success">Your password has been updated.</p>
-                  <Link to="/login" className="btn btn-primary w-full">Sign In</Link>
+                  <Link to="/login" className="btn btn-primary w-full">
+                    Sign In
+                  </Link>
                 </div>
               ) : (
                 <form onSubmit={handleReset} className="space-y-4">
@@ -97,7 +99,11 @@ export default function ResetPassword() {
                   </label>
                   {error && <div className="alert alert-error py-2 text-sm">{error}</div>}
                   <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-                    {loading ? <span className="loading loading-spinner loading-sm" /> : 'Update Password'}
+                    {loading ? (
+                      <span className="loading loading-spinner loading-sm" />
+                    ) : (
+                      'Update Password'
+                    )}
                   </button>
                 </form>
               )}
@@ -113,7 +119,9 @@ export default function ResetPassword() {
                   <p className="text-base-content/80">
                     If that email is registered, you'll receive a reset link shortly.
                   </p>
-                  <Link to="/login" className="btn btn-ghost w-full">Back to Sign In</Link>
+                  <Link to="/login" className="btn btn-ghost w-full">
+                    Back to Sign In
+                  </Link>
                 </div>
               ) : (
                 <form onSubmit={handleRequest} className="space-y-4">
@@ -130,10 +138,16 @@ export default function ResetPassword() {
                   </label>
                   {error && <div className="alert alert-error py-2 text-sm">{error}</div>}
                   <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-                    {loading ? <span className="loading loading-spinner loading-sm" /> : 'Send Reset Link'}
+                    {loading ? (
+                      <span className="loading loading-spinner loading-sm" />
+                    ) : (
+                      'Send Reset Link'
+                    )}
                   </button>
                   <div className="text-center">
-                    <Link to="/login" className="text-sm link link-primary">Back to Sign In</Link>
+                    <Link to="/login" className="text-sm link link-primary">
+                      Back to Sign In
+                    </Link>
                   </div>
                 </form>
               )}

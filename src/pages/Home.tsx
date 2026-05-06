@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BRAND } from '../constants/brand';
+import { Eyebrow } from '../components/ui';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ function StarRating({ rating }: { rating: number }) {
           width="13"
           height="13"
           viewBox="0 0 24 24"
-          style={{ flexShrink: 0, color: star <= rating ? 'var(--tk-gold)' : 'var(--tk-border)' }}
+          style={{ flexShrink: 0, color: star <= rating ? 'var(--accent)' : 'var(--line-2)' }}
         >
           <polygon
             points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
@@ -96,7 +97,7 @@ function TestimonialsSection() {
     <section
       style={{
         padding: '6rem 0',
-        background: 'var(--tk-bg)',
+        background: 'var(--bg)',
         transition: 'background-color 0.35s ease',
       }}
     >
@@ -105,14 +106,14 @@ function TestimonialsSection() {
           style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3.5rem' }}
         >
           <div
-            style={{ height: '1px', width: '3rem', background: 'var(--tk-gold)', flexShrink: 0 }}
+            style={{ height: '1px', width: '3rem', background: 'var(--accent)', flexShrink: 0 }}
           />
           <p
             style={{
               fontSize: '0.65rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'var(--tk-text-dim)',
+              color: 'var(--ink-2)',
               margin: 0,
               whiteSpace: 'nowrap',
             }}
@@ -130,10 +131,10 @@ function TestimonialsSection() {
           {reviews.map((review, i) => (
             <div
               key={review.id}
-              className={`lux-card anim-fade-up delay-${Math.min(i + 1, 8)}`}
+              className={`editorial-card-base anim-fade-up delay-${Math.min(i + 1, 8)}`}
               style={{
                 padding: '2rem',
-                borderTop: '2px solid var(--tk-gold)',
+                borderTop: '2px solid var(--accent)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.75rem',
@@ -147,7 +148,7 @@ function TestimonialsSection() {
                   fontWeight: 300,
                   fontStyle: 'italic',
                   lineHeight: 1.65,
-                  color: 'var(--tk-text-sub)',
+                  color: 'var(--ink-3)',
                   flex: 1,
                   margin: 0,
                 }}
@@ -156,7 +157,7 @@ function TestimonialsSection() {
               </blockquote>
               <div
                 style={{
-                  borderTop: '1px solid var(--tk-border)',
+                  borderTop: '1px solid var(--line-2)',
                   paddingTop: '1rem',
                   marginTop: 'auto',
                 }}
@@ -164,7 +165,7 @@ function TestimonialsSection() {
                 <p
                   style={{
                     fontSize: '0.85rem',
-                    color: 'var(--tk-text-bright)',
+                    color: 'var(--ink)',
                     fontWeight: 500,
                     margin: 0,
                   }}
@@ -176,7 +177,7 @@ function TestimonialsSection() {
                     fontSize: '0.6rem',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
-                    color: 'var(--tk-gold)',
+                    color: 'var(--accent)',
                     marginTop: '0.3rem',
                     marginBottom: 0,
                   }}
@@ -224,7 +225,7 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div style={{ background: 'var(--tk-bg)', transition: 'background-color 0.35s ease' }}>
+    <div style={{ background: 'var(--bg)', transition: 'background-color 0.35s ease' }}>
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <section style={{ padding: '3rem 2rem 0', maxWidth: '1280px', margin: '0 auto' }}>
         <div
@@ -239,18 +240,9 @@ const Home: React.FC = () => {
         >
           {/* Left — headline */}
           <div>
-            <p
-              className="anim-fade-up"
-              style={{
-                fontSize: '0.65rem',
-                letterSpacing: '0.3em',
-                textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
-                marginBottom: '1.75rem',
-              }}
-            >
+            <Eyebrow style={{ marginBottom: '1.75rem' }} className="anim-fade-up">
               —— Booking hub · est. 2026
-            </p>
+            </Eyebrow>
             <h1
               className="anim-fade-up delay-1 font-editorial"
               style={{
@@ -258,13 +250,13 @@ const Home: React.FC = () => {
                 fontWeight: 400,
                 lineHeight: 0.92,
                 letterSpacing: '-0.025em',
-                color: 'var(--tk-text)',
+                color: 'var(--ink)',
                 marginBottom: 0,
               }}
             >
               Find the
               <br />
-              <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>hands</span> behind
+              <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>hands</span> behind
               <br />
               your <span style={{ fontStyle: 'italic' }}>look.</span>
             </h1>
@@ -274,7 +266,7 @@ const Home: React.FC = () => {
                 fontFamily: "'Inter', sans-serif",
                 fontSize: '1.0625rem',
                 lineHeight: 1.6,
-                color: 'var(--tk-text-dim)',
+                color: 'var(--ink-2)',
                 maxWidth: '480px',
                 marginTop: '2.25rem',
               }}
@@ -335,7 +327,7 @@ const Home: React.FC = () => {
                 fontSize: '0.65rem',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
               }}
             >
               Beauty, hair &amp; nails · Kingston
@@ -348,23 +340,23 @@ const Home: React.FC = () => {
           className="search-bar-desktop anim-fade-up delay-3"
           style={{
             marginTop: '3rem',
-            background: 'var(--tk-bg-raised)',
+            background: 'var(--bg-card)',
             borderRadius: '999px',
             padding: '8px',
             display: 'grid',
             gridTemplateColumns: '1.4fr 1fr 1fr auto',
             alignItems: 'center',
             boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
-            border: '1px solid var(--tk-border)',
+            border: '1px solid var(--line-2)',
           }}
         >
-          <div style={{ padding: '0.625rem 1.5rem', borderRight: '1px solid var(--tk-border)' }}>
+          <div style={{ padding: '0.625rem 1.5rem', borderRight: '1px solid var(--line-2)' }}>
             <p
               style={{
                 fontSize: '0.625rem',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 margin: '0 0 4px',
               }}
             >
@@ -377,7 +369,7 @@ const Home: React.FC = () => {
               placeholder="Makeup, nails, hair…"
               style={{
                 fontSize: '0.9375rem',
-                color: 'var(--tk-text)',
+                color: 'var(--ink)',
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
@@ -386,13 +378,13 @@ const Home: React.FC = () => {
               }}
             />
           </div>
-          <div style={{ padding: '0.625rem 1.5rem', borderRight: '1px solid var(--tk-border)' }}>
+          <div style={{ padding: '0.625rem 1.5rem', borderRight: '1px solid var(--line-2)' }}>
             <p
               style={{
                 fontSize: '0.625rem',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 margin: '0 0 4px',
               }}
             >
@@ -405,7 +397,7 @@ const Home: React.FC = () => {
               placeholder="Kingston, Mo Bay…"
               style={{
                 fontSize: '0.9375rem',
-                color: 'var(--tk-text)',
+                color: 'var(--ink)',
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
@@ -420,13 +412,13 @@ const Home: React.FC = () => {
                 fontSize: '0.625rem',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 margin: '0 0 4px',
               }}
             >
               When
             </p>
-            <span style={{ fontSize: '0.9375rem', color: 'var(--tk-text-faint)' }}>Any time</span>
+            <span style={{ fontSize: '0.9375rem', color: 'var(--ink-3)' }}>Any time</span>
           </div>
           <button
             onClick={handleSearch}
@@ -434,8 +426,8 @@ const Home: React.FC = () => {
               marginRight: '8px',
               padding: '0.875rem 1.5rem',
               borderRadius: '999px',
-              background: 'var(--tk-gold)',
-              color: 'var(--tk-gold-on-gold)',
+              background: 'var(--accent)',
+              color: 'var(--bg)',
               border: 'none',
               cursor: 'pointer',
               fontFamily: "'Inter', sans-serif",
@@ -475,7 +467,7 @@ const Home: React.FC = () => {
             fontSize: '0.6875rem',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: 'var(--tk-text-faint)',
+            color: 'var(--ink-3)',
             paddingBottom: '0.5rem',
           }}
         >
@@ -496,8 +488,8 @@ const Home: React.FC = () => {
             marginTop: '1.5rem',
             padding: '6px 6px 6px 16px',
             borderRadius: '999px',
-            background: 'var(--tk-bg-raised)',
-            border: '1px solid var(--tk-border)',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--line-2)',
             alignItems: 'center',
             gap: '8px',
             cursor: 'pointer',
@@ -513,7 +505,7 @@ const Home: React.FC = () => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ color: 'var(--tk-text-faint)', flexShrink: 0 }}
+            style={{ color: 'var(--ink-3)', flexShrink: 0 }}
           >
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -522,7 +514,7 @@ const Home: React.FC = () => {
             style={{
               flex: 1,
               fontSize: '0.875rem',
-              color: 'var(--tk-text-faint)',
+              color: 'var(--ink-3)',
               fontFamily: "'Inter', sans-serif",
             }}
           >
@@ -533,7 +525,7 @@ const Home: React.FC = () => {
               width: 32,
               height: 32,
               borderRadius: '99px',
-              background: 'var(--tk-gold)',
+              background: 'var(--accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -565,7 +557,7 @@ const Home: React.FC = () => {
                 fontSize: '0.6rem',
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 marginBottom: '0.625rem',
               }}
             >
@@ -653,19 +645,19 @@ const Home: React.FC = () => {
                 fontSize: 'clamp(2rem, 5vw, 3.5rem)',
                 fontWeight: 400,
                 letterSpacing: '-0.02em',
-                color: 'var(--tk-text)',
+                color: 'var(--ink)',
                 margin: 0,
               }}
             >
               What are you{' '}
-              <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>looking</span> for?
+              <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>looking</span> for?
             </h2>
             <p
               style={{
                 fontSize: '0.65rem',
                 letterSpacing: '0.3em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 margin: 0,
               }}
             >
@@ -786,7 +778,7 @@ const Home: React.FC = () => {
                 fontSize: '0.65rem',
                 letterSpacing: '0.3em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 margin: 0,
               }}
             >
@@ -796,7 +788,7 @@ const Home: React.FC = () => {
               onClick={() => navigate('/artists')}
               style={{
                 fontSize: '0.8125rem',
-                color: 'var(--tk-text-dim)',
+                color: 'var(--ink-2)',
                 textDecoration: 'underline',
                 textUnderlineOffset: '4px',
                 cursor: 'pointer',
@@ -811,7 +803,7 @@ const Home: React.FC = () => {
               fontSize: 'clamp(2rem, 4.5vw, 4rem)',
               fontWeight: 400,
               letterSpacing: '-0.02em',
-              color: 'var(--tk-text)',
+              color: 'var(--ink)',
               margin: '0.75rem 0 3rem',
               maxWidth: '860px',
             }}
@@ -861,7 +853,7 @@ const Home: React.FC = () => {
                         style={{
                           position: 'absolute',
                           inset: 0,
-                          background: 'var(--tk-bg-raised)',
+                          background: 'var(--bg-card)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -871,7 +863,7 @@ const Home: React.FC = () => {
                           className="font-editorial"
                           style={{
                             fontSize: '4rem',
-                            color: 'var(--tk-border)',
+                            color: 'var(--line-2)',
                             fontStyle: 'italic',
                           }}
                         >
@@ -914,7 +906,7 @@ const Home: React.FC = () => {
                           fontSize: '1.625rem',
                           lineHeight: 1.1,
                           letterSpacing: '-0.01em',
-                          color: 'var(--tk-text)',
+                          color: 'var(--ink)',
                         }}
                       >
                         {firstName} <span style={{ fontStyle: 'italic' }}>{lastName}</span>
@@ -923,7 +915,7 @@ const Home: React.FC = () => {
                         <div
                           style={{
                             fontSize: '0.8125rem',
-                            color: 'var(--tk-text-dim)',
+                            color: 'var(--ink-2)',
                             marginTop: '4px',
                           }}
                         >
@@ -940,7 +932,7 @@ const Home: React.FC = () => {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      style={{ color: 'var(--tk-text-dim)', flexShrink: 0 }}
+                      style={{ color: 'var(--ink-2)', flexShrink: 0 }}
                     >
                       <line x1="7" y1="17" x2="17" y2="7" />
                       <polyline points="7 7 17 7 17 17" />
@@ -952,13 +944,13 @@ const Home: React.FC = () => {
                       justifyContent: 'space-between',
                       marginTop: '0.875rem',
                       paddingTop: '0.875rem',
-                      borderTop: '1px solid var(--tk-border)',
+                      borderTop: '1px solid var(--line-2)',
                       fontSize: '0.75rem',
-                      color: 'var(--tk-text-dim)',
+                      color: 'var(--ink-2)',
                     }}
                   >
                     {artist.location && <span>{artist.location}</span>}
-                    <span style={{ color: 'var(--tk-gold)', fontWeight: 500 }}>View profile</span>
+                    <span style={{ color: 'var(--accent)', fontWeight: 500 }}>View profile</span>
                   </div>
                 </div>
               );
@@ -974,13 +966,13 @@ const Home: React.FC = () => {
           <div
             style={{
               padding: '3.5rem 3rem',
-              background: 'var(--tk-bg-deep)',
+              background: 'var(--bg-card)',
               borderRadius: '4px',
               minHeight: '400px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              border: '1px solid var(--tk-border)',
+              border: '1px solid var(--line-2)',
             }}
           >
             <div>
@@ -989,7 +981,7 @@ const Home: React.FC = () => {
                   fontSize: '0.65rem',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: 'var(--tk-text-faint)',
+                  color: 'var(--ink-3)',
                   margin: '0 0 1.25rem',
                 }}
               >
@@ -1002,7 +994,7 @@ const Home: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: 1.05,
                   letterSpacing: '-0.02em',
-                  color: 'var(--tk-text)',
+                  color: 'var(--ink)',
                   margin: '0 0 2rem',
                   maxWidth: '420px',
                 }}
@@ -1028,7 +1020,7 @@ const Home: React.FC = () => {
                     key={point}
                     style={{
                       fontSize: '0.9375rem',
-                      color: 'var(--tk-text-dim)',
+                      color: 'var(--ink-2)',
                       display: 'flex',
                       gap: '0.875rem',
                       alignItems: 'baseline',
@@ -1038,7 +1030,7 @@ const Home: React.FC = () => {
                       style={{
                         width: '18px',
                         height: '1px',
-                        background: 'var(--tk-text-faint)',
+                        background: 'var(--ink-3)',
                         flex: 'none',
                         marginTop: '10px',
                         display: 'inline-block',
@@ -1050,7 +1042,7 @@ const Home: React.FC = () => {
               </ul>
             </div>
             <button
-              className="btn-gold"
+              className="btn-accent"
               onClick={() => navigate('/artists')}
               style={{ alignSelf: 'flex-start', marginTop: '2rem' }}
             >
@@ -1062,14 +1054,14 @@ const Home: React.FC = () => {
           <div
             style={{
               padding: '3.5rem 3rem',
-              background: 'var(--tk-bg-raised)',
+              background: 'var(--bg-card)',
               borderRadius: '4px',
               minHeight: '400px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              border: '1px solid var(--tk-border)',
-              borderColor: 'var(--tk-gold-subtle)',
+              border: '1px solid var(--line-2)',
+              borderColor: 'var(--line-2)',
             }}
           >
             <div>
@@ -1078,7 +1070,7 @@ const Home: React.FC = () => {
                   fontSize: '0.65rem',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: 'var(--tk-gold)',
+                  color: 'var(--accent)',
                   margin: '0 0 1.25rem',
                 }}
               >
@@ -1091,7 +1083,7 @@ const Home: React.FC = () => {
                   fontWeight: 400,
                   lineHeight: 1.05,
                   letterSpacing: '-0.02em',
-                  color: 'var(--tk-text)',
+                  color: 'var(--ink)',
                   margin: '0 0 2rem',
                   maxWidth: '420px',
                 }}
@@ -1117,7 +1109,7 @@ const Home: React.FC = () => {
                     key={point}
                     style={{
                       fontSize: '0.9375rem',
-                      color: 'var(--tk-text-dim)',
+                      color: 'var(--ink-2)',
                       display: 'flex',
                       gap: '0.875rem',
                       alignItems: 'baseline',
@@ -1127,7 +1119,7 @@ const Home: React.FC = () => {
                       style={{
                         width: '18px',
                         height: '1px',
-                        background: 'var(--tk-text-faint)',
+                        background: 'var(--ink-3)',
                         flex: 'none',
                         marginTop: '10px',
                         display: 'inline-block',
@@ -1139,7 +1131,7 @@ const Home: React.FC = () => {
               </ul>
             </div>
             <button
-              className="btn-gold"
+              className="btn-accent"
               onClick={() => navigate('/login')}
               style={{ alignSelf: 'flex-start', marginTop: '2rem' }}
             >
@@ -1154,14 +1146,14 @@ const Home: React.FC = () => {
 
       {/* ── Editorial footer mark ──────────────────────────────────────── */}
       <section style={{ padding: '6rem 2rem 4rem', maxWidth: '1280px', margin: '0 auto' }}>
-        <div style={{ borderTop: '1px solid var(--tk-border)', paddingTop: '2.5rem' }}>
+        <div style={{ borderTop: '1px solid var(--line-2)', paddingTop: '2.5rem' }}>
           <div
             className="font-editorial"
             style={{
               fontSize: 'clamp(5rem, 15vw, 13rem)',
               lineHeight: 0.85,
               letterSpacing: '-0.04em',
-              color: 'var(--tk-text)',
+              color: 'var(--ink)',
               fontStyle: 'italic',
               opacity: 0.12,
               userSelect: 'none',
@@ -1178,7 +1170,7 @@ const Home: React.FC = () => {
             fontSize: '0.6875rem',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: 'var(--tk-text-faint)',
+            color: 'var(--ink-3)',
           }}
         >
           <span>

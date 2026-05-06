@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'luxury' | 'lux-light';
+export type Theme = 'styleja' | 'styleja-dark';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -8,29 +8,25 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'luxury',
+  theme: 'styleja',
   toggleTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem('tk-theme') as Theme) || 'luxury';
+    return (localStorage.getItem('sj-theme') as Theme) || 'styleja';
   });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('tk-theme', theme);
+    localStorage.setItem('sj-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(t => t === 'luxury' ? 'lux-light' : 'luxury');
+    setTheme((t) => (t === 'styleja' ? 'styleja-dark' : 'styleja'));
   };
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export const useTheme = () => useContext(ThemeContext);

@@ -274,6 +274,14 @@ function datesInRange(from: string, to: string): string[] {
   return dates;
 }
 
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export default {
@@ -307,6 +315,13 @@ export default {
 
     // ── Public: industries ────────────────────────────────────────────────────
 
+    if (pathname === '/api/parishes' && method === 'GET') {
+      const { results } = await env.DB.prepare(
+        'SELECT id, slug, name, region, sort_order FROM parishes ORDER BY sort_order',
+      ).all();
+      return json(results);
+    }
+
     if (pathname === '/api/industries' && method === 'GET') {
       const { results } = await env.DB.prepare(
         'SELECT id, slug, name, tagline, icon, sort_order FROM industries WHERE is_active = 1 ORDER BY sort_order',
@@ -333,10 +348,16 @@ export default {
 
     if (pathname === '/api/artists' && method === 'GET') {
       const industryFilter = url.searchParams.get('industry');
+      const parishFilter = url.searchParams.get('parish');
+      const bboxParam = url.searchParams.get('bbox');
+      const nearParam = url.searchParams.get('near');
+      const radiusKm = parseFloat(url.searchParams.get('radiusKm') ?? '50');
+      const artistCols = `a.id, a.slug, a.name, a.bio, a.specialties, a.photo_url, a.location, a.whatsapp_number,
+                          a.lat, a.lng, a.cover_url, a.service_radius_km, a.parish_id`;
       let artistRows: Record<string, unknown>[];
       if (industryFilter) {
         const { results } = await env.DB.prepare(
-          `SELECT a.id, a.slug, a.name, a.bio, a.specialties, a.photo_url, a.location, a.whatsapp_number
+          `SELECT ${artistCols}
            FROM artists a
            JOIN artist_industries ai ON ai.artist_id = a.id
            JOIN industries i ON i.id = ai.industry_id
@@ -344,9 +365,41 @@ export default {
            ORDER BY a.name`,
         ).bind(industryFilter).all();
         artistRows = results as Record<string, unknown>[];
+      } else if (parishFilter) {
+        const { results } = await env.DB.prepare(
+          `SELECT ${artistCols}
+           FROM artists a
+           JOIN parishes p ON a.parish_id = p.id
+           WHERE a.is_active = 1 AND p.slug = ?
+           ORDER BY a.name`,
+        ).bind(parishFilter).all();
+        artistRows = results as Record<string, unknown>[];
+      } else if (bboxParam) {
+        const [minLng, minLat, maxLng, maxLat] = bboxParam.split(',').map(Number);
+        const { results } = await env.DB.prepare(
+          `SELECT ${artistCols}
+           FROM artists a
+           WHERE a.is_active = 1 AND a.lat IS NOT NULL AND a.lng IS NOT NULL
+             AND a.lat BETWEEN ? AND ? AND a.lng BETWEEN ? AND ?
+           ORDER BY a.name`,
+        ).bind(minLat, maxLat, minLng, maxLng).all();
+        artistRows = results as Record<string, unknown>[];
+      } else if (nearParam) {
+        const [nearLat, nearLng] = nearParam.split(',').map(Number);
+        const { results } = await env.DB.prepare(
+          `SELECT ${artistCols}
+           FROM artists a
+           WHERE a.is_active = 1 AND a.lat IS NOT NULL AND a.lng IS NOT NULL
+           ORDER BY a.name`,
+        ).all();
+        artistRows = (results as Record<string, unknown>[]).filter((a) =>
+          haversine(nearLat, nearLng, a.lat as number, a.lng as number) <= radiusKm,
+        );
       } else {
         const { results } = await env.DB.prepare(
-          'SELECT id, slug, name, bio, specialties, photo_url, location, whatsapp_number FROM artists WHERE is_active = 1 ORDER BY name',
+          `SELECT id, slug, name, bio, specialties, photo_url, location, whatsapp_number,
+                  lat, lng, cover_url, service_radius_km, parish_id
+           FROM artists WHERE is_active = 1 ORDER BY name`,
         ).all();
         artistRows = results as Record<string, unknown>[];
       }
@@ -378,14 +431,16 @@ export default {
       const artist = isNumeric
         ? await env.DB.prepare(
             `SELECT id, slug, name, bio, specialties, photo_url, about, location, experience,
-                    instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number
+                    instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number,
+                    lat, lng, cover_url, service_radius_km, parish_id
              FROM artists WHERE id = ? AND is_active = 1`,
           )
             .bind(Number(key))
             .first<Record<string, unknown>>()
         : await env.DB.prepare(
             `SELECT id, slug, name, bio, specialties, photo_url, about, location, experience,
-                    instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number
+                    instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number,
+                    lat, lng, cover_url, service_radius_km, parish_id
              FROM artists WHERE slug = ? AND is_active = 1`,
           )
             .bind(key)
@@ -1415,6 +1470,11 @@ export default {
           website_url?: string;
           whatsapp_number?: string | null;
           industry_ids?: number[];
+          parish_id?: number | null;
+          lat?: number | null;
+          lng?: number | null;
+          service_radius_km?: number | null;
+          cover_url?: string | null;
         }>();
 
         // Slug validation if provided
@@ -1450,7 +1510,12 @@ export default {
              tiktok_url = COALESCE(?, tiktok_url),
              facebook_url = COALESCE(?, facebook_url),
              website_url = COALESCE(?, website_url),
-             whatsapp_number = CASE WHEN ? IS NOT NULL THEN ? ELSE whatsapp_number END
+             whatsapp_number = CASE WHEN ? IS NOT NULL THEN ? ELSE whatsapp_number END,
+             parish_id = COALESCE(?, parish_id),
+             lat = COALESCE(?, lat),
+             lng = COALESCE(?, lng),
+             service_radius_km = COALESCE(?, service_radius_km),
+             cover_url = COALESCE(?, cover_url)
            WHERE id = ?`,
         )
           .bind(
@@ -1468,6 +1533,11 @@ export default {
             body.website_url ?? null,
             'whatsapp_number' in body ? (body.whatsapp_number ?? null) : null,
             body.whatsapp_number ?? null,
+            body.parish_id ?? null,
+            body.lat ?? null,
+            body.lng ?? null,
+            body.service_radius_km ?? null,
+            body.cover_url ?? null,
             artistId,
           )
           .run();

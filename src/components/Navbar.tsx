@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { Logo } from './ui';
 
 function SunIcon() {
   return (
@@ -89,27 +90,49 @@ function BottomTabBar({ user }: { user: { role: string } | null }) {
         </svg>
       ),
     },
-    {
-      to: '/my-bookings',
-      label: 'Bookings',
-      icon: (
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-      ),
-    },
+    user?.role === 'artist'
+      ? {
+          to: '/artist-dashboard',
+          label: 'Dashboard',
+          icon: (
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+          ),
+        }
+      : {
+          to: '/my-bookings',
+          label: 'Bookings',
+          icon: (
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          ),
+        },
     {
       to: '/contact',
       label: 'Contact',
@@ -165,7 +188,7 @@ function BottomTabBar({ user }: { user: { role: string } | null }) {
               textDecoration: 'none',
               flex: 1,
               padding: '0.5rem 0',
-              color: active ? 'var(--tk-gold)' : 'var(--tk-text-faint)',
+              color: active ? 'var(--accent)' : 'var(--ink-3)',
               transition: 'color 0.15s',
             }}
           >
@@ -198,13 +221,10 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/about', label: 'About' },
-    { to: '/industries', label: 'Industries' },
-    { to: '/artists', label: 'Artists' },
-    { to: '/services', label: 'Services' },
-    { to: '/classes', label: 'Classes' },
-    { to: '/contact', label: 'Contact' },
+    { to: '/artists', label: 'Browse' },
+    { to: '/about', label: 'How it works' },
+    { to: '/industries', label: 'For pros' },
+    { to: '/classes', label: 'Stories' },
   ];
 
   const linkStyle = {
@@ -212,7 +232,7 @@ export default function Navbar() {
     fontWeight: 400,
     letterSpacing: '0.18em',
     textTransform: 'uppercase' as const,
-    color: 'var(--tk-text-muted)',
+    color: 'var(--ink-2)',
     textDecoration: 'none',
     transition: 'color 0.2s ease',
   };
@@ -221,12 +241,12 @@ export default function Navbar() {
     fontSize: '0.72rem',
     letterSpacing: '0.15em',
     textTransform: 'uppercase' as const,
-    color: 'var(--tk-text-muted)',
+    color: 'var(--ink-2)',
     textDecoration: 'none',
   };
 
   return (
-    <nav className="lux-nav">
+    <nav className="editorial-nav">
       <div
         style={{
           maxWidth: '1280px',
@@ -239,33 +259,8 @@ export default function Navbar() {
         }}
       >
         {/* Logo */}
-        <Link
-          to="/"
-          style={{
-            fontFamily: "'Instrument Serif', serif",
-            fontSize: '1.375rem',
-            lineHeight: 1,
-            letterSpacing: '-0.01em',
-            textDecoration: 'none',
-            display: 'inline-flex',
-            alignItems: 'baseline',
-            color: 'var(--tk-text)',
-          }}
-        >
-          <span style={{ fontStyle: 'italic' }}>Style</span>
-          <span style={{ color: 'var(--tk-gold)', fontStyle: 'italic' }}>ja</span>
-          <span
-            style={{
-              width: '5px',
-              height: '5px',
-              borderRadius: '99px',
-              background: 'var(--tk-gold)',
-              marginLeft: '2px',
-              alignSelf: 'flex-end',
-              marginBottom: '3px',
-              display: 'inline-block',
-            }}
-          />
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <Logo size={22} />
         </Link>
 
         {/* Desktop links */}
@@ -278,8 +273,8 @@ export default function Navbar() {
               key={to}
               to={to}
               style={linkStyle}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--tk-text)')}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--tk-text-muted)')}
+              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--ink)')}
+              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--ink-2)')}
             >
               {label}
             </Link>
@@ -294,12 +289,12 @@ export default function Navbar() {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            aria-label={theme === 'luxury' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: 'var(--tk-gold)',
+              color: 'var(--accent)',
               padding: '0.3rem',
               display: 'flex',
               alignItems: 'center',
@@ -308,7 +303,7 @@ export default function Navbar() {
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.65')}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
           >
-            {theme === 'luxury' ? <SunIcon /> : <MoonIcon />}
+            {theme === 'styleja' ? <SunIcon /> : <MoonIcon />}
           </button>
 
           {user ? (
@@ -326,7 +321,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="btn-gold"
+                className="btn-accent"
                 style={{ padding: '0.45rem 1.25rem', fontSize: '0.65rem' }}
               >
                 Sign Out
@@ -339,7 +334,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/login?mode=signup"
-                className="btn-gold"
+                className="btn-accent"
                 style={{ padding: '0.45rem 1.25rem', fontSize: '0.65rem' }}
               >
                 Sign Up
@@ -355,18 +350,18 @@ export default function Navbar() {
         >
           <button
             onClick={toggleTheme}
-            aria-label={theme === 'luxury' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: 'var(--tk-gold)',
+              color: 'var(--accent)',
               padding: '0.5rem',
               display: 'flex',
               alignItems: 'center',
             }}
           >
-            {theme === 'luxury' ? <SunIcon /> : <MoonIcon />}
+            {theme === 'styleja' ? <SunIcon /> : <MoonIcon />}
           </button>
         </div>
       </div>

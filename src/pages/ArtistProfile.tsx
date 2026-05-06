@@ -181,10 +181,10 @@ export default function ArtistProfile() {
           justifyContent: 'center',
           alignItems: 'center',
           minHeight: '100vh',
-          background: 'var(--tk-bg)',
+          background: 'var(--bg)',
         }}
       >
-        <span className="loading loading-spinner loading-lg" style={{ color: 'var(--tk-gold)' }} />
+        <span className="loading loading-spinner loading-lg" style={{ color: 'var(--accent)' }} />
       </div>
     );
   if (!artist)
@@ -195,7 +195,7 @@ export default function ArtistProfile() {
           justifyContent: 'center',
           alignItems: 'center',
           minHeight: '100vh',
-          background: 'var(--tk-bg)',
+          background: 'var(--bg)',
           color: 'var(--color-error)',
         }}
       >
@@ -226,7 +226,7 @@ export default function ArtistProfile() {
   return (
     <div
       style={{
-        background: 'var(--tk-bg)',
+        background: 'var(--bg)',
         minHeight: '100vh',
         transition: 'background-color 0.35s ease',
       }}
@@ -250,7 +250,7 @@ export default function ArtistProfile() {
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 30%, var(--tk-bg) 100%)',
+              'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 30%, var(--bg) 100%)',
           }}
         />
 
@@ -390,9 +390,9 @@ export default function ArtistProfile() {
               height: '160px',
               borderRadius: '8px',
               overflow: 'hidden',
-              border: '4px solid var(--tk-bg)',
+              border: '4px solid var(--bg)',
               flexShrink: 0,
-              background: 'var(--tk-bg-raised)',
+              background: 'var(--bg-card)',
             }}
           >
             {artist.photo_url ? (
@@ -418,7 +418,7 @@ export default function ArtistProfile() {
               >
                 <span
                   className="font-editorial"
-                  style={{ fontSize: '4rem', color: 'var(--tk-border)', fontStyle: 'italic' }}
+                  style={{ fontSize: '4rem', color: 'var(--line-2)', fontStyle: 'italic' }}
                 >
                   {artist.name.charAt(0)}
                 </span>
@@ -445,7 +445,7 @@ export default function ArtistProfile() {
                   letterSpacing: '-0.025em',
                   margin: 0,
                   lineHeight: 1,
-                  color: 'var(--tk-text)',
+                  color: 'var(--ink)',
                 }}
               >
                 {firstName} <span style={{ fontStyle: 'italic' }}>{lastName}</span>
@@ -454,7 +454,7 @@ export default function ArtistProfile() {
                 width="22"
                 height="22"
                 viewBox="0 0 24 24"
-                fill="var(--tk-gold)"
+                fill="var(--accent)"
                 style={{ flexShrink: 0 }}
               >
                 <path
@@ -464,7 +464,7 @@ export default function ArtistProfile() {
               </svg>
             </div>
             {artist.specialties && (
-              <p style={{ fontSize: '1rem', color: 'var(--tk-text-dim)', margin: '0 0 0.75rem' }}>
+              <p style={{ fontSize: '1rem', color: 'var(--ink-2)', margin: '0 0 0.75rem' }}>
                 {artist.specialties}
               </p>
             )}
@@ -473,7 +473,7 @@ export default function ArtistProfile() {
                 display: 'flex',
                 gap: '1.5rem',
                 fontSize: '0.8125rem',
-                color: 'var(--tk-text-dim)',
+                color: 'var(--ink-2)',
                 flexWrap: 'wrap',
               }}
             >
@@ -523,8 +523,8 @@ export default function ArtistProfile() {
               marginBottom: '0.5rem',
               padding: '0.875rem 2rem',
               borderRadius: '999px',
-              background: 'var(--tk-gold)',
-              color: 'var(--tk-gold-on-gold)',
+              background: 'var(--accent)',
+              color: 'var(--bg)',
               border: 'none',
               cursor: 'pointer',
               fontFamily: "'Inter', sans-serif",
@@ -560,7 +560,7 @@ export default function ArtistProfile() {
       {/* ── Tabs — desktop underline style ─────────────────────────────── */}
       <div
         className="artist-tabs-desktop"
-        style={{ borderBottom: '1px solid var(--tk-border)', marginTop: '2rem' }}
+        style={{ borderBottom: '1px solid var(--line-2)', marginTop: '2rem' }}
       >
         <div
           style={{
@@ -581,8 +581,8 @@ export default function ArtistProfile() {
                 cursor: 'pointer',
                 background: 'none',
                 border: 'none',
-                borderBottom: `2px solid ${activeTab === tab ? 'var(--tk-gold)' : 'transparent'}`,
-                color: activeTab === tab ? 'var(--tk-text)' : 'var(--tk-text-dim)',
+                borderBottom: `2px solid ${activeTab === tab ? 'var(--accent)' : 'transparent'}`,
+                color: activeTab === tab ? 'var(--ink)' : 'var(--ink-2)',
                 fontWeight: activeTab === tab ? 500 : 400,
                 fontFamily: "'Inter', sans-serif",
                 transition: 'color 0.15s, border-color 0.15s',
@@ -605,7 +605,7 @@ export default function ArtistProfile() {
             flex: 1,
             gap: 6,
             padding: 4,
-            border: '1px solid var(--tk-border)',
+            border: '1px solid var(--line-2)',
             borderRadius: '999px',
             fontSize: '0.8125rem',
           }}
@@ -620,8 +620,8 @@ export default function ArtistProfile() {
                 textAlign: 'center',
                 borderRadius: '999px',
                 border: 'none',
-                background: activeTab === tab ? 'var(--tk-text)' : 'transparent',
-                color: activeTab === tab ? 'var(--tk-bg)' : 'var(--tk-text-dim)',
+                background: activeTab === tab ? 'var(--ink)' : 'transparent',
+                color: activeTab === tab ? 'var(--bg)' : 'var(--ink-2)',
                 cursor: 'pointer',
                 fontFamily: "'Inter', sans-serif",
                 fontSize: '0.8rem',
@@ -646,8 +646,8 @@ export default function ArtistProfile() {
           right: '12px',
           zIndex: 40,
           padding: '10px 10px 10px 20px',
-          background: 'var(--tk-text)',
-          color: 'var(--tk-bg)',
+          background: 'var(--ink)',
+          color: 'var(--bg)',
           borderRadius: '999px',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -667,7 +667,7 @@ export default function ArtistProfile() {
             width: 44,
             height: 44,
             borderRadius: '99px',
-            background: 'var(--tk-gold)',
+            background: 'var(--accent)',
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
@@ -729,12 +729,12 @@ export default function ArtistProfile() {
                         fontWeight: 400,
                         margin: 0,
                         letterSpacing: '-0.02em',
-                        color: 'var(--tk-text)',
+                        color: 'var(--ink)',
                       }}
                     >
                       Recent work
                     </h2>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--tk-text-faint)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>
                       {portfolio.length} photos
                     </span>
                   </div>
@@ -771,7 +771,7 @@ export default function ArtistProfile() {
               ) : (
                 <div
                   style={{
-                    color: 'var(--tk-text-faint)',
+                    color: 'var(--ink-3)',
                     textAlign: 'center',
                     padding: '4rem 0',
                     fontSize: '0.9rem',
@@ -793,7 +793,7 @@ export default function ArtistProfile() {
                   fontWeight: 400,
                   margin: '0 0 1.25rem',
                   letterSpacing: '-0.02em',
-                  color: 'var(--tk-text)',
+                  color: 'var(--ink)',
                 }}
               >
                 Services & prices
@@ -801,7 +801,7 @@ export default function ArtistProfile() {
               {services.length > 0 ? (
                 <div
                   style={{
-                    border: '1px solid var(--tk-border)',
+                    border: '1px solid var(--line-2)',
                     borderRadius: '6px',
                     overflow: 'hidden',
                   }}
@@ -820,8 +820,8 @@ export default function ArtistProfile() {
                           gap: '1.5rem',
                           alignItems: 'center',
                           padding: '1.25rem 1.5rem',
-                          borderTop: i === 0 ? 'none' : '1px solid var(--tk-border)',
-                          background: i % 2 ? 'transparent' : 'var(--tk-bg-raised)',
+                          borderTop: i === 0 ? 'none' : '1px solid var(--line-2)',
+                          background: i % 2 ? 'transparent' : 'var(--bg-card)',
                         }}
                       >
                         <div>
@@ -830,7 +830,7 @@ export default function ArtistProfile() {
                             style={{
                               fontSize: '1.25rem',
                               letterSpacing: '-0.01em',
-                              color: 'var(--tk-text)',
+                              color: 'var(--ink)',
                             }}
                           >
                             {s.name}
@@ -839,7 +839,7 @@ export default function ArtistProfile() {
                             <div
                               style={{
                                 fontSize: '0.8rem',
-                                color: 'var(--tk-text-faint)',
+                                color: 'var(--ink-3)',
                                 marginTop: '3px',
                               }}
                             >
@@ -850,7 +850,7 @@ export default function ArtistProfile() {
                         <div
                           style={{
                             fontSize: '0.8125rem',
-                            color: 'var(--tk-text-dim)',
+                            color: 'var(--ink-2)',
                             whiteSpace: 'nowrap',
                           }}
                         >
@@ -860,7 +860,7 @@ export default function ArtistProfile() {
                           style={{
                             fontFamily: "'Inter', sans-serif",
                             fontSize: '1rem',
-                            color: 'var(--tk-text)',
+                            color: 'var(--ink)',
                             fontWeight: 500,
                             whiteSpace: 'nowrap',
                           }}
@@ -906,8 +906,8 @@ export default function ArtistProfile() {
                               fontSize: '0.7rem',
                               letterSpacing: '0.12em',
                               textTransform: 'uppercase',
-                              color: 'var(--tk-text-dim)',
-                              border: '1px solid var(--tk-border)',
+                              color: 'var(--ink-2)',
+                              border: '1px solid var(--line-2)',
                               padding: '0.3rem 0.75rem',
                               borderRadius: '999px',
                               background: 'transparent',
@@ -923,9 +923,7 @@ export default function ArtistProfile() {
                   })}
                 </div>
               ) : (
-                <div
-                  style={{ color: 'var(--tk-text-faint)', padding: '2rem 0', fontSize: '0.9rem' }}
-                >
+                <div style={{ color: 'var(--ink-3)', padding: '2rem 0', fontSize: '0.9rem' }}>
                   No services listed yet.
                 </div>
               )}
@@ -942,7 +940,7 @@ export default function ArtistProfile() {
                   fontWeight: 400,
                   margin: '0 0 1.5rem',
                   letterSpacing: '-0.02em',
-                  color: 'var(--tk-text)',
+                  color: 'var(--ink)',
                 }}
               >
                 About
@@ -952,7 +950,7 @@ export default function ArtistProfile() {
                   style={{
                     fontSize: '1rem',
                     lineHeight: 1.75,
-                    color: 'var(--tk-text-dim)',
+                    color: 'var(--ink-2)',
                     maxWidth: '640px',
                     whiteSpace: 'pre-line',
                     marginBottom: '2rem',
@@ -961,7 +959,7 @@ export default function ArtistProfile() {
                   {artist.about ?? artist.bio}
                 </p>
               ) : (
-                <p style={{ color: 'var(--tk-text-faint)', fontSize: '0.9rem' }}>No bio yet.</p>
+                <p style={{ color: 'var(--ink-3)', fontSize: '0.9rem' }}>No bio yet.</p>
               )}
               {artist.industries.length > 0 && (
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -972,8 +970,8 @@ export default function ArtistProfile() {
                         fontSize: '0.6rem',
                         letterSpacing: '0.2em',
                         textTransform: 'uppercase',
-                        border: '1px solid var(--tk-gold)',
-                        color: 'var(--tk-gold)',
+                        border: '1px solid var(--accent)',
+                        color: 'var(--accent)',
                         padding: '0.25rem 0.75rem',
                         borderRadius: '999px',
                       }}
@@ -997,7 +995,7 @@ export default function ArtistProfile() {
                         fontSize: '0.75rem',
                         letterSpacing: '0.15em',
                         textTransform: 'uppercase',
-                        color: 'var(--tk-text-dim)',
+                        color: 'var(--ink-2)',
                         textDecoration: 'none',
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -1016,7 +1014,7 @@ export default function ArtistProfile() {
                         fontSize: '0.75rem',
                         letterSpacing: '0.15em',
                         textTransform: 'uppercase',
-                        color: 'var(--tk-text-dim)',
+                        color: 'var(--ink-2)',
                         textDecoration: 'none',
                       }}
                     >
@@ -1032,7 +1030,7 @@ export default function ArtistProfile() {
                         fontSize: '0.75rem',
                         letterSpacing: '0.15em',
                         textTransform: 'uppercase',
-                        color: 'var(--tk-text-dim)',
+                        color: 'var(--ink-2)',
                         textDecoration: 'none',
                       }}
                     >
@@ -1048,7 +1046,7 @@ export default function ArtistProfile() {
                         fontSize: '0.75rem',
                         letterSpacing: '0.15em',
                         textTransform: 'uppercase',
-                        color: 'var(--tk-text-dim)',
+                        color: 'var(--ink-2)',
                         textDecoration: 'none',
                       }}
                     >
@@ -1070,7 +1068,7 @@ export default function ArtistProfile() {
                   fontWeight: 400,
                   margin: '0 0 1.25rem',
                   letterSpacing: '-0.02em',
-                  color: 'var(--tk-text)',
+                  color: 'var(--ink)',
                 }}
               >
                 {testimonials.length > 0 ? `What clients say · ${testimonials.length}` : 'Reviews'}
@@ -1088,8 +1086,8 @@ export default function ArtistProfile() {
                       key={t.id}
                       style={{
                         padding: '1.5rem',
-                        background: 'var(--tk-bg-raised)',
-                        border: '1px solid var(--tk-border)',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--line-2)',
                         borderRadius: '6px',
                       }}
                     >
@@ -1104,7 +1102,7 @@ export default function ArtistProfile() {
                           style={{
                             fontWeight: 500,
                             fontSize: '0.9375rem',
-                            color: 'var(--tk-text)',
+                            color: 'var(--ink)',
                           }}
                         >
                           {t.client_name}
@@ -1116,7 +1114,7 @@ export default function ArtistProfile() {
                               fontSize: '0.6875rem',
                               letterSpacing: '0.1em',
                               textTransform: 'uppercase',
-                              color: 'var(--tk-text-faint)',
+                              color: 'var(--ink-3)',
                             }}
                           >
                             {t.date}
@@ -1129,7 +1127,7 @@ export default function ArtistProfile() {
                           fontSize: '1.0625rem',
                           fontStyle: 'italic',
                           lineHeight: 1.6,
-                          color: 'var(--tk-text-dim)',
+                          color: 'var(--ink-2)',
                           margin: 0,
                         }}
                       >
@@ -1139,9 +1137,7 @@ export default function ArtistProfile() {
                   ))}
                 </div>
               ) : (
-                <div style={{ color: 'var(--tk-text-faint)', fontSize: '0.9rem' }}>
-                  No reviews yet.
-                </div>
+                <div style={{ color: 'var(--ink-3)', fontSize: '0.9rem' }}>No reviews yet.</div>
               )}
             </div>
           )}
@@ -1152,7 +1148,7 @@ export default function ArtistProfile() {
             style={{
               marginTop: '4rem',
               paddingTop: '3rem',
-              borderTop: '1px solid var(--tk-border)',
+              borderTop: '1px solid var(--line-2)',
             }}
           >
             <h2
@@ -1162,7 +1158,7 @@ export default function ArtistProfile() {
                 fontWeight: 400,
                 margin: '0 0 1.5rem',
                 letterSpacing: '-0.02em',
-                color: 'var(--tk-text)',
+                color: 'var(--ink)',
               }}
             >
               Book an appointment
@@ -1170,9 +1166,9 @@ export default function ArtistProfile() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
               <div
                 style={{
-                  background: 'var(--tk-bg-raised)',
+                  background: 'var(--bg-card)',
                   borderRadius: '6px',
-                  border: '1px solid var(--tk-border)',
+                  border: '1px solid var(--line-2)',
                   padding: '1.25rem',
                 }}
               >
@@ -1198,7 +1194,7 @@ export default function ArtistProfile() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       height: '100%',
-                      color: 'var(--tk-text-faint)',
+                      color: 'var(--ink-3)',
                       textAlign: 'center',
                       padding: '2rem 0',
                       fontSize: '0.875rem',
@@ -1213,7 +1209,7 @@ export default function ArtistProfile() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       height: '100%',
-                      color: 'var(--tk-text-faint)',
+                      color: 'var(--ink-3)',
                       fontSize: '0.875rem',
                     }}
                   >
@@ -1225,7 +1221,7 @@ export default function ArtistProfile() {
                       style={{
                         fontSize: '0.875rem',
                         fontWeight: 500,
-                        color: 'var(--tk-text)',
+                        color: 'var(--ink)',
                         marginBottom: '1rem',
                       }}
                     >
@@ -1249,22 +1245,21 @@ export default function ArtistProfile() {
                           style={{
                             padding: '0.875rem 0',
                             textAlign: 'center',
-                            border: '1px solid var(--tk-border)',
+                            border: '1px solid var(--line-2)',
                             borderRadius: '6px',
                             cursor: 'pointer',
                             background: 'transparent',
-                            color: 'var(--tk-text)',
+                            color: 'var(--ink)',
                             fontSize: '0.9375rem',
                             fontFamily: "'Inter', sans-serif",
                             transition: 'border-color 0.15s, background 0.15s',
                           }}
                           onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--tk-text)';
-                            (e.currentTarget as HTMLElement).style.background =
-                              'var(--tk-bg-raised)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--ink)';
+                            (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)';
                           }}
                           onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--tk-border)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-2)';
                             (e.currentTarget as HTMLElement).style.background = 'transparent';
                           }}
                         >
@@ -1276,7 +1271,7 @@ export default function ArtistProfile() {
                       <p
                         style={{
                           fontSize: '0.8rem',
-                          color: 'var(--tk-text-faint)',
+                          color: 'var(--ink-3)',
                           marginTop: '1rem',
                           textAlign: 'center',
                         }}
@@ -1298,9 +1293,9 @@ export default function ArtistProfile() {
               position: 'sticky',
               top: '5rem',
               padding: '1.75rem',
-              border: '1px solid var(--tk-border)',
+              border: '1px solid var(--line-2)',
               borderRadius: '8px',
-              background: 'var(--tk-bg-raised)',
+              background: 'var(--bg-card)',
             }}
           >
             <p
@@ -1308,7 +1303,7 @@ export default function ArtistProfile() {
                 fontSize: '0.6875rem',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 margin: '0 0 0.875rem',
               }}
             >
@@ -1325,18 +1320,16 @@ export default function ArtistProfile() {
               >
                 <span
                   className="font-editorial"
-                  style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', color: 'var(--tk-text)' }}
+                  style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', color: 'var(--ink)' }}
                 >
                   ${startingPrice}
                 </span>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--tk-text-faint)' }}>
-                  starting
-                </span>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--ink-3)' }}>starting</span>
               </div>
             )}
             <div
               style={{
-                borderTop: '1px solid var(--tk-border)',
+                borderTop: '1px solid var(--line-2)',
                 paddingTop: '1.25rem',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1356,8 +1349,8 @@ export default function ArtistProfile() {
                     fontSize: '0.8125rem',
                   }}
                 >
-                  <span style={{ color: 'var(--tk-text-faint)' }}>{label}</span>
-                  <span style={{ color: 'var(--tk-text)' }}>{value}</span>
+                  <span style={{ color: 'var(--ink-3)' }}>{label}</span>
+                  <span style={{ color: 'var(--ink)' }}>{value}</span>
                 </div>
               ))}
             </div>
@@ -1367,8 +1360,8 @@ export default function ArtistProfile() {
                 width: '100%',
                 padding: '0.9375rem',
                 borderRadius: '999px',
-                background: 'var(--tk-gold)',
-                color: 'var(--tk-gold-on-gold)',
+                background: 'var(--accent)',
+                color: 'var(--bg)',
                 border: 'none',
                 cursor: 'pointer',
                 fontFamily: "'Inter', sans-serif",
@@ -1408,12 +1401,12 @@ export default function ArtistProfile() {
                   width: '100%',
                   padding: '0.9375rem',
                   borderRadius: '999px',
-                  border: '1px solid var(--tk-border)',
+                  border: '1px solid var(--line-2)',
                   background: 'transparent',
                   cursor: 'pointer',
                   fontFamily: "'Inter', sans-serif",
                   fontSize: '0.9375rem',
-                  color: 'var(--tk-text)',
+                  color: 'var(--ink)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1430,7 +1423,7 @@ export default function ArtistProfile() {
                 style={{
                   marginTop: '1.5rem',
                   paddingTop: '1.5rem',
-                  borderTop: '1px solid var(--tk-border)',
+                  borderTop: '1px solid var(--line-2)',
                 }}
               >
                 <p
@@ -1438,7 +1431,7 @@ export default function ArtistProfile() {
                     fontSize: '0.6875rem',
                     letterSpacing: '0.14em',
                     textTransform: 'uppercase',
-                    color: 'var(--tk-text-faint)',
+                    color: 'var(--ink-3)',
                     margin: '0 0 0.75rem',
                   }}
                 >
@@ -1448,7 +1441,7 @@ export default function ArtistProfile() {
                   style={{
                     fontSize: '0.8125rem',
                     lineHeight: 1.65,
-                    color: 'var(--tk-text-dim)',
+                    color: 'var(--ink-2)',
                     margin: 0,
                   }}
                 >
@@ -1532,8 +1525,8 @@ export default function ArtistProfile() {
         <dialog open className="modal modal-open">
           <div
             style={{
-              background: 'var(--tk-bg-raised)',
-              border: '1px solid var(--tk-border)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--line-2)',
               borderRadius: '8px',
               padding: '2rem',
               maxWidth: '420px',
@@ -1550,7 +1543,7 @@ export default function ArtistProfile() {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 fontSize: '1rem',
               }}
               onClick={() => setBookingSlot(null)}
@@ -1563,7 +1556,7 @@ export default function ArtistProfile() {
                 fontSize: '1.75rem',
                 fontWeight: 400,
                 letterSpacing: '-0.02em',
-                color: 'var(--tk-text)',
+                color: 'var(--ink)',
                 margin: '0 0 0.5rem',
               }}
             >
@@ -1572,7 +1565,7 @@ export default function ArtistProfile() {
             <p
               style={{
                 fontSize: '0.8125rem',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 marginBottom: '1.5rem',
               }}
             >
@@ -1592,7 +1585,7 @@ export default function ArtistProfile() {
                     width: 72,
                     height: 72,
                     borderRadius: '99px',
-                    background: 'var(--tk-gold)',
+                    background: 'var(--accent)',
                     color: '#fff',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -1621,18 +1614,18 @@ export default function ArtistProfile() {
                     lineHeight: 1,
                     letterSpacing: '-0.025em',
                     margin: '0 0 0.75rem',
-                    color: 'var(--tk-text)',
+                    color: 'var(--ink)',
                   }}
                 >
                   You're
                   <br />
-                  <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>booked.</span>
+                  <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>booked.</span>
                 </h2>
                 <p
                   style={{
                     fontSize: '0.875rem',
                     lineHeight: 1.5,
-                    color: 'var(--tk-text-dim)',
+                    color: 'var(--ink-2)',
                     margin: '0 0 1.5rem',
                   }}
                 >
@@ -1648,9 +1641,9 @@ export default function ArtistProfile() {
                 <div
                   style={{
                     padding: '1rem 1.25rem',
-                    border: '1px solid var(--tk-border)',
+                    border: '1px solid var(--line-2)',
                     borderRadius: '10px',
-                    background: 'var(--tk-bg)',
+                    background: 'var(--bg)',
                     textAlign: 'left',
                     marginBottom: '1.5rem',
                   }}
@@ -1661,7 +1654,7 @@ export default function ArtistProfile() {
                       alignItems: 'center',
                       gap: '10px',
                       paddingBottom: '0.875rem',
-                      borderBottom: '1px solid var(--tk-border)',
+                      borderBottom: '1px solid var(--line-2)',
                     }}
                   >
                     {artist.photo_url && (
@@ -1682,10 +1675,10 @@ export default function ArtistProfile() {
                       </div>
                     )}
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--tk-text)' }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--ink)' }}>
                         {artist.name}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--tk-text-faint)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>
                         {selectedService}
                       </div>
                     </div>
@@ -1697,12 +1690,12 @@ export default function ArtistProfile() {
                       gap: '6px',
                       paddingTop: '0.875rem',
                       fontSize: '0.8125rem',
-                      color: 'var(--tk-text-dim)',
+                      color: 'var(--ink-2)',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Date</span>
-                      <span style={{ color: 'var(--tk-text)' }}>
+                      <span style={{ color: 'var(--ink)' }}>
                         {new Date(bookingSlot!.date + 'T00:00').toLocaleDateString('default', {
                           month: 'short',
                           day: 'numeric',
@@ -1713,7 +1706,7 @@ export default function ArtistProfile() {
                     {artist.location && (
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>Location</span>
-                        <span style={{ color: 'var(--tk-text)' }}>{artist.location}</span>
+                        <span style={{ color: 'var(--ink)' }}>{artist.location}</span>
                       </div>
                     )}
                   </div>
@@ -1721,7 +1714,7 @@ export default function ArtistProfile() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {user && (
                     <button
-                      className="btn-gold"
+                      className="btn-accent"
                       style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}
                       onClick={() => {
                         setBookingSlot(null);
@@ -1738,7 +1731,7 @@ export default function ArtistProfile() {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: 'var(--tk-text-dim)',
+                      color: 'var(--ink-2)',
                       fontSize: '0.875rem',
                     }}
                     onClick={() => setBookingSlot(null)}
@@ -1758,7 +1751,7 @@ export default function ArtistProfile() {
                       fontSize: '0.6875rem',
                       letterSpacing: '0.14em',
                       textTransform: 'uppercase',
-                      color: 'var(--tk-text-faint)',
+                      color: 'var(--ink-3)',
                       display: 'block',
                       marginBottom: '0.5rem',
                     }}
@@ -1768,9 +1761,9 @@ export default function ArtistProfile() {
                   <select
                     className="select select-bordered w-full"
                     style={{
-                      background: 'var(--tk-bg)',
-                      color: 'var(--tk-text)',
-                      border: '1px solid var(--tk-border)',
+                      background: 'var(--bg)',
+                      color: 'var(--ink)',
+                      border: '1px solid var(--line-2)',
                       borderRadius: '6px',
                     }}
                     value={selectedService}
@@ -1792,7 +1785,7 @@ export default function ArtistProfile() {
                       fontSize: '0.6875rem',
                       letterSpacing: '0.14em',
                       textTransform: 'uppercase',
-                      color: 'var(--tk-text-faint)',
+                      color: 'var(--ink-3)',
                       display: 'block',
                       marginBottom: '0.5rem',
                     }}
@@ -1802,9 +1795,9 @@ export default function ArtistProfile() {
                   <textarea
                     style={{
                       width: '100%',
-                      background: 'var(--tk-bg)',
-                      color: 'var(--tk-text)',
-                      border: '1px solid var(--tk-border)',
+                      background: 'var(--bg)',
+                      color: 'var(--ink)',
+                      border: '1px solid var(--line-2)',
                       borderRadius: '6px',
                       padding: '0.75rem',
                       fontSize: '0.875rem',
@@ -1830,14 +1823,14 @@ export default function ArtistProfile() {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: 'var(--tk-text-faint)',
+                      color: 'var(--ink-3)',
                       fontSize: '0.875rem',
                     }}
                     onClick={() => setBookingSlot(null)}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn-gold" disabled={bookingLoading}>
+                  <button type="submit" className="btn-accent" disabled={bookingLoading}>
                     {bookingLoading ? 'Booking…' : 'Confirm Booking'}
                   </button>
                 </div>

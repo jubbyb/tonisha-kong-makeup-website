@@ -4,10 +4,17 @@ import BookingFlow from '../components/BookingFlow';
 
 const Bookings: React.FC = () => {
   const location = useLocation();
-  const preselectedService: string = (location.state as { service?: { name?: string } } | null)?.service?.name ?? '';
+  const preselectedService: string =
+    (location.state as { service?: { name?: string } } | null)?.service?.name ?? '';
 
   return (
-    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
+    <div
+      style={{
+        background: 'var(--bg)',
+        minHeight: '100vh',
+        transition: 'background-color 0.35s ease',
+      }}
+    >
       <div
         style={{
           maxWidth: '1280px',
@@ -21,7 +28,7 @@ const Bookings: React.FC = () => {
             fontSize: '0.65rem',
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            color: 'var(--tk-gold)',
+            color: 'var(--accent)',
             marginBottom: '1rem',
           }}
         >
@@ -33,19 +40,19 @@ const Bookings: React.FC = () => {
             fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
             fontWeight: 300,
             lineHeight: 1.05,
-            color: 'var(--tk-text)',
+            color: 'var(--ink)',
             marginBottom: '1rem',
           }}
         >
           Book an
           <br />
-          <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Appointment</span>
+          <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>Appointment</span>
         </h1>
         <p
           className="anim-fade-up delay-2"
           style={{
             fontSize: '0.9rem',
-            color: 'var(--tk-text-dim)',
+            color: 'var(--ink-2)',
             maxWidth: '480px',
             lineHeight: 1.7,
             marginBottom: '4rem',
@@ -71,15 +78,33 @@ const Bookings: React.FC = () => {
         <div className="anim-fade-up delay-2 bookings-sidebar" style={{ paddingTop: '0.5rem' }}>
           <div className="divider-gold" style={{ marginBottom: '2.5rem' }} />
           {[
-            { label: 'Consultation', value: 'All bookings begin with a brief consultation to understand your vision and needs.' },
-            { label: 'Preparation', value: 'Come to your appointment with a clean, moisturised face for best results.' },
-            { label: 'Cancellation', value: 'Please give at least 24 hours notice if you need to reschedule.' },
+            {
+              label: 'Consultation',
+              value:
+                'All bookings begin with a brief consultation to understand your vision and needs.',
+            },
+            {
+              label: 'Preparation',
+              value: 'Come to your appointment with a clean, moisturised face for best results.',
+            },
+            {
+              label: 'Cancellation',
+              value: 'Please give at least 24 hours notice if you need to reschedule.',
+            },
           ].map(({ label, value }) => (
             <div key={label} style={{ marginBottom: '2rem' }}>
-              <p style={{ fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--tk-gold)', marginBottom: '0.5rem' }}>
+              <p
+                style={{
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  color: 'var(--accent)',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 {label}
               </p>
-              <p style={{ fontSize: '0.88rem', lineHeight: 1.75, color: 'var(--tk-text-dim)' }}>
+              <p style={{ fontSize: '0.88rem', lineHeight: 1.75, color: 'var(--ink-2)' }}>
                 {value}
               </p>
             </div>
@@ -90,9 +115,9 @@ const Bookings: React.FC = () => {
         <div
           className="anim-fade-up delay-3"
           style={{
-            border: '1px solid var(--tk-border)',
+            border: '1px solid var(--line-2)',
             padding: '2.5rem',
-            background: 'var(--tk-bg-raised)',
+            background: 'var(--bg-card)',
           }}
         >
           <BookingFlow preselectedService={preselectedService} />

@@ -34,6 +34,30 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS parishes (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug          TEXT UNIQUE NOT NULL,
+  name          TEXT NOT NULL,
+  region        TEXT,
+  sort_order    INTEGER DEFAULT 0
+);
+
+INSERT OR IGNORE INTO parishes (slug, name, region, sort_order) VALUES
+  ('kingston', 'Kingston', 'Surrey', 1),
+  ('st-andrew', 'St. Andrew', 'Surrey', 2),
+  ('st-thomas', 'St. Thomas', 'Surrey', 3),
+  ('portland', 'Portland', 'Surrey', 4),
+  ('st-mary', 'St. Mary', 'Middlesex', 5),
+  ('st-ann', 'St. Ann', 'Middlesex', 6),
+  ('trelawny', 'Trelawny', 'Middlesex', 7),
+  ('st-james', 'St. James', 'Cornwall', 8),
+  ('hanover', 'Hanover', 'Cornwall', 9),
+  ('westmoreland', 'Westmoreland', 'Cornwall', 10),
+  ('st-elizabeth', 'St. Elizabeth', 'Cornwall', 11),
+  ('manchester', 'Manchester', 'Middlesex', 12),
+  ('clarendon', 'Clarendon', 'Middlesex', 13),
+  ('st-catherine', 'St. Catherine', 'Surrey', 14);
+
 CREATE TABLE IF NOT EXISTS artists (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   name             TEXT NOT NULL,
@@ -53,10 +77,17 @@ CREATE TABLE IF NOT EXISTS artists (
   tiktok_url       TEXT,
   facebook_url     TEXT,
   website_url      TEXT,
-  whatsapp_number  TEXT
+  whatsapp_number  TEXT,
+  parish_id        INTEGER REFERENCES parishes(id),
+  lat              REAL,
+  lng              REAL,
+  service_radius_km REAL,
+  cover_url        TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_artists_user_id ON artists(user_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_slug ON artists(slug);
+CREATE INDEX IF NOT EXISTS idx_artists_parish ON artists(parish_id);
+CREATE INDEX IF NOT EXISTS idx_artists_geo ON artists(lat, lng);
 
 -- Artist weekly working hours (one row per working day; if no row, that day is unavailable)
 -- day_of_week: 0=Monday ... 6=Sunday
