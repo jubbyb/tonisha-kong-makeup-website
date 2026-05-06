@@ -26,7 +26,7 @@ const Footer = () => {
         <div>
           <p
             style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Instrument Serif', 'Cormorant Garamond', serif",
               fontSize: '1.4rem',
               fontWeight: 500,
               letterSpacing: '0.12em',

@@ -51,6 +51,18 @@ interface Testimonial {
   date: string | null;
 }
 
+const COVER_FALLBACKS: Record<string, string> = {
+  makeup: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=1400&q=80',
+  nails: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=1400&q=80',
+  hair: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1400&q=80',
+  barber: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=1400&q=80',
+  stylist: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1400&q=80',
+  tailor: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=1400&q=80',
+};
+
+const TABS = ['Portfolio', 'Services', 'About', 'Reviews'] as const;
+type Tab = (typeof TABS)[number];
+
 export default function ArtistProfile() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -63,6 +75,7 @@ export default function ArtistProfile() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('Portfolio');
 
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
@@ -76,12 +89,11 @@ export default function ArtistProfile() {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  // Fetch artist by slug, then load related collections by id
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
     fetch(`/api/artists/${encodeURIComponent(slug)}`)
-      .then((r) => (r.ok ? (r.json() as Promise<Artist>) : Promise.reject(new Error('not found'))))
+      .then((r) => (r.ok ? (r.json() as Promise<Artist>) : Promise.reject()))
       .then((a) => {
         setArtist(a);
         return Promise.all([
@@ -163,299 +175,1293 @@ export default function ArtistProfile() {
 
   if (loading)
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <span className="loading loading-spinner loading-lg" />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: 'var(--tk-bg)',
+        }}
+      >
+        <span className="loading loading-spinner loading-lg" style={{ color: 'var(--tk-gold)' }} />
       </div>
     );
   if (!artist)
     return (
-      <div className="flex justify-center items-center min-h-screen text-error">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: 'var(--tk-bg)',
+          color: 'var(--color-error)',
+        }}
+      >
         Artist not found.
       </div>
     );
 
-  const socials: Array<{ url: string; label: string; icon: string }> = [];
-  if (artist.instagram_url)
-    socials.push({ url: artist.instagram_url, label: 'Instagram', icon: 'IG' });
-  if (artist.tiktok_url) socials.push({ url: artist.tiktok_url, label: 'TikTok', icon: 'TT' });
-  if (artist.facebook_url)
-    socials.push({ url: artist.facebook_url, label: 'Facebook', icon: 'FB' });
-  if (artist.website_url) socials.push({ url: artist.website_url, label: 'Website', icon: 'WEB' });
+  const nameParts = artist.name.split(' ');
+  const firstName = nameParts[0];
+  const lastName = nameParts.slice(1).join(' ');
+  const primaryIndustry = artist.industries[0];
+  const coverImg = primaryIndustry
+    ? (COVER_FALLBACKS[primaryIndustry.slug] ?? COVER_FALLBACKS.makeup)
+    : COVER_FALLBACKS.makeup;
+  const whatsappUrl = buildWhatsAppUrl(artist.whatsapp_number, defaultBookingMessage(artist.name));
+  const startingPrice = services.find((s) => s.price != null)?.price;
+
+  const handleBookCTA = () => {
+    if (!user) {
+      navigate(`/login?returnTo=/artists/${slug}`);
+      return;
+    }
+    if (availableDates.length > 0) setSelectedDate(availableDates[0]);
+    setActiveTab('Portfolio');
+    document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      {/* Hero */}
-      <div className="flex flex-col sm:flex-row gap-6 mb-10">
-        <div className="flex-shrink-0">
-          {artist.photo_url ? (
-            <img
-              src={artist.photo_url}
-              alt={artist.name}
-              className="w-36 h-36 rounded-full object-cover ring-4 ring-primary ring-offset-2"
-            />
-          ) : (
-            <div className="w-36 h-36 rounded-full bg-base-200 flex items-center justify-center text-5xl font-bold text-base-content/30">
-              {artist.name.charAt(0)}
-            </div>
-          )}
-        </div>
-        <div className="flex-1">
-          <h1 className="text-4xl font-bold mb-2">{artist.name}</h1>
-          {artist.location && <p className="text-base-content/60 mb-2">📍 {artist.location}</p>}
-          {artist.industries && artist.industries.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
-              {artist.industries.map((ind) => (
-                <span
-                  key={ind.slug}
-                  style={{
-                    fontSize: '0.55rem',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    border: '1px solid var(--tk-gold)',
-                    color: 'var(--tk-gold)',
-                    padding: '0.2rem 0.55rem',
-                  }}
-                >
-                  {ind.name}
-                </span>
-              ))}
-            </div>
-          )}
-          {artist.specialties && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {artist.specialties.split(',').map((s) => (
-                <span key={s} className="badge badge-primary badge-outline">
-                  {s.trim()}
-                </span>
-              ))}
-            </div>
-          )}
-          {artist.bio && (
-            <p className="text-base-content/80 leading-relaxed max-w-xl mb-3">{artist.bio}</p>
-          )}
-          {artist.experience && (
-            <p className="text-sm text-base-content/60 italic">{artist.experience}</p>
-          )}
-          {socials.length > 0 && (
-            <div className="flex gap-2 mt-3">
-              {socials.map((s) => (
-                <a
-                  key={s.url}
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-circle btn-sm btn-outline"
-                  aria-label={s.label}
-                  title={s.label}
-                >
-                  <span className="text-xs font-semibold">{s.icon}</span>
-                </a>
-              ))}
-            </div>
-          )}
-          {buildWhatsAppUrl(artist.whatsapp_number, defaultBookingMessage(artist.name)) && (
-            <div className="mt-3">
-              <a
-                href={buildWhatsAppUrl(artist.whatsapp_number, defaultBookingMessage(artist.name))!}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  fontSize: '0.65rem',
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  color: '#25d366',
-                  border: '1px solid #25d366',
-                  padding: '0.4rem 1rem',
-                  textDecoration: 'none',
-                  transition: 'background 0.2s, color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = '#25d366';
-                  (e.currentTarget as HTMLElement).style.color = '#fff';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = '#25d366';
-                }}
+    <div
+      style={{
+        background: 'var(--tk-bg)',
+        minHeight: '100vh',
+        transition: 'background-color 0.35s ease',
+      }}
+    >
+      {/* ── Cover ──────────────────────────────────────────────────────── */}
+      <div style={{ position: 'relative', height: '340px', overflow: 'hidden' }}>
+        <img
+          src={artist.photo_url ?? coverImg}
+          alt=""
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center top',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 30%, var(--tk-bg) 100%)',
+          }}
+        />
+
+        {/* Floating action buttons — mobile only */}
+        <div
+          className="mobile-cover-actions"
+          style={{
+            display: 'none',
+            position: 'absolute',
+            top: '50px',
+            left: 0,
+            right: 0,
+            padding: '0 16px',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '99px',
+              background: 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(8px)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              aria-label="Save artist"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '99px',
+                background: 'rgba(0,0,0,0.4)',
+                backdropFilter: 'blur(8px)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                Book on WhatsApp
-              </a>
-            </div>
-          )}
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: artist.name, url: window.location.href });
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                }
+              }}
+              aria-label="Share profile"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '99px',
+                background: 'rgba(0,0,0,0.4)',
+                backdropFilter: 'blur(8px)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* About */}
-      {artist.about && (
-        <section className="mb-10">
-          <div className="divider">About</div>
-          <p className="text-base-content/80 leading-relaxed whitespace-pre-line">{artist.about}</p>
-        </section>
-      )}
-
-      {/* Portfolio */}
-      {portfolio.length > 0 && (
-        <section className="mb-10">
-          <div className="divider">Portfolio</div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {portfolio.map((item, i) => (
-              <button
-                key={item.id}
-                type="button"
-                className="aspect-square overflow-hidden rounded-lg bg-base-200 group relative"
-                onClick={() => setLightboxIndex(i)}
-              >
-                <img
-                  src={item.image_url}
-                  alt={item.caption ?? `Portfolio image ${i + 1}`}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                />
-                {item.caption && (
-                  <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition-opacity text-left">
-                    {item.caption}
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Services */}
-      {services.length > 0 && (
-        <section className="mb-10">
-          <div className="divider">Services</div>
-          <ul className="divide-y divide-base-300 border border-base-300 rounded-lg">
-            {services.map((s) => {
-              const waUrl = buildWhatsAppUrl(
-                artist.whatsapp_number,
-                defaultBookingMessage(artist.name, s.name),
-              );
-              return (
-                <li key={s.id} className="px-4 py-3 flex items-baseline justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{s.name}</div>
-                    {s.description && (
-                      <div className="text-sm text-base-content/60">{s.description}</div>
-                    )}
-                    {waUrl && (
-                      <a
-                        href={waUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: '0.65rem', color: '#25d366', letterSpacing: '0.1em', textDecoration: 'none', display: 'inline-block', marginTop: '0.3rem' }}
-                      >
-                        Book on WhatsApp →
-                      </a>
-                    )}
-                  </div>
-                  <div className="text-right whitespace-nowrap">
-                    {s.price != null && <div className="font-semibold">${s.price}</div>}
-                    <div className="text-xs text-base-content/60">{s.duration_min} min</div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
-      {/* Testimonials */}
-      {testimonials.length > 0 && (
-        <section className="mb-10">
-          <div className="divider">What clients say</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {testimonials.map((t) => (
-              <blockquote key={t.id} className="p-4 bg-base-100 border border-base-300 rounded-lg">
-                <p className="italic text-base-content/80 mb-2">"{t.quote}"</p>
-                <footer className="text-sm text-base-content/60">
-                  — {t.client_name}
-                  {t.date ? ` · ${t.date}` : ''}
-                </footer>
-              </blockquote>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Booking section */}
-      <div className="divider">Book an Appointment</div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-        <div className="bg-base-100 rounded-xl border border-base-300 p-4">
-          <CalendarView
-            year={calYear}
-            month={calMonth}
-            markedDates={availableDates}
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-            onMonthChange={(y, m) => {
-              setCalYear(y);
-              setCalMonth(m);
-              setSelectedDate(null);
+      {/* ── Identity ───────────────────────────────────────────────────── */}
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 2rem',
+          position: 'relative',
+          marginTop: '-80px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2rem', flexWrap: 'wrap' }}>
+          {/* Avatar */}
+          <div
+            style={{
+              width: '160px',
+              height: '160px',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              border: '4px solid var(--tk-bg)',
+              flexShrink: 0,
+              background: 'var(--tk-bg-raised)',
             }}
-          />
-        </div>
+          >
+            {artist.photo_url ? (
+              <img
+                src={artist.photo_url}
+                alt={artist.name}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <span
+                  className="font-editorial"
+                  style={{ fontSize: '4rem', color: 'var(--tk-border)', fontStyle: 'italic' }}
+                >
+                  {artist.name.charAt(0)}
+                </span>
+              </div>
+            )}
+          </div>
 
-        <div>
-          {!selectedDate ? (
-            <div className="flex flex-col items-center justify-center h-full text-base-content/40 text-center py-8">
+          {/* Name + meta */}
+          <div style={{ flex: 1, paddingBottom: '0.5rem', minWidth: '200px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                marginBottom: '0.5rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <h1
+                className="font-editorial"
+                style={{
+                  fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+                  fontWeight: 400,
+                  letterSpacing: '-0.025em',
+                  margin: 0,
+                  lineHeight: 1,
+                  color: 'var(--tk-text)',
+                }}
+              >
+                {firstName} <span style={{ fontStyle: 'italic' }}>{lastName}</span>
+              </h1>
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mb-2 opacity-30"
-                fill="none"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
+                fill="var(--tk-gold)"
+                style={{ flexShrink: 0 }}
               >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                  strokeWidth="0"
                 />
               </svg>
-              <p>Select a highlighted date to see available times</p>
             </div>
-          ) : slotsForDate.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-base-content/40 py-8">
-              No available slots on this date.
-            </div>
-          ) : (
-            <div>
-              <h3 className="font-semibold text-lg mb-3">
-                {new Date(selectedDate + 'T00:00').toLocaleDateString('default', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </h3>
-              <div className="space-y-2">
-                {slotsForDate.map((slot) => (
-                  <button
-                    key={`${slot.date}-${slot.start}`}
-                    className="btn btn-outline btn-block justify-between"
-                    onClick={() => openBooking(slot)}
+            {artist.specialties && (
+              <p style={{ fontSize: '1rem', color: 'var(--tk-text-dim)', margin: '0 0 0.75rem' }}>
+                {artist.specialties}
+              </p>
+            )}
+            <div
+              style={{
+                display: 'flex',
+                gap: '1.5rem',
+                fontSize: '0.8125rem',
+                color: 'var(--tk-text-dim)',
+                flexWrap: 'wrap',
+              }}
+            >
+              {artist.location && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <span>
-                      {slot.start} – {slot.end}
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  {artist.location}
+                </span>
+              )}
+              {artist.experience && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  {artist.experience}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Book CTA */}
+          <button
+            onClick={handleBookCTA}
+            style={{
+              marginBottom: '0.5rem',
+              padding: '0.875rem 2rem',
+              borderRadius: '999px',
+              background: 'var(--tk-gold)',
+              color: 'var(--tk-gold-on-gold)',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: '0.9375rem',
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              whiteSpace: 'nowrap',
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            Book a session
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Tabs — desktop underline style ─────────────────────────────── */}
+      <div
+        className="artist-tabs-desktop"
+        style={{ borderBottom: '1px solid var(--tk-border)', marginTop: '2rem' }}
+      >
+        <div
+          style={{
+            maxWidth: '1280px',
+            margin: '0 auto',
+            padding: '0 2rem',
+            display: 'flex',
+            gap: '2rem',
+          }}
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '0.875rem 0',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                borderBottom: `2px solid ${activeTab === tab ? 'var(--tk-gold)' : 'transparent'}`,
+                color: activeTab === tab ? 'var(--tk-text)' : 'var(--tk-text-dim)',
+                fontWeight: activeTab === tab ? 500 : 400,
+                fontFamily: "'Inter', sans-serif",
+                transition: 'color 0.15s, border-color 0.15s',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Tabs — mobile pill style ────────────────────────────────────── */}
+      <div
+        className="artist-tabs-mobile"
+        style={{ display: 'none', padding: '1rem 1rem 0', gap: '6px' }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flex: 1,
+            gap: 6,
+            padding: 4,
+            border: '1px solid var(--tk-border)',
+            borderRadius: '999px',
+            fontSize: '0.8125rem',
+          }}
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1,
+                padding: '8px 0',
+                textAlign: 'center',
+                borderRadius: '999px',
+                border: 'none',
+                background: activeTab === tab ? 'var(--tk-text)' : 'transparent',
+                color: activeTab === tab ? 'var(--tk-bg)' : 'var(--tk-text-dim)',
+                cursor: 'pointer',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '0.8rem',
+                fontWeight: activeTab === tab ? 500 : 400,
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Sticky mobile booking CTA ───────────────────────────────────── */}
+      <div
+        className="sticky-book-bar"
+        style={{
+          display: 'none',
+          position: 'fixed',
+          bottom: '68px',
+          left: '12px',
+          right: '12px',
+          zIndex: 40,
+          padding: '10px 10px 10px 20px',
+          background: 'var(--tk-text)',
+          color: 'var(--tk-bg)',
+          borderRadius: '999px',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <div>
+          <div style={{ fontSize: '11px', opacity: 0.65, letterSpacing: '0.05em' }}>
+            {startingPrice != null ? `From $${startingPrice}` : 'Book now'}
+          </div>
+          <div className="font-editorial" style={{ fontSize: '18px', lineHeight: 1.1 }}>
+            Book a session
+          </div>
+        </div>
+        <button
+          onClick={handleBookCTA}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: '99px',
+            background: 'var(--tk-gold)',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            flexShrink: 0,
+          }}
+          aria-label="Book a session"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+
+      {/* ── Body — main + sidebar ──────────────────────────────────────── */}
+      <div
+        className="artist-body-grid"
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '2.5rem 2rem 6rem',
+          display: 'grid',
+          gridTemplateColumns: '1fr 360px',
+          gap: '3rem',
+          alignItems: 'start',
+        }}
+      >
+        {/* ── Main content ─────────────────────────────────────────────── */}
+        <div>
+          {/* Portfolio tab */}
+          {activeTab === 'Portfolio' && (
+            <div>
+              {portfolio.length > 0 ? (
+                <>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      marginBottom: '1.25rem',
+                    }}
+                  >
+                    <h2
+                      className="font-editorial"
+                      style={{
+                        fontSize: '2.25rem',
+                        fontWeight: 400,
+                        margin: 0,
+                        letterSpacing: '-0.02em',
+                        color: 'var(--tk-text)',
+                      }}
+                    >
+                      Recent work
+                    </h2>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--tk-text-faint)' }}>
+                      {portfolio.length} photos
                     </span>
-                    <span className="badge badge-success badge-sm">Available</span>
-                  </button>
-                ))}
-              </div>
-              {!user && (
-                <p className="text-sm text-base-content/50 mt-3 text-center">
-                  You'll be asked to sign in before confirming your booking.
-                </p>
+                  </div>
+                  <div className="portfolio-grid">
+                    {portfolio.map((item, i) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setLightboxIndex(i)}
+                        className={`portfolio-item${i === 0 ? ' portfolio-item-first' : ''}`}
+                      >
+                        <img
+                          src={item.image_url}
+                          alt={item.caption ?? `Work ${i + 1}`}
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.4s ease',
+                          }}
+                          onMouseEnter={(e) =>
+                            ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)')
+                          }
+                          onMouseLeave={(e) =>
+                            ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1)')
+                          }
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div
+                  style={{
+                    color: 'var(--tk-text-faint)',
+                    textAlign: 'center',
+                    padding: '4rem 0',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  No portfolio photos yet.
+                </div>
               )}
             </div>
           )}
+
+          {/* Services tab */}
+          {activeTab === 'Services' && (
+            <div>
+              <h2
+                className="font-editorial"
+                style={{
+                  fontSize: '2.25rem',
+                  fontWeight: 400,
+                  margin: '0 0 1.25rem',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--tk-text)',
+                }}
+              >
+                Services & prices
+              </h2>
+              {services.length > 0 ? (
+                <div
+                  style={{
+                    border: '1px solid var(--tk-border)',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {services.map((s, i) => {
+                    const waUrl = buildWhatsAppUrl(
+                      artist.whatsapp_number,
+                      defaultBookingMessage(artist.name, s.name),
+                    );
+                    return (
+                      <div
+                        key={s.id}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto auto auto',
+                          gap: '1.5rem',
+                          alignItems: 'center',
+                          padding: '1.25rem 1.5rem',
+                          borderTop: i === 0 ? 'none' : '1px solid var(--tk-border)',
+                          background: i % 2 ? 'transparent' : 'var(--tk-bg-raised)',
+                        }}
+                      >
+                        <div>
+                          <div
+                            className="font-editorial"
+                            style={{
+                              fontSize: '1.25rem',
+                              letterSpacing: '-0.01em',
+                              color: 'var(--tk-text)',
+                            }}
+                          >
+                            {s.name}
+                          </div>
+                          {s.description && (
+                            <div
+                              style={{
+                                fontSize: '0.8rem',
+                                color: 'var(--tk-text-faint)',
+                                marginTop: '3px',
+                              }}
+                            >
+                              {s.description}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '0.8125rem',
+                            color: 'var(--tk-text-dim)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {s.duration_min} min
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: '1rem',
+                            color: 'var(--tk-text)',
+                            fontWeight: 500,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {s.price != null
+                            ? `$${s.price}`
+                            : s.catalog_price != null
+                              ? `$${s.catalog_price}`
+                              : '—'}
+                        </div>
+                        {waUrl ? (
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: '0.7rem',
+                              letterSpacing: '0.12em',
+                              textTransform: 'uppercase',
+                              color: '#25d366',
+                              border: '1px solid #25d366',
+                              padding: '0.3rem 0.75rem',
+                              borderRadius: '999px',
+                              textDecoration: 'none',
+                              whiteSpace: 'nowrap',
+                              transition: 'background 0.15s, color 0.15s',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLElement).style.background = '#25d366';
+                              (e.currentTarget as HTMLElement).style.color = '#fff';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.background = 'transparent';
+                              (e.currentTarget as HTMLElement).style.color = '#25d366';
+                            }}
+                          >
+                            Book
+                          </a>
+                        ) : (
+                          <button
+                            onClick={handleBookCTA}
+                            style={{
+                              fontSize: '0.7rem',
+                              letterSpacing: '0.12em',
+                              textTransform: 'uppercase',
+                              color: 'var(--tk-text-dim)',
+                              border: '1px solid var(--tk-border)',
+                              padding: '0.3rem 0.75rem',
+                              borderRadius: '999px',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Book
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div
+                  style={{ color: 'var(--tk-text-faint)', padding: '2rem 0', fontSize: '0.9rem' }}
+                >
+                  No services listed yet.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* About tab */}
+          {activeTab === 'About' && (
+            <div>
+              <h2
+                className="font-editorial"
+                style={{
+                  fontSize: '2.25rem',
+                  fontWeight: 400,
+                  margin: '0 0 1.5rem',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--tk-text)',
+                }}
+              >
+                About
+              </h2>
+              {(artist.about ?? artist.bio) ? (
+                <p
+                  style={{
+                    fontSize: '1rem',
+                    lineHeight: 1.75,
+                    color: 'var(--tk-text-dim)',
+                    maxWidth: '640px',
+                    whiteSpace: 'pre-line',
+                    marginBottom: '2rem',
+                  }}
+                >
+                  {artist.about ?? artist.bio}
+                </p>
+              ) : (
+                <p style={{ color: 'var(--tk-text-faint)', fontSize: '0.9rem' }}>No bio yet.</p>
+              )}
+              {artist.industries.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {artist.industries.map((ind) => (
+                    <span
+                      key={ind.slug}
+                      style={{
+                        fontSize: '0.6rem',
+                        letterSpacing: '0.2em',
+                        textTransform: 'uppercase',
+                        border: '1px solid var(--tk-gold)',
+                        color: 'var(--tk-gold)',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '999px',
+                      }}
+                    >
+                      {ind.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {(artist.instagram_url ||
+                artist.tiktok_url ||
+                artist.facebook_url ||
+                artist.website_url) && (
+                <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  {artist.instagram_url && (
+                    <a
+                      href={artist.instagram_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        color: 'var(--tk-text-dim)',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      Instagram ↗
+                    </a>
+                  )}
+                  {artist.tiktok_url && (
+                    <a
+                      href={artist.tiktok_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        color: 'var(--tk-text-dim)',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      TikTok ↗
+                    </a>
+                  )}
+                  {artist.facebook_url && (
+                    <a
+                      href={artist.facebook_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        color: 'var(--tk-text-dim)',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      Facebook ↗
+                    </a>
+                  )}
+                  {artist.website_url && (
+                    <a
+                      href={artist.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        color: 'var(--tk-text-dim)',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      Website ↗
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reviews tab */}
+          {activeTab === 'Reviews' && (
+            <div>
+              <h2
+                className="font-editorial"
+                style={{
+                  fontSize: '2.25rem',
+                  fontWeight: 400,
+                  margin: '0 0 1.25rem',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--tk-text)',
+                }}
+              >
+                {testimonials.length > 0 ? `What clients say · ${testimonials.length}` : 'Reviews'}
+              </h2>
+              {testimonials.length > 0 ? (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '1rem',
+                  }}
+                >
+                  {testimonials.map((t) => (
+                    <div
+                      key={t.id}
+                      style={{
+                        padding: '1.5rem',
+                        background: 'var(--tk-bg-raised)',
+                        border: '1px solid var(--tk-border)',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginBottom: '0.875rem',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 500,
+                            fontSize: '0.9375rem',
+                            color: 'var(--tk-text)',
+                          }}
+                        >
+                          {t.client_name}
+                        </div>
+                        {t.date && (
+                          <div
+                            style={{
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: '0.6875rem',
+                              letterSpacing: '0.1em',
+                              textTransform: 'uppercase',
+                              color: 'var(--tk-text-faint)',
+                            }}
+                          >
+                            {t.date}
+                          </div>
+                        )}
+                      </div>
+                      <p
+                        className="font-editorial"
+                        style={{
+                          fontSize: '1.0625rem',
+                          fontStyle: 'italic',
+                          lineHeight: 1.6,
+                          color: 'var(--tk-text-dim)',
+                          margin: 0,
+                        }}
+                      >
+                        "{t.quote}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: 'var(--tk-text-faint)', fontSize: '0.9rem' }}>
+                  No reviews yet.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Booking section (below tabs) */}
+          <div
+            id="booking-section"
+            style={{
+              marginTop: '4rem',
+              paddingTop: '3rem',
+              borderTop: '1px solid var(--tk-border)',
+            }}
+          >
+            <h2
+              className="font-editorial"
+              style={{
+                fontSize: '2.25rem',
+                fontWeight: 400,
+                margin: '0 0 1.5rem',
+                letterSpacing: '-0.02em',
+                color: 'var(--tk-text)',
+              }}
+            >
+              Book an appointment
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              <div
+                style={{
+                  background: 'var(--tk-bg-raised)',
+                  borderRadius: '6px',
+                  border: '1px solid var(--tk-border)',
+                  padding: '1.25rem',
+                }}
+              >
+                <CalendarView
+                  year={calYear}
+                  month={calMonth}
+                  markedDates={availableDates}
+                  selectedDate={selectedDate}
+                  onDateSelect={setSelectedDate}
+                  onMonthChange={(y, m) => {
+                    setCalYear(y);
+                    setCalMonth(m);
+                    setSelectedDate(null);
+                  }}
+                />
+              </div>
+              <div>
+                {!selectedDate ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      color: 'var(--tk-text-faint)',
+                      textAlign: 'center',
+                      padding: '2rem 0',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    Select a highlighted date to see available times
+                  </div>
+                ) : slotsForDate.length === 0 ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      color: 'var(--tk-text-faint)',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    No slots on this date.
+                  </div>
+                ) : (
+                  <div>
+                    <h3
+                      style={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        color: 'var(--tk-text)',
+                        marginBottom: '1rem',
+                      }}
+                    >
+                      {new Date(selectedDate + 'T00:00').toLocaleDateString('default', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </h3>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '0.5rem',
+                      }}
+                    >
+                      {slotsForDate.map((slot) => (
+                        <button
+                          key={`${slot.date}-${slot.start}`}
+                          onClick={() => openBooking(slot)}
+                          style={{
+                            padding: '0.875rem 0',
+                            textAlign: 'center',
+                            border: '1px solid var(--tk-border)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            background: 'transparent',
+                            color: 'var(--tk-text)',
+                            fontSize: '0.9375rem',
+                            fontFamily: "'Inter', sans-serif",
+                            transition: 'border-color 0.15s, background 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--tk-text)';
+                            (e.currentTarget as HTMLElement).style.background =
+                              'var(--tk-bg-raised)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--tk-border)';
+                            (e.currentTarget as HTMLElement).style.background = 'transparent';
+                          }}
+                        >
+                          {slot.start}
+                        </button>
+                      ))}
+                    </div>
+                    {!user && (
+                      <p
+                        style={{
+                          fontSize: '0.8rem',
+                          color: 'var(--tk-text-faint)',
+                          marginTop: '1rem',
+                          textAlign: 'center',
+                        }}
+                      >
+                        You'll be asked to sign in before confirming.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Sticky sidebar ─────────────────────────────────────────────── */}
+        <div className="artist-sidebar">
+          <div
+            style={{
+              position: 'sticky',
+              top: '5rem',
+              padding: '1.75rem',
+              border: '1px solid var(--tk-border)',
+              borderRadius: '8px',
+              background: 'var(--tk-bg-raised)',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.6875rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--tk-text-faint)',
+                margin: '0 0 0.875rem',
+              }}
+            >
+              —— Booking
+            </p>
+            {startingPrice != null && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.5rem',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                <span
+                  className="font-editorial"
+                  style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', color: 'var(--tk-text)' }}
+                >
+                  ${startingPrice}
+                </span>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--tk-text-faint)' }}>
+                  starting
+                </span>
+              </div>
+            )}
+            <div
+              style={{
+                borderTop: '1px solid var(--tk-border)',
+                paddingTop: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+                marginBottom: '1.5rem',
+              }}
+            >
+              {[
+                { label: 'Location', value: artist.location ?? 'Jamaica' },
+                { label: 'Cancel policy', value: '24h notice' },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.8125rem',
+                  }}
+                >
+                  <span style={{ color: 'var(--tk-text-faint)' }}>{label}</span>
+                  <span style={{ color: 'var(--tk-text)' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={handleBookCTA}
+              style={{
+                width: '100%',
+                padding: '0.9375rem',
+                borderRadius: '999px',
+                background: 'var(--tk-gold)',
+                color: 'var(--tk-gold-on-gold)',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '0.9375rem',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                transition: 'opacity 0.15s',
+                marginBottom: '0.625rem',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              Book a session
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  width: '100%',
+                  padding: '0.9375rem',
+                  borderRadius: '999px',
+                  border: '1px solid var(--tk-border)',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: '0.9375rem',
+                  color: 'var(--tk-text)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  textDecoration: 'none',
+                  transition: 'border-color 0.15s',
+                }}
+              >
+                Message on WhatsApp
+              </a>
+            )}
+            {(artist.about ?? artist.bio) && (
+              <div
+                style={{
+                  marginTop: '1.5rem',
+                  paddingTop: '1.5rem',
+                  borderTop: '1px solid var(--tk-border)',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '0.6875rem',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'var(--tk-text-faint)',
+                    margin: '0 0 0.75rem',
+                  }}
+                >
+                  About
+                </p>
+                <p
+                  style={{
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.65,
+                    color: 'var(--tk-text-dim)',
+                    margin: 0,
+                  }}
+                >
+                  {(artist.about ?? artist.bio ?? '').slice(0, 180)}
+                  {(artist.about ?? artist.bio ?? '').length > 180 ? '…' : ''}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Lightbox */}
+      {/* ── Lightbox ───────────────────────────────────────────────────── */}
       {lightboxIndex !== null && portfolio[lightboxIndex] && (
         <dialog open className="modal modal-open" onClick={() => setLightboxIndex(null)}>
           <div
@@ -475,10 +1481,21 @@ export default function ArtistProfile() {
               className="w-full h-auto rounded-lg"
             />
             {portfolio[lightboxIndex].caption && (
-              <p className="text-center text-white/90 mt-2">{portfolio[lightboxIndex].caption}</p>
+              <p
+                style={{
+                  textAlign: 'center',
+                  color: 'rgba(255,255,255,0.9)',
+                  marginTop: '0.5rem',
+                  fontSize: '0.875rem',
+                }}
+              >
+                {portfolio[lightboxIndex].caption}
+              </p>
             )}
             {portfolio.length > 1 && (
-              <div className="flex justify-between mt-3">
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem' }}
+              >
                 <button
                   type="button"
                   className="btn btn-sm btn-ghost text-white"
@@ -488,7 +1505,13 @@ export default function ArtistProfile() {
                 >
                   ← Prev
                 </button>
-                <span className="text-white/70 text-sm self-center">
+                <span
+                  style={{
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: '0.875rem',
+                    alignSelf: 'center',
+                  }}
+                >
                   {lightboxIndex + 1} / {portfolio.length}
                 </span>
                 <button
@@ -504,19 +1527,55 @@ export default function ArtistProfile() {
         </dialog>
       )}
 
-      {/* Booking modal */}
+      {/* ── Booking modal ──────────────────────────────────────────────── */}
       {bookingSlot && (
         <dialog open className="modal modal-open">
-          <div className="modal-box max-w-md">
+          <div
+            style={{
+              background: 'var(--tk-bg-raised)',
+              border: '1px solid var(--tk-border)',
+              borderRadius: '8px',
+              padding: '2rem',
+              maxWidth: '420px',
+              width: '100%',
+              position: 'relative',
+            }}
+          >
             <button
               type="button"
-              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--tk-text-faint)',
+                fontSize: '1rem',
+              }}
               onClick={() => setBookingSlot(null)}
             >
               ✕
             </button>
-            <h3 className="font-bold text-lg mb-1">Confirm Booking</h3>
-            <p className="text-sm text-base-content/60 mb-4">
+            <h3
+              className="font-editorial"
+              style={{
+                fontSize: '1.75rem',
+                fontWeight: 400,
+                letterSpacing: '-0.02em',
+                color: 'var(--tk-text)',
+                margin: '0 0 0.5rem',
+              }}
+            >
+              Confirm Booking
+            </h3>
+            <p
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--tk-text-faint)',
+                marginBottom: '1.5rem',
+              }}
+            >
               {artist.name} ·{' '}
               {new Date(bookingSlot.date + 'T00:00').toLocaleDateString('default', {
                 weekday: 'long',
@@ -527,39 +1586,193 @@ export default function ArtistProfile() {
             </p>
 
             {bookingSuccess ? (
-              <div className="text-center py-4">
-                <div className="text-4xl mb-3">🎉</div>
-                <p className="font-semibold text-lg">Booking submitted!</p>
-                <p className="text-sm text-base-content/60 mt-1">
-                  The artist will confirm your appointment shortly.
+              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                <div
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: '99px',
+                    background: 'var(--tk-gold)',
+                    color: '#fff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '1.5rem',
+                  }}
+                >
+                  <svg
+                    width="36"
+                    height="36"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <h2
+                  className="font-editorial"
+                  style={{
+                    fontSize: '2.75rem',
+                    fontWeight: 400,
+                    lineHeight: 1,
+                    letterSpacing: '-0.025em',
+                    margin: '0 0 0.75rem',
+                    color: 'var(--tk-text)',
+                  }}
+                >
+                  You're
+                  <br />
+                  <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>booked.</span>
+                </h2>
+                <p
+                  style={{
+                    fontSize: '0.875rem',
+                    lineHeight: 1.5,
+                    color: 'var(--tk-text-dim)',
+                    margin: '0 0 1.5rem',
+                  }}
+                >
+                  {new Date(bookingSlot!.date + 'T00:00').toLocaleDateString('default', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                  })}{' '}
+                  · {bookingSlot!.start}
+                  <br />
+                  with {artist.name}
                 </p>
-                {user ? (
-                  <button
-                    className="btn btn-primary mt-4"
-                    onClick={() => {
-                      setBookingSlot(null);
-                      navigate('/my-bookings');
+                <div
+                  style={{
+                    padding: '1rem 1.25rem',
+                    border: '1px solid var(--tk-border)',
+                    borderRadius: '10px',
+                    background: 'var(--tk-bg)',
+                    textAlign: 'left',
+                    marginBottom: '1.5rem',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      paddingBottom: '0.875rem',
+                      borderBottom: '1px solid var(--tk-border)',
                     }}
                   >
-                    View my bookings
-                  </button>
-                ) : (
+                    {artist.photo_url && (
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '99px',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={artist.photo_url}
+                          alt={artist.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--tk-text)' }}>
+                        {artist.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--tk-text-faint)' }}>
+                        {selectedService}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      paddingTop: '0.875rem',
+                      fontSize: '0.8125rem',
+                      color: 'var(--tk-text-dim)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Date</span>
+                      <span style={{ color: 'var(--tk-text)' }}>
+                        {new Date(bookingSlot!.date + 'T00:00').toLocaleDateString('default', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}{' '}
+                        · {bookingSlot!.start}
+                      </span>
+                    </div>
+                    {artist.location && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Location</span>
+                        <span style={{ color: 'var(--tk-text)' }}>{artist.location}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {user && (
+                    <button
+                      className="btn-gold"
+                      style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}
+                      onClick={() => {
+                        setBookingSlot(null);
+                        navigate('/my-bookings');
+                      }}
+                    >
+                      View my bookings
+                    </button>
+                  )}
                   <button
-                    className="btn btn-ghost mt-4"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--tk-text-dim)',
+                      fontSize: '0.875rem',
+                    }}
                     onClick={() => setBookingSlot(null)}
                   >
-                    Back to profile
+                    Done
                   </button>
-                )}
+                </div>
               </div>
             ) : (
-              <form onSubmit={handleBook} className="space-y-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Service</span>
+              <form
+                onSubmit={handleBook}
+                style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+              >
+                <div>
+                  <label
+                    style={{
+                      fontSize: '0.6875rem',
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: 'var(--tk-text-faint)',
+                      display: 'block',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    Service
                   </label>
                   <select
                     className="select select-bordered w-full"
+                    style={{
+                      background: 'var(--tk-bg)',
+                      color: 'var(--tk-text)',
+                      border: '1px solid var(--tk-border)',
+                      borderRadius: '6px',
+                    }}
                     value={selectedService}
                     onChange={(e) => setSelectedService(e.target.value)}
                     required
@@ -573,30 +1786,59 @@ export default function ArtistProfile() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Message (optional)</span>
+                <div>
+                  <label
+                    style={{
+                      fontSize: '0.6875rem',
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: 'var(--tk-text-faint)',
+                      display: 'block',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    Message (optional)
                   </label>
                   <textarea
-                    className="textarea textarea-bordered h-20"
-                    placeholder="Any special requests or notes for the artist..."
+                    style={{
+                      width: '100%',
+                      background: 'var(--tk-bg)',
+                      color: 'var(--tk-text)',
+                      border: '1px solid var(--tk-border)',
+                      borderRadius: '6px',
+                      padding: '0.75rem',
+                      fontSize: '0.875rem',
+                      height: '80px',
+                      resize: 'vertical',
+                      outline: 'none',
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                    placeholder="Any special requests…"
                     value={bookingMessage}
                     onChange={(e) => setBookingMessage(e.target.value)}
                   />
                 </div>
                 {bookingError && (
-                  <div className="alert alert-error py-2 text-sm">{bookingError}</div>
+                  <div style={{ color: 'var(--color-error)', fontSize: '0.875rem' }}>
+                    {bookingError}
+                  </div>
                 )}
-                <div className="modal-action">
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
                   <button
                     type="button"
-                    className="btn btn-ghost"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--tk-text-faint)',
+                      fontSize: '0.875rem',
+                    }}
                     onClick={() => setBookingSlot(null)}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={bookingLoading}>
-                    {bookingLoading ? 'Booking...' : 'Confirm Booking'}
+                  <button type="submit" className="btn-gold" disabled={bookingLoading}>
+                    {bookingLoading ? 'Booking…' : 'Confirm Booking'}
                   </button>
                 </div>
               </form>

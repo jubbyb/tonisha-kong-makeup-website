@@ -1,12 +1,18 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { BRAND } from '../constants/brand';
 
 function SunIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    >
       <circle cx="12" cy="12" r="4" />
       <line x1="12" y1="2" x2="12" y2="4" />
       <line x1="12" y1="20" x2="12" y2="22" />
@@ -22,9 +28,162 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
+  );
+}
+
+function BottomTabBar({ user }: { user: { role: string } | null }) {
+  const location = useLocation();
+  const isActive = (to: string) =>
+    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
+
+  const tabs = [
+    {
+      to: '/',
+      label: 'Explore',
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      ),
+    },
+    {
+      to: '/artists',
+      label: 'Artists',
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      to: '/my-bookings',
+      label: 'Bookings',
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      ),
+    },
+    {
+      to: '/contact',
+      label: 'Contact',
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      ),
+    },
+    {
+      to: user ? '/profile' : '/login',
+      label: user ? 'Profile' : 'Login',
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <div className="mobile-tab-bar">
+      {tabs.map(({ to, label, icon }) => {
+        const active = isActive(to);
+        return (
+          <Link
+            key={to}
+            to={to}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '3px',
+              textDecoration: 'none',
+              flex: 1,
+              padding: '0.5rem 0',
+              color: active ? 'var(--tk-gold)' : 'var(--tk-text-faint)',
+              transition: 'color 0.15s',
+            }}
+          >
+            {icon}
+            <span
+              style={{
+                fontSize: '0.5rem',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              {label}
+            </span>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 
@@ -32,12 +191,10 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/');
-    setMenuOpen(false);
   };
 
   const navLinks = [
@@ -85,16 +242,30 @@ export default function Navbar() {
         <Link
           to="/"
           style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: '1.35rem',
-            fontWeight: 500,
-            letterSpacing: '0.12em',
-            color: 'var(--tk-gold)',
+            fontFamily: "'Instrument Serif', serif",
+            fontSize: '1.375rem',
+            lineHeight: 1,
+            letterSpacing: '-0.01em',
             textDecoration: 'none',
-            textTransform: 'uppercase',
+            display: 'inline-flex',
+            alignItems: 'baseline',
+            color: 'var(--tk-text)',
           }}
         >
-          {BRAND.name}
+          <span style={{ fontStyle: 'italic' }}>Style</span>
+          <span style={{ color: 'var(--tk-gold)', fontStyle: 'italic' }}>ja</span>
+          <span
+            style={{
+              width: '5px',
+              height: '5px',
+              borderRadius: '99px',
+              background: 'var(--tk-gold)',
+              marginLeft: '2px',
+              alignSelf: 'flex-end',
+              marginBottom: '3px',
+              display: 'inline-block',
+            }}
+          />
         </Link>
 
         {/* Desktop links */}
@@ -107,12 +278,8 @@ export default function Navbar() {
               key={to}
               to={to}
               style={linkStyle}
-              onMouseEnter={(e) =>
-                ((e.target as HTMLElement).style.color = 'var(--tk-text)')
-              }
-              onMouseLeave={(e) =>
-                ((e.target as HTMLElement).style.color = 'var(--tk-text-muted)')
-              }
+              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--tk-text)')}
+              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--tk-text-muted)')}
             >
               {label}
             </Link>
@@ -147,10 +314,16 @@ export default function Navbar() {
           {user ? (
             <>
               {user.role === 'artist' && (
-                <Link to="/artist-dashboard" style={authLinkStyle}>Dashboard</Link>
+                <Link to="/artist-dashboard" style={authLinkStyle}>
+                  Dashboard
+                </Link>
               )}
-              <Link to="/my-bookings" style={authLinkStyle}>My Bookings</Link>
-              <Link to="/profile" style={authLinkStyle}>Profile</Link>
+              <Link to="/my-bookings" style={authLinkStyle}>
+                My Bookings
+              </Link>
+              <Link to="/profile" style={authLinkStyle}>
+                Profile
+              </Link>
               <button
                 onClick={handleLogout}
                 className="btn-gold"
@@ -161,7 +334,9 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login" style={authLinkStyle}>Login</Link>
+              <Link to="/login" style={authLinkStyle}>
+                Login
+              </Link>
               <Link
                 to="/login?mode=signup"
                 className="btn-gold"
@@ -173,8 +348,11 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile right: theme toggle + hamburger */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} className="mobile-controls">
+        {/* Mobile right: theme toggle only (hamburger replaced by bottom tab bar) */}
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          className="mobile-controls"
+        >
           <button
             onClick={toggleTheme}
             aria-label={theme === 'luxury' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -190,119 +368,10 @@ export default function Navbar() {
           >
             {theme === 'luxury' ? <SunIcon /> : <MoonIcon />}
           </button>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--tk-gold)',
-              padding: '0.5rem',
-            }}
-          >
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              {menuOpen ? (
-                <>
-                  <line x1="3" y1="3" x2="19" y2="19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <line x1="19" y1="3" x2="3" y2="19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="6" x2="19" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <line x1="3" y1="11" x2="19" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <line x1="3" y1="16" x2="19" y2="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </>
-              )}
-            </svg>
-          </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div
-          style={{
-            background: 'var(--tk-bg)',
-            borderTop: '1px solid var(--tk-border)',
-            padding: '1.5rem 2rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.25rem',
-          }}
-        >
-          {navLinks.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              onClick={() => setMenuOpen(false)}
-              style={{
-                fontSize: '0.8rem',
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                color: 'var(--tk-text-muted)',
-                textDecoration: 'none',
-              }}
-            >
-              {label}
-            </Link>
-          ))}
-          <div style={{ borderTop: '1px solid var(--tk-border)', paddingTop: '1rem', marginTop: '0.25rem' }}>
-            {user ? (
-              <>
-                {user.role === 'artist' && (
-                  <Link
-                    to="/artist-dashboard"
-                    onClick={() => setMenuOpen(false)}
-                    style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none', display: 'block', marginBottom: '1rem' }}
-                  >
-                    Dashboard
-                  </Link>
-                )}
-                <Link
-                  to="/my-bookings"
-                  onClick={() => setMenuOpen(false)}
-                  style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none', display: 'block', marginBottom: '1rem' }}
-                >
-                  My Bookings
-                </Link>
-                <Link
-                  to="/profile"
-                  onClick={() => setMenuOpen(false)}
-                  style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none', display: 'block', marginBottom: '1rem' }}
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="btn-gold"
-                  style={{ padding: '0.5rem 1.5rem', fontSize: '0.65rem' }}
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                <Link
-                  to="/login"
-                  onClick={() => setMenuOpen(false)}
-                  style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--tk-text-muted)', textDecoration: 'none' }}
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/login?mode=signup"
-                  onClick={() => setMenuOpen(false)}
-                  className="btn-gold"
-                  style={{ padding: '0.5rem 1.5rem', fontSize: '0.65rem' }}
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <BottomTabBar user={user} />
 
       <style>{`
         @media (min-width: 768px) {

@@ -231,7 +231,7 @@ const Services: React.FC = () => {
                         {service.price != null && (
                           <span
                             style={{
-                              fontFamily: "'Cormorant Garamond', serif",
+                              fontFamily: "'Instrument Serif', 'Cormorant Garamond', serif",
                               fontSize: '1.2rem',
                               fontWeight: 300,
                               color: 'var(--tk-gold)',

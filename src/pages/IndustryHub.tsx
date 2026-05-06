@@ -210,7 +210,7 @@ export default function IndustryHub() {
                     {svc.name}
                   </h3>
                   {svc.price != null && (
-                    <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', color: 'var(--tk-gold)', whiteSpace: 'nowrap', marginLeft: '0.5rem' }}>
+                    <span style={{ fontFamily: "'Instrument Serif', 'Cormorant Garamond', serif", fontSize: '1.1rem', color: 'var(--tk-gold)', whiteSpace: 'nowrap', marginLeft: '0.5rem' }}>
                       ${svc.price}
                     </span>
                   )}
