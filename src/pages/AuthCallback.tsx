@@ -4,9 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 function decodeToken(token: string) {
   try {
-    const payload = JSON.parse(
-      atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
-    );
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
     return {
       id: String(payload.sub),
       name: payload.name as string,

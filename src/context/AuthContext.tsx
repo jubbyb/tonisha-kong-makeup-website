@@ -21,7 +21,13 @@ function decodeToken(token: string): AuthUser | null {
   try {
     const payload = token.split('.')[1];
     const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return { id: decoded.sub, name: decoded.name, email: decoded.email, role: decoded.role, artist_id: decoded.artist_id };
+    return {
+      id: decoded.sub,
+      name: decoded.name,
+      email: decoded.email,
+      role: decoded.role,
+      artist_id: decoded.artist_id,
+    };
   } catch {
     return null;
   }
@@ -72,9 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, setAuth, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ user, token, setAuth, logout }}>{children}</AuthContext.Provider>
   );
 }
 

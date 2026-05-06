@@ -14,9 +14,7 @@ const Contact: React.FC = () => {
 
   const validateEmail = (v: string) => {
     if (!v.trim()) return 'Email is required.';
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
-      ? ''
-      : 'Please enter a valid email address.';
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email address.';
   };
 
   const validatePhone = (v: string) => {
@@ -76,7 +74,13 @@ const Contact: React.FC = () => {
   };
 
   return (
-    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
+    <div
+      style={{
+        background: 'var(--bg)',
+        minHeight: '100vh',
+        transition: 'background-color 0.35s ease',
+      }}
+    >
       <div
         style={{
           maxWidth: '1280px',
@@ -97,7 +101,7 @@ const Contact: React.FC = () => {
               fontSize: '0.65rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'var(--tk-gold)',
+              color: 'var(--accent)',
               marginBottom: '1rem',
             }}
           >
@@ -109,13 +113,13 @@ const Contact: React.FC = () => {
               fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
               fontWeight: 300,
               lineHeight: 1.05,
-              color: 'var(--tk-text)',
+              color: 'var(--ink)',
               marginBottom: '2rem',
             }}
           >
             Let's Create
             <br />
-            <span style={{ fontStyle: 'italic', color: 'var(--tk-gold)' }}>Together</span>
+            <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>Together</span>
           </h1>
 
           <div className="divider-gold anim-fade-in delay-2" style={{ marginBottom: '2rem' }} />
@@ -125,7 +129,7 @@ const Contact: React.FC = () => {
             style={{
               fontSize: '0.95rem',
               lineHeight: 1.8,
-              color: 'var(--tk-text-dim)',
+              color: 'var(--ink-2)',
               marginBottom: '3rem',
               maxWidth: '400px',
             }}
@@ -150,7 +154,7 @@ const Contact: React.FC = () => {
                     fontSize: '0.6rem',
                     letterSpacing: '0.25em',
                     textTransform: 'uppercase',
-                    color: 'var(--tk-text-faint)',
+                    color: 'var(--ink-3)',
                     marginBottom: '0.3rem',
                   }}
                 >
@@ -159,7 +163,7 @@ const Contact: React.FC = () => {
                 <p
                   style={{
                     fontSize: '0.9rem',
-                    color: 'var(--tk-text-muted)',
+                    color: 'var(--ink-2)',
                   }}
                 >
                   {value}
@@ -176,10 +180,38 @@ const Contact: React.FC = () => {
             style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
           >
             {[
-              { label: 'Full Name', key: 'name', type: 'text', value: name, setter: setName, required: true },
-              { label: 'Email Address', key: 'email', type: 'email', value: email, setter: setEmail, required: true },
-              { label: 'Phone Number', key: 'phone', type: 'tel', value: phone, setter: setPhone, required: false },
-              { label: 'Subject', key: 'subject', type: 'text', value: subject, setter: setSubject, required: true },
+              {
+                label: 'Full Name',
+                key: 'name',
+                type: 'text',
+                value: name,
+                setter: setName,
+                required: true,
+              },
+              {
+                label: 'Email Address',
+                key: 'email',
+                type: 'email',
+                value: email,
+                setter: setEmail,
+                required: true,
+              },
+              {
+                label: 'Phone Number',
+                key: 'phone',
+                type: 'tel',
+                value: phone,
+                setter: setPhone,
+                required: false,
+              },
+              {
+                label: 'Subject',
+                key: 'subject',
+                type: 'text',
+                value: subject,
+                setter: setSubject,
+                required: true,
+              },
             ].map(({ label, key, type, value, setter, required }) => (
               <div key={label}>
                 <label
@@ -188,7 +220,7 @@ const Contact: React.FC = () => {
                     fontSize: '0.6rem',
                     letterSpacing: '0.22em',
                     textTransform: 'uppercase',
-                    color: 'var(--tk-text-faint)',
+                    color: 'var(--ink-3)',
                     marginBottom: '0.5rem',
                   }}
                 >
@@ -196,7 +228,7 @@ const Contact: React.FC = () => {
                 </label>
                 <input
                   type={type}
-                  className="input-luxury"
+                  className="input-editorial"
                   value={value}
                   onChange={(e) => setter(e.target.value)}
                   onBlur={() => {
@@ -209,7 +241,13 @@ const Contact: React.FC = () => {
                   placeholder={label}
                 />
                 {fieldErrors[key] && (
-                  <p style={{ fontSize: '0.75rem', color: 'var(--color-error, oklch(65% 0.2 25))', marginTop: '0.35rem' }}>
+                  <p
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--color-error, oklch(65% 0.2 25))',
+                      marginTop: '0.35rem',
+                    }}
+                  >
                     {fieldErrors[key]}
                   </p>
                 )}
@@ -223,14 +261,14 @@ const Contact: React.FC = () => {
                   fontSize: '0.6rem',
                   letterSpacing: '0.22em',
                   textTransform: 'uppercase',
-                  color: 'var(--tk-text-faint)',
+                  color: 'var(--ink-3)',
                   marginBottom: '0.5rem',
                 }}
               >
                 Message
               </label>
               <textarea
-                className="input-luxury"
+                className="input-editorial"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
@@ -242,7 +280,7 @@ const Contact: React.FC = () => {
 
             <button
               type="submit"
-              className="btn-gold"
+              className="btn-accent"
               disabled={loading}
               style={{ alignSelf: 'flex-start', marginTop: '0.5rem' }}
             >
@@ -253,16 +291,14 @@ const Contact: React.FC = () => {
               <p
                 style={{
                   fontSize: '0.8rem',
-                  color: 'var(--tk-gold)',
+                  color: 'var(--accent)',
                   letterSpacing: '0.1em',
                 }}
               >
                 Message received — I'll be in touch soon.
               </p>
             )}
-            {error && (
-              <p style={{ fontSize: '0.8rem', color: 'var(--color-error)' }}>{error}</p>
-            )}
+            {error && <p style={{ fontSize: '0.8rem', color: 'var(--color-error)' }}>{error}</p>}
           </form>
         </div>
       </div>

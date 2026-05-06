@@ -128,7 +128,9 @@ function BookingsTab({ token }: { token: string }) {
     }
   }, [token]);
 
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this booking?')) return;
@@ -139,7 +141,12 @@ function BookingsTab({ token }: { token: string }) {
     setBookings((prev) => prev.filter((b) => b.id !== id));
   };
 
-  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
   if (error) return <div className="alert alert-error mt-4">{error}</div>;
 
   return (
@@ -174,12 +181,11 @@ function BookingsTab({ token }: { token: string }) {
                   <td>{b.phone ?? '—'}</td>
                   <td>{b.service}</td>
                   <td className="max-w-xs truncate">{b.message ?? '—'}</td>
-                  <td className="whitespace-nowrap text-sm text-base-content/60">{new Date(b.created_at).toLocaleDateString()}</td>
+                  <td className="whitespace-nowrap text-sm text-base-content/60">
+                    {new Date(b.created_at).toLocaleDateString()}
+                  </td>
                   <td>
-                    <button
-                      className="btn btn-error btn-xs"
-                      onClick={() => handleDelete(b.id)}
-                    >
+                    <button className="btn btn-error btn-xs" onClick={() => handleDelete(b.id)}>
                       Delete
                     </button>
                   </td>
@@ -207,10 +213,7 @@ function ClassesTab({ token }: { token: string }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const artistById = useMemo(
-    () => new Map(artists.map((a) => [a.id, a.name])),
-    [artists],
-  );
+  const artistById = useMemo(() => new Map(artists.map((a) => [a.id, a.name])), [artists]);
 
   const fetchClasses = useCallback(async () => {
     setLoading(true);
@@ -231,7 +234,9 @@ function ClassesTab({ token }: { token: string }) {
     }
   }, [token]);
 
-  useEffect(() => { fetchClasses(); }, [fetchClasses]);
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   const openAdd = () => {
     setEditingClass(null);
@@ -302,14 +307,21 @@ function ClassesTab({ token }: { token: string }) {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
   if (error) return <div className="alert alert-error mt-4">{error}</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Classes</h2>
-        <button className="btn btn-primary btn-sm" onClick={openAdd}>+ Add Class</button>
+        <button className="btn btn-primary btn-sm" onClick={openAdd}>
+          + Add Class
+        </button>
       </div>
 
       {classes.length === 0 ? (
@@ -336,26 +348,36 @@ function ClassesTab({ token }: { token: string }) {
                   (b) => b.service === c.name && b.date.startsWith(classDate),
                 ).length;
                 return (
-                <tr key={c.id}>
-                  <td>
-                    <div className="font-medium">{c.name}</div>
-                    <div className="text-sm text-base-content/60 max-w-xs truncate">{c.description}</div>
-                  </td>
-                  <td className="whitespace-nowrap">{new Date(c.date).toLocaleString()}</td>
-                  <td>${c.price}</td>
-                  <td>{c.host_artist_id ? (artistById.get(c.host_artist_id) ?? '—') : '—'}</td>
-                  <td>
-                    {c.total_slots > 0
-                      ? <span className={booked >= c.total_slots ? 'text-error font-medium' : ''}>{booked} / {c.total_slots}</span>
-                      : <span>{booked}</span>}
-                  </td>
-                  <td>{c.certificate ? '✓' : '—'}</td>
-                  <td>{c.mentoring ? '✓' : '—'}</td>
-                  <td className="space-x-2 whitespace-nowrap">
-                    <button className="btn btn-ghost btn-xs" onClick={() => openEdit(c)}>Edit</button>
-                    <button className="btn btn-error btn-xs" onClick={() => handleDelete(c.id)}>Delete</button>
-                  </td>
-                </tr>
+                  <tr key={c.id}>
+                    <td>
+                      <div className="font-medium">{c.name}</div>
+                      <div className="text-sm text-base-content/60 max-w-xs truncate">
+                        {c.description}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap">{new Date(c.date).toLocaleString()}</td>
+                    <td>${c.price}</td>
+                    <td>{c.host_artist_id ? (artistById.get(c.host_artist_id) ?? '—') : '—'}</td>
+                    <td>
+                      {c.total_slots > 0 ? (
+                        <span className={booked >= c.total_slots ? 'text-error font-medium' : ''}>
+                          {booked} / {c.total_slots}
+                        </span>
+                      ) : (
+                        <span>{booked}</span>
+                      )}
+                    </td>
+                    <td>{c.certificate ? '✓' : '—'}</td>
+                    <td>{c.mentoring ? '✓' : '—'}</td>
+                    <td className="space-x-2 whitespace-nowrap">
+                      <button className="btn btn-ghost btn-xs" onClick={() => openEdit(c)}>
+                        Edit
+                      </button>
+                      <button className="btn btn-error btn-xs" onClick={() => handleDelete(c.id)}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -370,27 +392,57 @@ function ClassesTab({ token }: { token: string }) {
               type="button"
               className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
               onClick={() => setModalOpen(false)}
-            >✕</button>
+            >
+              ✕
+            </button>
             <h3 className="font-bold text-lg mb-4">{editingClass ? 'Edit Class' : 'Add Class'}</h3>
             <form onSubmit={handleSave} className="space-y-3">
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Name</span>
-                <input type="text" className="grow" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                <input
+                  type="text"
+                  className="grow"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  required
+                />
               </label>
               <label className="textarea textarea-bordered flex items-start gap-2 pt-2">
                 <span className="label w-24 mt-1">Description</span>
-                <textarea className="grow" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required rows={3} />
+                <textarea
+                  className="grow"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  required
+                  rows={3}
+                />
               </label>
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Date</span>
-                <input type="datetime-local" className="grow" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+                <input
+                  type="datetime-local"
+                  className="grow"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  required
+                />
               </label>
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Price ($)</span>
-                <input type="number" min="0" step="0.01" className="grow" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="grow"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  required
+                />
               </label>
               <label className="form-control w-full">
-                <div className="label"><span className="label-text">Host Artist</span></div>
+                <div className="label">
+                  <span className="label-text">Host Artist</span>
+                </div>
                 <select
                   className="select select-bordered w-full"
                   value={form.host_artist_id}
@@ -398,7 +450,9 @@ function ClassesTab({ token }: { token: string }) {
                 >
                   <option value="">— No host —</option>
                   {artists.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -406,7 +460,9 @@ function ClassesTab({ token }: { token: string }) {
                 <label className="input input-bordered flex items-center gap-2 flex-1">
                   <span className="label whitespace-nowrap">Total Slots</span>
                   <input
-                    type="number" min="0" className="grow"
+                    type="number"
+                    min="0"
+                    className="grow"
                     value={form.total_slots}
                     onChange={(e) => setForm({ ...form, total_slots: e.target.value })}
                     placeholder="0 = unlimited"
@@ -415,7 +471,9 @@ function ClassesTab({ token }: { token: string }) {
                 <label className="input input-bordered flex items-center gap-2 flex-1">
                   <span className="label whitespace-nowrap">Duration (min)</span>
                   <input
-                    type="number" min="1" className="grow"
+                    type="number"
+                    min="1"
+                    className="grow"
                     value={form.duration_min}
                     onChange={(e) => setForm({ ...form, duration_min: e.target.value })}
                   />
@@ -423,17 +481,29 @@ function ClassesTab({ token }: { token: string }) {
               </div>
               <div className="flex gap-6 pl-1">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="checkbox checkbox-primary" checked={form.certificate} onChange={(e) => setForm({ ...form, certificate: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary"
+                    checked={form.certificate}
+                    onChange={(e) => setForm({ ...form, certificate: e.target.checked })}
+                  />
                   <span>Certificate</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="checkbox checkbox-primary" checked={form.mentoring} onChange={(e) => setForm({ ...form, mentoring: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary"
+                    checked={form.mentoring}
+                    onChange={(e) => setForm({ ...form, mentoring: e.target.checked })}
+                  />
                   <span>1-on-1 Mentoring</span>
                 </label>
               </div>
               {saveError && <div className="alert alert-error py-2 text-sm">{saveError}</div>}
               <div className="modal-action mt-2">
-                <button type="button" className="btn btn-ghost" onClick={() => setModalOpen(false)}>Cancel</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalOpen(false)}>
+                  Cancel
+                </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? 'Saving...' : editingClass ? 'Save Changes' : 'Add Class'}
                 </button>
@@ -459,12 +529,37 @@ interface ArtistRecord {
   user_id: number | null;
 }
 
-interface AdminIndustry { id: number; slug: string; name: string; }
+interface AdminIndustry {
+  id: number;
+  slug: string;
+  name: string;
+}
 
-type ArtistForm = { name: string; email: string; password: string; bio: string; specialties: string; photo_url: string };
-const emptyArtistForm = (): ArtistForm => ({ name: '', email: '', password: '', bio: '', specialties: '', photo_url: '' });
+type ArtistForm = {
+  name: string;
+  email: string;
+  password: string;
+  bio: string;
+  specialties: string;
+  photo_url: string;
+};
+const emptyArtistForm = (): ArtistForm => ({
+  name: '',
+  email: '',
+  password: '',
+  bio: '',
+  specialties: '',
+  photo_url: '',
+});
 
-type ArtistEditForm = { name: string; bio: string; specialties: string; photo_url: string; whatsapp_number: string; industry_ids: number[] };
+type ArtistEditForm = {
+  name: string;
+  bio: string;
+  specialties: string;
+  photo_url: string;
+  whatsapp_number: string;
+  industry_ids: number[];
+};
 const emptyArtistEditForm = (a: ArtistRecord): ArtistEditForm => ({
   name: a.name,
   bio: a.bio ?? '',
@@ -489,12 +584,16 @@ function ArtistsTab({ token }: { token: string }) {
 
   const fetchArtists = useCallback(async () => {
     setLoading(true);
-    const res = await fetch('/api/admin/artists', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch('/api/admin/artists', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setArtists(await res.json());
     setLoading(false);
   }, [token]);
 
-  useEffect(() => { fetchArtists(); }, [fetchArtists]);
+  useEffect(() => {
+    fetchArtists();
+  }, [fetchArtists]);
   useEffect(() => {
     fetch('/api/industries')
       .then((r) => r.json() as Promise<AdminIndustry[]>)
@@ -510,9 +609,19 @@ function ArtistsTab({ token }: { token: string }) {
       const res = await fetch('/api/admin/artists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: form.name, email: form.email, password: form.password, bio: form.bio || undefined, specialties: form.specialties || undefined, photo_url: form.photo_url || undefined }),
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          bio: form.bio || undefined,
+          specialties: form.specialties || undefined,
+          photo_url: form.photo_url || undefined,
+        }),
       });
-      if (!res.ok) { const d = (await res.json()) as { error: string }; throw new Error(d.error); }
+      if (!res.ok) {
+        const d = (await res.json()) as { error: string };
+        throw new Error(d.error);
+      }
       await fetchArtists();
       setModalOpen(false);
       setForm(emptyArtistForm());
@@ -534,7 +643,10 @@ function ArtistsTab({ token }: { token: string }) {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this artist? This cannot be undone.')) return;
-    await fetch(`/api/admin/artists/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`/api/admin/artists/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setArtists((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -562,7 +674,10 @@ function ArtistsTab({ token }: { token: string }) {
           industry_ids: editForm.industry_ids,
         }),
       });
-      if (!res.ok) { const d = (await res.json()) as { error: string }; throw new Error(d.error); }
+      if (!res.ok) {
+        const d = (await res.json()) as { error: string };
+        throw new Error(d.error);
+      }
       await fetchArtists();
       setEditArtist(null);
       setEditForm(null);
@@ -573,13 +688,27 @@ function ArtistsTab({ token }: { token: string }) {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Artists</h2>
-        <button className="btn btn-primary btn-sm" onClick={() => { setForm(emptyArtistForm()); setSaveError(null); setModalOpen(true); }}>+ Add Artist</button>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={() => {
+            setForm(emptyArtistForm());
+            setSaveError(null);
+            setModalOpen(true);
+          }}
+        >
+          + Add Artist
+        </button>
       </div>
 
       {artists.length === 0 ? (
@@ -587,29 +716,49 @@ function ArtistsTab({ token }: { token: string }) {
       ) : (
         <div className="overflow-x-auto rounded-lg border border-base-300">
           <table className="table table-zebra w-full">
-            <thead><tr><th>Name</th><th>Email</th><th>Specialties</th><th>Account</th><th>Status</th><th></th></tr></thead>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Specialties</th>
+                <th>Account</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
             <tbody>
               {artists.map((a) => (
                 <tr key={a.id}>
                   <td>
                     <div className="font-medium">{a.name}</div>
-                    {a.bio && <div className="text-xs text-base-content/60 max-w-xs truncate">{a.bio}</div>}
+                    {a.bio && (
+                      <div className="text-xs text-base-content/60 max-w-xs truncate">{a.bio}</div>
+                    )}
                   </td>
                   <td>{a.email}</td>
                   <td className="text-sm">{a.specialties ?? '—'}</td>
                   <td>
-                    {a.user_id != null
-                      ? <span className="badge badge-info badge-sm">Linked</span>
-                      : <span className="text-base-content/40 text-xs">Standalone</span>}
+                    {a.user_id != null ? (
+                      <span className="badge badge-info badge-sm">Linked</span>
+                    ) : (
+                      <span className="text-base-content/40 text-xs">Standalone</span>
+                    )}
                   </td>
                   <td>
-                    <button className={`badge ${a.is_active ? 'badge-success' : 'badge-error'} cursor-pointer`} onClick={() => handleToggleActive(a)}>
+                    <button
+                      className={`badge ${a.is_active ? 'badge-success' : 'badge-error'} cursor-pointer`}
+                      onClick={() => handleToggleActive(a)}
+                    >
                       {a.is_active ? 'Active' : 'Inactive'}
                     </button>
                   </td>
                   <td className="flex gap-1">
-                    <button className="btn btn-ghost btn-xs" onClick={() => openEdit(a)}>Edit</button>
-                    <button className="btn btn-error btn-xs" onClick={() => handleDelete(a.id)}>Delete</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => openEdit(a)}>
+                      Edit
+                    </button>
+                    <button className="btn btn-error btn-xs" onClick={() => handleDelete(a.id)}>
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -621,28 +770,64 @@ function ArtistsTab({ token }: { token: string }) {
       {editArtist && editForm && (
         <dialog open className="modal modal-open">
           <div className="modal-box max-w-lg">
-            <button type="button" className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => { setEditArtist(null); setEditForm(null); }}>✕</button>
+            <button
+              type="button"
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              onClick={() => {
+                setEditArtist(null);
+                setEditForm(null);
+              }}
+            >
+              ✕
+            </button>
             <h3 className="font-bold text-lg mb-4">Edit Artist — {editArtist.name}</h3>
             <form onSubmit={handleSaveEdit} className="space-y-3">
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-28">Name</span>
-                <input type="text" className="grow" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+                <input
+                  type="text"
+                  className="grow"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  required
+                />
               </label>
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-28">Specialties</span>
-                <input type="text" className="grow" placeholder="Bridal, Editorial" value={editForm.specialties} onChange={(e) => setEditForm({ ...editForm, specialties: e.target.value })} />
+                <input
+                  type="text"
+                  className="grow"
+                  placeholder="Bridal, Editorial"
+                  value={editForm.specialties}
+                  onChange={(e) => setEditForm({ ...editForm, specialties: e.target.value })}
+                />
               </label>
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-28">Photo URL</span>
-                <input type="url" className="grow" value={editForm.photo_url} onChange={(e) => setEditForm({ ...editForm, photo_url: e.target.value })} />
+                <input
+                  type="url"
+                  className="grow"
+                  value={editForm.photo_url}
+                  onChange={(e) => setEditForm({ ...editForm, photo_url: e.target.value })}
+                />
               </label>
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-28">WhatsApp</span>
-                <input type="tel" className="grow" placeholder="18765551234 (digits only)" value={editForm.whatsapp_number} onChange={(e) => setEditForm({ ...editForm, whatsapp_number: e.target.value.replace(/\D/g, '') })} />
+                <input
+                  type="tel"
+                  className="grow"
+                  placeholder="18765551234 (digits only)"
+                  value={editForm.whatsapp_number}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, whatsapp_number: e.target.value.replace(/\D/g, '') })
+                  }
+                />
               </label>
               {adminIndustries.length > 0 && (
                 <div className="form-control">
-                  <label className="label"><span className="label-text text-sm">Industries</span></label>
+                  <label className="label">
+                    <span className="label-text text-sm">Industries</span>
+                  </label>
                   <div className="flex flex-wrap gap-3">
                     {adminIndustries.map((ind) => (
                       <label key={ind.id} className="flex items-center gap-2 cursor-pointer">
@@ -665,12 +850,28 @@ function ArtistsTab({ token }: { token: string }) {
               )}
               <label className="textarea textarea-bordered flex items-start gap-2 pt-2">
                 <span className="label w-28 mt-1">Bio</span>
-                <textarea className="grow" value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} rows={3} />
+                <textarea
+                  className="grow"
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  rows={3}
+                />
               </label>
               {editError && <div className="alert alert-error py-2 text-sm">{editError}</div>}
               <div className="modal-action">
-                <button type="button" className="btn btn-ghost" onClick={() => { setEditArtist(null); setEditForm(null); }}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={editSaving}>{editSaving ? 'Saving...' : 'Save Changes'}</button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setEditArtist(null);
+                    setEditForm(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={editSaving}>
+                  {editSaving ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
             </form>
           </div>
@@ -680,35 +881,74 @@ function ArtistsTab({ token }: { token: string }) {
       {modalOpen && (
         <dialog open className="modal modal-open">
           <div className="modal-box max-w-lg">
-            <button type="button" className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => setModalOpen(false)}>✕</button>
+            <button
+              type="button"
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              onClick={() => setModalOpen(false)}
+            >
+              ✕
+            </button>
             <h3 className="font-bold text-lg mb-4">Add Artist</h3>
             <form onSubmit={handleCreate} className="space-y-3">
               {(['name', 'email'] as const).map((field) => (
                 <label key={field} className="input input-bordered flex items-center gap-2">
                   <span className="label w-24 capitalize">{field}</span>
-                  <input type={field === 'email' ? 'email' : 'text'} className="grow" value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })} required />
+                  <input
+                    type={field === 'email' ? 'email' : 'text'}
+                    className="grow"
+                    value={form[field]}
+                    onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                    required
+                  />
                 </label>
               ))}
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Password</span>
-                <input type="password" className="grow" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+                <input
+                  type="password"
+                  className="grow"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  minLength={8}
+                />
               </label>
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Specialties</span>
-                <input type="text" className="grow" placeholder="Bridal, Editorial" value={form.specialties} onChange={(e) => setForm({ ...form, specialties: e.target.value })} />
+                <input
+                  type="text"
+                  className="grow"
+                  placeholder="Bridal, Editorial"
+                  value={form.specialties}
+                  onChange={(e) => setForm({ ...form, specialties: e.target.value })}
+                />
               </label>
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Photo URL</span>
-                <input type="url" className="grow" value={form.photo_url} onChange={(e) => setForm({ ...form, photo_url: e.target.value })} />
+                <input
+                  type="url"
+                  className="grow"
+                  value={form.photo_url}
+                  onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
+                />
               </label>
               <label className="textarea textarea-bordered flex items-start gap-2 pt-2">
                 <span className="label w-24 mt-1">Bio</span>
-                <textarea className="grow" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} />
+                <textarea
+                  className="grow"
+                  value={form.bio}
+                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                  rows={3}
+                />
               </label>
               {saveError && <div className="alert alert-error py-2 text-sm">{saveError}</div>}
               <div className="modal-action">
-                <button type="button" className="btn btn-ghost" onClick={() => setModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Creating...' : 'Create Artist'}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Creating...' : 'Create Artist'}
+                </button>
               </div>
             </form>
           </div>
@@ -748,17 +988,22 @@ function UsersTab({ token }: { token: string }) {
     setLoading(false);
   }, [token]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleDemote = async (user: UserRecord) => {
-    if (!confirm(`Convert ${user.name} back to a client? Their artist profile will be deactivated.`)) return;
+    if (
+      !confirm(`Convert ${user.name} back to a client? Their artist profile will be deactivated.`)
+    )
+      return;
     setSaving(user.id);
     await fetch(`/api/admin/users/${user.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ role: 'user' }),
     });
-    setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, role: 'user' } : u));
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, role: 'user' } : u)));
     setSaving(null);
   };
 
@@ -778,7 +1023,7 @@ function UsersTab({ token }: { token: string }) {
         }),
       });
       if (!res.ok) {
-        const d = await res.json() as { error: string };
+        const d = (await res.json()) as { error: string };
         throw new Error(d.error);
       }
       await fetchUsers();
@@ -793,11 +1038,19 @@ function UsersTab({ token }: { token: string }) {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this user? This cannot be undone.')) return;
-    await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`/api/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
-  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
 
   return (
     <div>
@@ -825,7 +1078,9 @@ function UsersTab({ token }: { token: string }) {
                   <td className="font-medium">{u.name}</td>
                   <td>{u.email}</td>
                   <td>
-                    <span className={`badge badge-sm ${u.role === 'artist' ? 'badge-primary' : 'badge-neutral'}`}>
+                    <span
+                      className={`badge badge-sm ${u.role === 'artist' ? 'badge-primary' : 'badge-neutral'}`}
+                    >
                       {u.role === 'artist' ? 'Artist' : 'Client'}
                     </span>
                   </td>
@@ -857,7 +1112,9 @@ function UsersTab({ token }: { token: string }) {
                           Convert to Client
                         </button>
                       )}
-                      <button className="btn btn-error btn-xs" onClick={() => handleDelete(u.id)}>Delete</button>
+                      <button className="btn btn-error btn-xs" onClick={() => handleDelete(u.id)}>
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -870,10 +1127,17 @@ function UsersTab({ token }: { token: string }) {
       {promoteModalOpen && promotingUser && (
         <dialog open className="modal modal-open">
           <div className="modal-box max-w-lg">
-            <button type="button" className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => setPromoteModalOpen(false)}>✕</button>
+            <button
+              type="button"
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              onClick={() => setPromoteModalOpen(false)}
+            >
+              ✕
+            </button>
             <h3 className="font-bold text-lg mb-1">Promote to Artist</h3>
             <p className="text-sm text-base-content/60 mb-4">
-              Creating artist profile for <strong>{promotingUser.name}</strong> ({promotingUser.email}). All fields are optional.
+              Creating artist profile for <strong>{promotingUser.name}</strong> (
+              {promotingUser.email}). All fields are optional.
             </p>
             <form onSubmit={handlePromote} className="space-y-3">
               <label className="input input-bordered flex items-center gap-2">
@@ -906,7 +1170,13 @@ function UsersTab({ token }: { token: string }) {
               </label>
               {promoteError && <div className="alert alert-error py-2 text-sm">{promoteError}</div>}
               <div className="modal-action">
-                <button type="button" className="btn btn-ghost" onClick={() => setPromoteModalOpen(false)}>Cancel</button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setPromoteModalOpen(false)}
+                >
+                  Cancel
+                </button>
                 <button type="submit" className="btn btn-primary" disabled={promoting}>
                   {promoting ? 'Promoting...' : 'Promote to Artist'}
                 </button>
@@ -921,9 +1191,26 @@ function UsersTab({ token }: { token: string }) {
 
 // ── Services tab ─────────────────────────────────────────────────────────────
 
-interface ServiceCategory { id: number; name: string; sort_order: number }
-interface ServiceSubcategory { id: number; category_id: number; name: string; sort_order: number }
-interface CatalogServiceItem { id: number; subcategory_id: number; name: string; description: string | null; price: number | null; duration_min: number; sort_order: number }
+interface ServiceCategory {
+  id: number;
+  name: string;
+  sort_order: number;
+}
+interface ServiceSubcategory {
+  id: number;
+  category_id: number;
+  name: string;
+  sort_order: number;
+}
+interface CatalogServiceItem {
+  id: number;
+  subcategory_id: number;
+  name: string;
+  description: string | null;
+  price: number | null;
+  duration_min: number;
+  sort_order: number;
+}
 
 function ServicesTab({ token }: { token: string }) {
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
@@ -935,7 +1222,10 @@ function ServicesTab({ token }: { token: string }) {
   const [section, setSection] = useState<'categories' | 'subcategories' | 'services'>('categories');
 
   // Modal state
-  const [modal, setModal] = useState<null | { type: 'category' | 'subcategory' | 'service'; item?: ServiceCategory | ServiceSubcategory | CatalogServiceItem }>(null);
+  const [modal, setModal] = useState<null | {
+    type: 'category' | 'subcategory' | 'service';
+    item?: ServiceCategory | ServiceSubcategory | CatalogServiceItem;
+  }>(null);
   const [formData, setFormData] = useState<Record<string, string | number | null>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -945,9 +1235,15 @@ function ServicesTab({ token }: { token: string }) {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [cats, subs, svcs] = await Promise.all([
-      fetch('/api/admin/service-catalog/categories', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json() as Promise<ServiceCategory[]>),
-      fetch('/api/admin/service-catalog/subcategories', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json() as Promise<ServiceSubcategory[]>),
-      fetch('/api/admin/service-catalog/services', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json() as Promise<CatalogServiceItem[]>),
+      fetch('/api/admin/service-catalog/categories', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json() as Promise<ServiceCategory[]>),
+      fetch('/api/admin/service-catalog/subcategories', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json() as Promise<ServiceSubcategory[]>),
+      fetch('/api/admin/service-catalog/services', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json() as Promise<CatalogServiceItem[]>),
     ]);
     setCategories(cats);
     setSubcategories(subs);
@@ -955,31 +1251,52 @@ function ServicesTab({ token }: { token: string }) {
     setLoading(false);
   }, [token]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
   const openAdd = (type: 'category' | 'subcategory' | 'service') => {
     const defaults: Record<string, string | number> =
-      type === 'category' ? { name: '', sort_order: 0 } :
-      type === 'subcategory' ? { name: '', sort_order: 0, category_id: categories[0]?.id ?? '' } :
-      { name: '', description: '', price: '', duration_min: 60, sort_order: 0, subcategory_id: subcategories[0]?.id ?? '' };
+      type === 'category'
+        ? { name: '', sort_order: 0 }
+        : type === 'subcategory'
+          ? { name: '', sort_order: 0, category_id: categories[0]?.id ?? '' }
+          : {
+              name: '',
+              description: '',
+              price: '',
+              duration_min: 60,
+              sort_order: 0,
+              subcategory_id: subcategories[0]?.id ?? '',
+            };
     setFormData(defaults);
     setSaveError(null);
     setModal({ type });
   };
 
-  const openEdit = (type: 'category' | 'subcategory' | 'service', item: ServiceCategory | ServiceSubcategory | CatalogServiceItem) => {
+  const openEdit = (
+    type: 'category' | 'subcategory' | 'service',
+    item: ServiceCategory | ServiceSubcategory | CatalogServiceItem,
+  ) => {
     setFormData({ ...item });
     setSaveError(null);
     setModal({ type, item });
   };
 
   const handleDelete = async (type: 'category' | 'subcategory' | 'service', id: number) => {
-    const label = type === 'category' ? 'category (and all subcategories and services within it)' : type === 'subcategory' ? 'subcategory (and all services within it)' : 'service';
+    const label =
+      type === 'category'
+        ? 'category (and all subcategories and services within it)'
+        : type === 'subcategory'
+          ? 'subcategory (and all services within it)'
+          : 'service';
     if (!confirm(`Delete this ${label}?`)) return;
     const url =
-      type === 'category' ? `/api/admin/service-catalog/categories/${id}` :
-      type === 'subcategory' ? `/api/admin/service-catalog/subcategories/${id}` :
-      `/api/admin/service-catalog/services/${id}`;
+      type === 'category'
+        ? `/api/admin/service-catalog/categories/${id}`
+        : type === 'subcategory'
+          ? `/api/admin/service-catalog/subcategories/${id}`
+          : `/api/admin/service-catalog/services/${id}`;
     await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     fetchAll();
   };
@@ -1006,8 +1323,15 @@ function ServicesTab({ token }: { token: string }) {
       } else {
         body.sort_order = Number(formData.sort_order) || 0;
       }
-      const res = await fetch(url, { method: item ? 'PUT' : 'POST', headers: authHeaders, body: JSON.stringify(body) });
-      if (!res.ok) { const d = (await res.json()) as { error: string }; throw new Error(d.error); }
+      const res = await fetch(url, {
+        method: item ? 'PUT' : 'POST',
+        headers: authHeaders,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const d = (await res.json()) as { error: string };
+        throw new Error(d.error);
+      }
       await fetchAll();
       setModal(null);
     } catch (err) {
@@ -1017,10 +1341,18 @@ function ServicesTab({ token }: { token: string }) {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
 
   const catName = (id: number) => categories.find((c) => c.id === id)?.name ?? '—';
-  const subName = (id: number) => { const s = subcategories.find((s) => s.id === id); return s ? `${catName(s.category_id)} › ${s.name}` : '—'; };
+  const subName = (id: number) => {
+    const s = subcategories.find((s) => s.id === id);
+    return s ? `${catName(s.category_id)} › ${s.name}` : '—';
+  };
 
   return (
     <div>
@@ -1030,7 +1362,13 @@ function ServicesTab({ token }: { token: string }) {
 
       <div className="tabs tabs-boxed mb-6 w-fit">
         {(['categories', 'subcategories', 'services'] as const).map((s) => (
-          <button key={s} className={`tab capitalize ${section === s ? 'tab-active' : ''}`} onClick={() => setSection(s)}>{s}</button>
+          <button
+            key={s}
+            className={`tab capitalize ${section === s ? 'tab-active' : ''}`}
+            onClick={() => setSection(s)}
+          >
+            {s}
+          </button>
         ))}
       </div>
 
@@ -1038,23 +1376,44 @@ function ServicesTab({ token }: { token: string }) {
       {section === 'categories' && (
         <div>
           <div className="flex justify-end mb-3">
-            <button className="btn btn-primary btn-sm" onClick={() => openAdd('category')}>+ Add Category</button>
+            <button className="btn btn-primary btn-sm" onClick={() => openAdd('category')}>
+              + Add Category
+            </button>
           </div>
           {categories.length === 0 ? (
             <div className="text-center text-base-content/50 py-12">No categories yet.</div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-base-300">
               <table className="table table-zebra w-full">
-                <thead><tr><th>Name</th><th>Sort Order</th><th>Subcategories</th><th></th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Sort Order</th>
+                    <th>Subcategories</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 <tbody>
                   {categories.map((c) => (
                     <tr key={c.id}>
                       <td className="font-medium">{c.name}</td>
                       <td>{c.sort_order}</td>
-                      <td className="text-sm text-base-content/60">{subcategories.filter((s) => s.category_id === c.id).length}</td>
+                      <td className="text-sm text-base-content/60">
+                        {subcategories.filter((s) => s.category_id === c.id).length}
+                      </td>
                       <td className="space-x-2">
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit('category', c)}>Edit</button>
-                        <button className="btn btn-error btn-xs" onClick={() => handleDelete('category', c.id)}>Delete</button>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => openEdit('category', c)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-error btn-xs"
+                          onClick={() => handleDelete('category', c.id)}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1069,24 +1428,46 @@ function ServicesTab({ token }: { token: string }) {
       {section === 'subcategories' && (
         <div>
           <div className="flex justify-end mb-3">
-            <button className="btn btn-primary btn-sm" onClick={() => openAdd('subcategory')}>+ Add Subcategory</button>
+            <button className="btn btn-primary btn-sm" onClick={() => openAdd('subcategory')}>
+              + Add Subcategory
+            </button>
           </div>
           {subcategories.length === 0 ? (
             <div className="text-center text-base-content/50 py-12">No subcategories yet.</div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-base-300">
               <table className="table table-zebra w-full">
-                <thead><tr><th>Category</th><th>Name</th><th>Sort Order</th><th>Services</th><th></th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Name</th>
+                    <th>Sort Order</th>
+                    <th>Services</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 <tbody>
                   {subcategories.map((s) => (
                     <tr key={s.id}>
                       <td className="text-sm text-base-content/60">{catName(s.category_id)}</td>
                       <td className="font-medium">{s.name}</td>
                       <td>{s.sort_order}</td>
-                      <td className="text-sm text-base-content/60">{services.filter((sv) => sv.subcategory_id === s.id).length}</td>
+                      <td className="text-sm text-base-content/60">
+                        {services.filter((sv) => sv.subcategory_id === s.id).length}
+                      </td>
                       <td className="space-x-2">
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit('subcategory', s)}>Edit</button>
-                        <button className="btn btn-error btn-xs" onClick={() => handleDelete('subcategory', s.id)}>Delete</button>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => openEdit('subcategory', s)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-error btn-xs"
+                          onClick={() => handleDelete('subcategory', s.id)}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1101,7 +1482,9 @@ function ServicesTab({ token }: { token: string }) {
       {section === 'services' && (
         <div>
           <div className="flex justify-end mb-3">
-            <button className="btn btn-primary btn-sm" onClick={() => openAdd('service')}>+ Add Service</button>
+            <button className="btn btn-primary btn-sm" onClick={() => openAdd('service')}>
+              + Add Service
+            </button>
           </div>
           {(() => {
             const nonClassServices = services.filter((sv) => {
@@ -1111,32 +1494,57 @@ function ServicesTab({ token }: { token: string }) {
               return cat?.name !== 'Lessons & Education';
             });
             return nonClassServices.length === 0 ? (
-            <div className="text-center text-base-content/50 py-12">No services yet.</div>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-base-300">
-              <table className="table table-zebra w-full">
-                <thead><tr><th>Category › Sub</th><th>Name</th><th>Price</th><th>Duration</th><th>Sort</th><th></th></tr></thead>
-                <tbody>
-                  {nonClassServices.map((sv) => (
-                    <tr key={sv.id}>
-                      <td className="text-sm text-base-content/60">{subName(sv.subcategory_id)}</td>
-                      <td>
-                        <div className="font-medium">{sv.name}</div>
-                        {sv.description && <div className="text-xs text-base-content/50 max-w-xs truncate">{sv.description}</div>}
-                      </td>
-                      <td>{sv.price != null ? `$${sv.price}` : '—'}</td>
-                      <td>{sv.duration_min} min</td>
-                      <td>{sv.sort_order}</td>
-                      <td className="space-x-2">
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit('service', sv)}>Edit</button>
-                        <button className="btn btn-error btn-xs" onClick={() => handleDelete('service', sv.id)}>Delete</button>
-                      </td>
+              <div className="text-center text-base-content/50 py-12">No services yet.</div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-base-300">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Category › Sub</th>
+                      <th>Name</th>
+                      <th>Price</th>
+                      <th>Duration</th>
+                      <th>Sort</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
+                  </thead>
+                  <tbody>
+                    {nonClassServices.map((sv) => (
+                      <tr key={sv.id}>
+                        <td className="text-sm text-base-content/60">
+                          {subName(sv.subcategory_id)}
+                        </td>
+                        <td>
+                          <div className="font-medium">{sv.name}</div>
+                          {sv.description && (
+                            <div className="text-xs text-base-content/50 max-w-xs truncate">
+                              {sv.description}
+                            </div>
+                          )}
+                        </td>
+                        <td>{sv.price != null ? `$${sv.price}` : '—'}</td>
+                        <td>{sv.duration_min} min</td>
+                        <td>{sv.sort_order}</td>
+                        <td className="space-x-2">
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => openEdit('service', sv)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-error btn-xs"
+                            onClick={() => handleDelete('service', sv.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
           })()}
         </div>
       )}
@@ -1145,54 +1553,123 @@ function ServicesTab({ token }: { token: string }) {
       {modal && (
         <dialog open className="modal modal-open">
           <div className="modal-box max-w-md">
-            <button type="button" className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => setModal(null)}>✕</button>
-            <h3 className="font-bold text-lg mb-4 capitalize">{modal.item ? 'Edit' : 'Add'} {modal.type}</h3>
+            <button
+              type="button"
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              onClick={() => setModal(null)}
+            >
+              ✕
+            </button>
+            <h3 className="font-bold text-lg mb-4 capitalize">
+              {modal.item ? 'Edit' : 'Add'} {modal.type}
+            </h3>
             <form onSubmit={handleSave} className="space-y-3">
               {modal.type === 'subcategory' && (
                 <div className="form-control">
-                  <label className="label"><span className="label-text">Category</span></label>
-                  <select className="select select-bordered" value={formData.category_id ?? ''} onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })} required>
-                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  <label className="label">
+                    <span className="label-text">Category</span>
+                  </label>
+                  <select
+                    className="select select-bordered"
+                    value={formData.category_id ?? ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category_id: Number(e.target.value) })
+                    }
+                    required
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
               {modal.type === 'service' && (
                 <div className="form-control">
-                  <label className="label"><span className="label-text">Subcategory</span></label>
-                  <select className="select select-bordered" value={formData.subcategory_id ?? ''} onChange={(e) => setFormData({ ...formData, subcategory_id: Number(e.target.value) })} required>
-                    {subcategories.map((s) => <option key={s.id} value={s.id}>{catName(s.category_id)} › {s.name}</option>)}
+                  <label className="label">
+                    <span className="label-text">Subcategory</span>
+                  </label>
+                  <select
+                    className="select select-bordered"
+                    value={formData.subcategory_id ?? ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, subcategory_id: Number(e.target.value) })
+                    }
+                    required
+                  >
+                    {subcategories.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {catName(s.category_id)} › {s.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Name</span>
-                <input type="text" className="grow" value={String(formData.name ?? '')} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                <input
+                  type="text"
+                  className="grow"
+                  value={String(formData.name ?? '')}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
               </label>
               {modal.type === 'service' && (
                 <>
                   <label className="textarea textarea-bordered flex items-start gap-2 pt-2">
                     <span className="label w-24 mt-1">Description</span>
-                    <textarea className="grow" rows={2} value={String(formData.description ?? '')} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                    <textarea
+                      className="grow"
+                      rows={2}
+                      value={String(formData.description ?? '')}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
                   </label>
                   <label className="input input-bordered flex items-center gap-2">
                     <span className="label w-24">Price ($)</span>
-                    <input type="number" min="0" step="0.01" className="grow" placeholder="Optional" value={String(formData.price ?? '')} onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="grow"
+                      placeholder="Optional"
+                      value={String(formData.price ?? '')}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    />
                   </label>
                   <label className="input input-bordered flex items-center gap-2">
                     <span className="label w-24">Duration</span>
-                    <input type="number" min="1" className="grow" value={String(formData.duration_min ?? 60)} onChange={(e) => setFormData({ ...formData, duration_min: e.target.value })} required />
+                    <input
+                      type="number"
+                      min="1"
+                      className="grow"
+                      value={String(formData.duration_min ?? 60)}
+                      onChange={(e) => setFormData({ ...formData, duration_min: e.target.value })}
+                      required
+                    />
                     <span className="text-sm text-base-content/60">min</span>
                   </label>
                 </>
               )}
               <label className="input input-bordered flex items-center gap-2">
                 <span className="label w-24">Sort Order</span>
-                <input type="number" className="grow" value={String(formData.sort_order ?? 0)} onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })} />
+                <input
+                  type="number"
+                  className="grow"
+                  value={String(formData.sort_order ?? 0)}
+                  onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })}
+                />
               </label>
               {saveError && <div className="alert alert-error py-2 text-sm">{saveError}</div>}
               <div className="modal-action mt-2">
-                <button type="button" className="btn btn-ghost" onClick={() => setModal(null)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : modal.item ? 'Save Changes' : 'Add'}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setModal(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Saving...' : modal.item ? 'Save Changes' : 'Add'}
+                </button>
               </div>
             </form>
           </div>
@@ -1237,7 +1714,9 @@ function ReviewsTab({ token }: { token: string }) {
     }
   }, [token]);
 
-  useEffect(() => { fetchReviews(); }, [fetchReviews]);
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleToggleApprove = async (id: number, currentApproved: number) => {
     await fetch(`/api/admin/reviews/${id}`, {
@@ -1245,7 +1724,9 @@ function ReviewsTab({ token }: { token: string }) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ approved: currentApproved ? 0 : 1 }),
     });
-    setReviews((prev) => prev.map((r) => r.id === id ? { ...r, approved: currentApproved ? 0 : 1 } : r));
+    setReviews((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, approved: currentApproved ? 0 : 1 } : r)),
+    );
   };
 
   const handleDelete = async (id: number) => {
@@ -1257,7 +1738,12 @@ function ReviewsTab({ token }: { token: string }) {
     setReviews((prev) => prev.filter((r) => r.id !== id));
   };
 
-  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
   if (error) return <div className="alert alert-error mt-4">{error}</div>;
 
   return (
@@ -1267,7 +1753,9 @@ function ReviewsTab({ token }: { token: string }) {
         <span className="badge badge-neutral">{reviews.length} total</span>
       </div>
       {reviews.length === 0 ? (
-        <div className="text-center text-base-content/60 py-12">No reviews yet. They will appear here once clients submit surveys.</div>
+        <div className="text-center text-base-content/60 py-12">
+          No reviews yet. They will appear here once clients submit surveys.
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-base-300">
           <table className="table table-zebra w-full">
@@ -1287,11 +1775,14 @@ function ReviewsTab({ token }: { token: string }) {
                 <tr key={r.id}>
                   <td>
                     <div className="font-medium">{r.name}</div>
-                    {r.booking_email && <div className="text-xs text-base-content/50">{r.booking_email}</div>}
+                    {r.booking_email && (
+                      <div className="text-xs text-base-content/50">{r.booking_email}</div>
+                    )}
                   </td>
                   <td className="text-sm">{r.service}</td>
                   <td className="whitespace-nowrap">
-                    {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
+                    {'★'.repeat(r.rating)}
+                    {'☆'.repeat(5 - r.rating)}
                   </td>
                   <td className="max-w-xs">
                     <div className="truncate text-sm">{r.body || '—'}</div>
@@ -1351,11 +1842,13 @@ function SurveysTab({ token }: { token: string }) {
     const res = await fetch('/api/admin/surveys', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    setSurveys(await res.json() as SurveyRecord[]);
+    setSurveys((await res.json()) as SurveyRecord[]);
     setLoading(false);
   }, [token]);
 
-  useEffect(() => { fetchSurveys(); }, [fetchSurveys]);
+  useEffect(() => {
+    fetchSurveys();
+  }, [fetchSurveys]);
 
   const handleAction = async (id: number, endpoint: string, label: string) => {
     setActionLoading(id);
@@ -1379,7 +1872,12 @@ function SurveysTab({ token }: { token: string }) {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><span className="loading loading-spinner loading-lg" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
 
   return (
     <div>
@@ -1390,11 +1888,16 @@ function SurveysTab({ token }: { token: string }) {
       {actionMsg && (
         <div className="alert alert-info mb-4 py-2 text-sm">
           {actionMsg}
-          <button className="btn btn-ghost btn-xs ml-2" onClick={() => setActionMsg(null)}>✕</button>
+          <button className="btn btn-ghost btn-xs ml-2" onClick={() => setActionMsg(null)}>
+            ✕
+          </button>
         </div>
       )}
       {surveys.length === 0 ? (
-        <div className="text-center text-base-content/60 py-12">No surveys sent yet. Surveys are sent automatically 1 hour after a booking is marked as completed.</div>
+        <div className="text-center text-base-content/60 py-12">
+          No surveys sent yet. Surveys are sent automatically 1 hour after a booking is marked as
+          completed.
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-base-300">
           <table className="table table-zebra w-full">
@@ -1422,20 +1925,27 @@ function SurveysTab({ token }: { token: string }) {
                     {new Date(s.sent_at).toLocaleDateString()}
                   </td>
                   <td>
-                    {s.submitted_at
-                      ? <span className="badge badge-success badge-sm">Submitted</span>
-                      : <span className="badge badge-ghost badge-sm">Pending</span>}
+                    {s.submitted_at ? (
+                      <span className="badge badge-success badge-sm">Submitted</span>
+                    ) : (
+                      <span className="badge badge-ghost badge-sm">Pending</span>
+                    )}
                   </td>
-                  <td className="whitespace-nowrap">
-                    {s.rating ? `${s.rating}/5` : '—'}
-                  </td>
+                  <td className="whitespace-nowrap">{s.rating ? `${s.rating}/5` : '—'}</td>
                   <td className="max-w-xs">
                     <div className="truncate text-sm">{s.body ?? '—'}</div>
                   </td>
                   <td>
-                    {s.review_requested
-                      ? <span className="badge badge-info badge-sm" title={s.review_request_sent_at ?? ''}>Sent</span>
-                      : <span className="text-base-content/40 text-sm">—</span>}
+                    {s.review_requested ? (
+                      <span
+                        className="badge badge-info badge-sm"
+                        title={s.review_request_sent_at ?? ''}
+                      >
+                        Sent
+                      </span>
+                    ) : (
+                      <span className="text-base-content/40 text-sm">—</span>
+                    )}
                   </td>
                   <td>
                     <div className="flex gap-1">
@@ -1471,7 +1981,9 @@ function SurveysTab({ token }: { token: string }) {
 
 const Admin: React.FC = () => {
   const [token, setToken] = useState<string | null>(() => sessionStorage.getItem('adminToken'));
-  const [activeTab, setActiveTab] = useState<'bookings' | 'classes' | 'artists' | 'users' | 'services' | 'reviews' | 'surveys'>('bookings');
+  const [activeTab, setActiveTab] = useState<
+    'bookings' | 'classes' | 'artists' | 'users' | 'services' | 'reviews' | 'surveys'
+  >('bookings');
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminToken');
@@ -1486,12 +1998,21 @@ const Admin: React.FC = () => {
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Sign Out</button>
+        <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
+          Sign Out
+        </button>
       </div>
 
       <div role="tablist" className="tabs tabs-bordered mb-6">
-        {(['bookings', 'classes', 'artists', 'users', 'services', 'reviews', 'surveys'] as const).map((t) => (
-          <button key={t} role="tab" className={`tab tab-lg capitalize ${activeTab === t ? 'tab-active' : ''}`} onClick={() => setActiveTab(t)}>
+        {(
+          ['bookings', 'classes', 'artists', 'users', 'services', 'reviews', 'surveys'] as const
+        ).map((t) => (
+          <button
+            key={t}
+            role="tab"
+            className={`tab tab-lg capitalize ${activeTab === t ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab(t)}
+          >
             {t}
           </button>
         ))}

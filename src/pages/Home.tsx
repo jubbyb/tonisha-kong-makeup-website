@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BRAND } from '../constants/brand';
+import { Eyebrow } from '../components/ui';
 
-// ── Testimonials ──────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface Review {
   id: number;
@@ -11,6 +12,49 @@ interface Review {
   rating: number;
   body: string;
 }
+
+interface Industry {
+  id: number;
+  slug: string;
+  name: string;
+  artist_count?: number;
+}
+
+interface Artist {
+  id: number;
+  slug: string | null;
+  name: string;
+  bio: string | null;
+  specialties: string | null;
+  photo_url: string | null;
+  location: string | null;
+  industries: { slug: string; name: string }[];
+}
+
+// ── Category image map ─────────────────────────────────────────────────────
+
+const CATEGORY_IMAGES: Record<string, string> = {
+  makeup: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=800&q=80',
+  nails: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800&q=80',
+  hair: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80',
+  barber: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=800&q=80',
+  stylist: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=80',
+  tailor: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80',
+  beauty: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=800&q=80',
+  styling: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=80',
+};
+
+function getCategoryImage(slug: string, name: string): string {
+  const key = slug.toLowerCase();
+  if (CATEGORY_IMAGES[key]) return CATEGORY_IMAGES[key];
+  const nameKey = name.toLowerCase();
+  for (const k of Object.keys(CATEGORY_IMAGES)) {
+    if (nameKey.includes(k) || k.includes(nameKey)) return CATEGORY_IMAGES[k];
+  }
+  return 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=800&q=80';
+}
+
+// ── Testimonials ───────────────────────────────────────────────────────────
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -21,7 +65,7 @@ function StarRating({ rating }: { rating: number }) {
           width="13"
           height="13"
           viewBox="0 0 24 24"
-          style={{ flexShrink: 0, color: star <= rating ? 'var(--tk-gold)' : 'var(--tk-border)' }}
+          style={{ flexShrink: 0, color: star <= rating ? 'var(--accent)' : 'var(--line-2)' }}
         >
           <polygon
             points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
@@ -53,26 +97,23 @@ function TestimonialsSection() {
     <section
       style={{
         padding: '6rem 0',
-        background: 'var(--tk-bg)',
+        background: 'var(--bg)',
         transition: 'background-color 0.35s ease',
       }}
     >
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3.5rem' }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3.5rem' }}
+        >
           <div
-            style={{
-              height: '1px',
-              width: '3rem',
-              background: 'var(--tk-gold)',
-              flexShrink: 0,
-            }}
+            style={{ height: '1px', width: '3rem', background: 'var(--accent)', flexShrink: 0 }}
           />
           <p
             style={{
               fontSize: '0.65rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: 'var(--tk-text-dim)',
+              color: 'var(--ink-2)',
               margin: 0,
               whiteSpace: 'nowrap',
             }}
@@ -80,7 +121,6 @@ function TestimonialsSection() {
             Client Stories
           </p>
         </div>
-
         <div
           style={{
             display: 'grid',
@@ -91,10 +131,10 @@ function TestimonialsSection() {
           {reviews.map((review, i) => (
             <div
               key={review.id}
-              className={`lux-card anim-fade-up delay-${Math.min(i + 1, 8)}`}
+              className={`editorial-card-base anim-fade-up delay-${Math.min(i + 1, 8)}`}
               style={{
                 padding: '2rem',
-                borderTop: '2px solid var(--tk-gold)',
+                borderTop: '2px solid var(--accent)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.75rem',
@@ -108,7 +148,7 @@ function TestimonialsSection() {
                   fontWeight: 300,
                   fontStyle: 'italic',
                   lineHeight: 1.65,
-                  color: 'var(--tk-text-sub)',
+                  color: 'var(--ink-3)',
                   flex: 1,
                   margin: 0,
                 }}
@@ -117,7 +157,7 @@ function TestimonialsSection() {
               </blockquote>
               <div
                 style={{
-                  borderTop: '1px solid var(--tk-border)',
+                  borderTop: '1px solid var(--line-2)',
                   paddingTop: '1rem',
                   marginTop: 'auto',
                 }}
@@ -125,7 +165,7 @@ function TestimonialsSection() {
                 <p
                   style={{
                     fontSize: '0.85rem',
-                    color: 'var(--tk-text-bright)',
+                    color: 'var(--ink)',
                     fontWeight: 500,
                     margin: 0,
                   }}
@@ -137,7 +177,7 @@ function TestimonialsSection() {
                     fontSize: '0.6rem',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
-                    color: 'var(--tk-gold)',
+                    color: 'var(--accent)',
                     marginTop: '0.3rem',
                     marginBottom: 0,
                   }}
@@ -153,344 +193,992 @@ function TestimonialsSection() {
   );
 }
 
-const galleryImages = [
-  {
-    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/e889690c-deae-484d-876f-fd818921bd96-20190806_143114-01.jpeg',
-    span: 'row-span-2',
-  },
-  {
-    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/33148347-b587-47f1-bdc9-5474239b1892-IMG_1120.jpg',
-    span: '',
-  },
-  {
-    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/dda95bc7-b855-4eb6-9323-e25900c43c45-80f9db98-da7e-470f-b28a-cb1cf01c40a5.jpg',
-    span: '',
-  },
-   {
-    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/f7ae9e7e-48c3-4fc5-8449-5bb4e5e49198-IMG_1121.jpg',
-    span: '',
-  },
-  {
-    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/f1a18aab-5b90-49a9-b8a3-c46ce92de646-BYDC18.jpg',
-    span: 'row-span-2',
-  },
- 
-  {
-    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/9152a979-871b-46ff-bbeb-9865313f5eeb-Andie-Jamaica-132%20(1).jpg',
-    span: '',
-  },
-  {
-    src: 'https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/7d1e6328-2667-4bc6-a475-64a4d0217ad6-IMG-20210324-WA0038.jpg',
-    span: '',
-  },
-];
+// ── Main component ─────────────────────────────────────────────────────────
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [featuredArtists, setFeaturedArtists] = useState<Artist[]>([]);
+  const [serviceQuery, setServiceQuery] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
+
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json() as Promise<Industry[]>)
+      .then(setIndustries)
+      .catch(() => {});
+    fetch('/api/artists')
+      .then((r) => r.json() as Promise<Artist[]>)
+      .then((data) => setFeaturedArtists(data.slice(0, 3)))
+      .catch(() => {});
+  }, []);
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (serviceQuery) params.set('q', serviceQuery);
+    if (locationQuery) params.set('location', locationQuery);
+    navigate(`/artists${params.toString() ? '?' + params.toString() : ''}`);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearch();
+  };
 
   return (
-    <div style={{ background: 'var(--tk-bg)', transition: 'background-color 0.35s ease' }}>
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <section
-        style={{
-          position: 'relative',
-          height: 'calc(100vh - 64px)',
-          minHeight: '600px',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'flex-end',
-        }}
-      >
-        {/* Background photo */}
-        <img
-          src="https://pub-49f3cdaa48b5476894f4890f6d54f0a2.r2.dev/uploads/e889690c-deae-484d-876f-fd818921bd96-20190806_143114-01.jpeg"
-          alt="Styleja — beauty and style platform"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center top',
-          }}
-          className="anim-fade-in"
-        />
-
-        {/* Gradient overlay */}
+    <div style={{ background: 'var(--bg)', transition: 'background-color 0.35s ease' }}>
+      {/* ── Hero ───────────────────────────────────────────────────────── */}
+      <section style={{ padding: '3rem 2rem 0', maxWidth: '1280px', margin: '0 auto' }}>
         <div
+          className="home-hero-grid"
           style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(to top, var(--tk-hero-overlay) 0%, var(--tk-hero-overlay-half) 45%, transparent 70%)',
-          }}
-        />
-
-        {/* Hero content */}
-        <div
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            padding: '0 2rem 4rem',
-            maxWidth: '1280px',
-            margin: '0 auto',
-            width: '100%',
-          }}
-        >
-          {/* Overline */}
-          <p
-            className="anim-fade-up delay-1"
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: '0.65rem',
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: 'var(--tk-gold)',
-              marginBottom: '1rem',
-            }}
-          >
-            Beauty · Hair · Nails · Barber · Styling · Tailoring
-          </p>
-
-          {/* Main title */}
-          <h1
-            className="anim-fade-up delay-2 font-display"
-            style={{
-              fontSize: 'clamp(3.5rem, 9vw, 8rem)',
-              fontWeight: 300,
-              lineHeight: 0.92,
-              letterSpacing: '-0.01em',
-              color: 'var(--tk-text-bright)',
-              marginBottom: '1.5rem',
-            }}
-          >
-            Styleja
-          </h1>
-
-          {/* Tagline */}
-          <p
-            className="anim-fade-up delay-3"
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: '0.95rem',
-              fontWeight: 300,
-              color: 'var(--tk-text-muted)',
-              maxWidth: '420px',
-              lineHeight: 1.6,
-              marginBottom: '2.5rem',
-            }}
-          >
-            {BRAND.tagline}
-          </p>
-
-          {/* CTA */}
-          <div className="anim-fade-up delay-4" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button className="btn-gold" onClick={() => navigate('/industries')}>
-              Explore Industries
-            </button>
-            <button
-              className="btn-gold"
-              onClick={() => navigate('/artists')}
-              style={{ borderColor: 'var(--tk-border-soft)', color: 'var(--tk-text-muted)' }}
-            >
-              Find an Artist
-            </button>
-          </div>
-        </div>
-
-        {/* Vertical scroll hint */}
-        <div
-          className="anim-fade-in delay-5"
-          style={{
-            position: 'absolute',
-            right: '2rem',
-            bottom: '3rem',
-            zIndex: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.5rem',
-          }}
-        >
-          <div
-            style={{
-              width: '1px',
-              height: '60px',
-              background: 'linear-gradient(to bottom, transparent, var(--tk-gold))',
-            }}
-          />
-          <span
-            style={{
-              fontSize: '0.6rem',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--tk-text-faint)',
-              writingMode: 'vertical-rl',
-            }}
-          >
-            Scroll
-          </span>
-        </div>
-      </section>
-
-      {/* ── Statement ─────────────────────────────────────────────────── */}
-      <section
-        style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '6rem 2rem',
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: '2rem',
-        }}
-      >
-        <div style={{ borderLeft: '1px solid var(--tk-gold)', paddingLeft: '2rem' }}>
-          <blockquote
-            className="font-display"
-            style={{
-              fontSize: 'clamp(1.8rem, 4vw, 3rem)',
-              fontWeight: 300,
-              fontStyle: 'italic',
-              lineHeight: 1.3,
-              color: 'var(--tk-text-sub)',
-              marginBottom: '1.5rem',
-            }}
-          >
-            "Every artist here is chosen for their craft — book the one who speaks to your vision."
-          </blockquote>
-          <p
-            style={{
-              fontSize: '0.7rem',
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              color: 'var(--tk-gold)',
-            }}
-          >
-            — {BRAND.name}
-          </p>
-        </div>
-      </section>
-
-      {/* ── Gallery Grid ──────────────────────────────────────────────── */}
-      <section style={{ padding: '0 0 6rem' }}>
-        <div
-          style={{
-            maxWidth: '1280px',
-            margin: '0 auto',
-            padding: '0 2rem',
-            marginBottom: '3rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2rem',
-          }}
-        >
-          <div className="divider-gold" />
-          <h2
-            className="font-display"
-            style={{
-              fontSize: '0.7rem',
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: 'var(--tk-text-dim)',
-            }}
-          >
-            Portfolio
-          </h2>
-        </div>
-
-        <div
-          style={{
-            maxWidth: '1280px',
-            margin: '0 auto',
-            padding: '0 2rem',
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gridAutoRows: '260px',
-            gap: '6px',
+            gridTemplateColumns: '1.15fr 0.85fr',
+            gap: '3rem',
+            alignItems: 'end',
+            minHeight: '520px',
           }}
         >
-          {galleryImages.map((img, i) => (
-            <div
-              key={i}
-              className={`anim-fade-up delay-${Math.min(i + 1, 8)}`}
+          {/* Left — headline */}
+          <div>
+            <Eyebrow style={{ marginBottom: '1.75rem' }} className="anim-fade-up">
+              —— Booking hub · est. 2026
+            </Eyebrow>
+            <h1
+              className="anim-fade-up delay-1 font-editorial"
               style={{
+                fontSize: 'clamp(4rem, 9vw, 8.5rem)',
+                fontWeight: 400,
+                lineHeight: 0.92,
+                letterSpacing: '-0.025em',
+                color: 'var(--ink)',
+                marginBottom: 0,
+              }}
+            >
+              Find the
+              <br />
+              <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>hands</span> behind
+              <br />
+              your <span style={{ fontStyle: 'italic' }}>look.</span>
+            </h1>
+            <p
+              className="anim-fade-up delay-2"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '1.0625rem',
+                lineHeight: 1.6,
+                color: 'var(--ink-2)',
+                maxWidth: '480px',
+                marginTop: '2.25rem',
+              }}
+            >
+              {BRAND.tagline}
+            </p>
+          </div>
+
+          {/* Right — portrait stack */}
+          <div
+            className="home-hero-portrait anim-fade-in delay-3"
+            style={{ position: 'relative', height: '520px' }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '62%',
+                height: '75%',
                 overflow: 'hidden',
-                gridRow: img.span === 'row-span-2' ? 'span 2' : 'span 1',
-                position: 'relative',
+                borderRadius: '4px',
               }}
             >
               <img
-                src={img.src}
-                alt={`Portfolio ${i + 1}`}
+                src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80"
+                alt="Makeup artist at work"
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
                   objectPosition: 'center top',
-                  transition: 'transform 0.6s ease',
-                  display: 'block',
                 }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)')
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1)')
-                }
               />
             </div>
-          ))}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '60px',
+                left: 0,
+                width: '42%',
+                height: '52%',
+                overflow: 'hidden',
+                borderRadius: '4px',
+              }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80"
+                alt="Nail art detail"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            <p
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: '10%',
+                fontSize: '0.65rem',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+              }}
+            >
+              Beauty, hair &amp; nails · Kingston
+            </p>
+          </div>
+        </div>
+
+        {/* Search bar — desktop */}
+        <div
+          className="search-bar-desktop anim-fade-up delay-3"
+          style={{
+            marginTop: '3rem',
+            background: 'var(--bg-card)',
+            borderRadius: '999px',
+            padding: '8px',
+            display: 'grid',
+            gridTemplateColumns: '1.4fr 1fr 1fr auto',
+            alignItems: 'center',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
+            border: '1px solid var(--line-2)',
+          }}
+        >
+          <div style={{ padding: '0.625rem 1.5rem', borderRight: '1px solid var(--line-2)' }}>
+            <p
+              style={{
+                fontSize: '0.625rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                margin: '0 0 4px',
+              }}
+            >
+              Service
+            </p>
+            <input
+              value={serviceQuery}
+              onChange={(e) => setServiceQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Makeup, nails, hair…"
+              style={{
+                fontSize: '0.9375rem',
+                color: 'var(--ink)',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                width: '100%',
+                fontFamily: "'Inter', sans-serif",
+              }}
+            />
+          </div>
+          <div style={{ padding: '0.625rem 1.5rem', borderRight: '1px solid var(--line-2)' }}>
+            <p
+              style={{
+                fontSize: '0.625rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                margin: '0 0 4px',
+              }}
+            >
+              Where
+            </p>
+            <input
+              value={locationQuery}
+              onChange={(e) => setLocationQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Kingston, Mo Bay…"
+              style={{
+                fontSize: '0.9375rem',
+                color: 'var(--ink)',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                width: '100%',
+                fontFamily: "'Inter', sans-serif",
+              }}
+            />
+          </div>
+          <div style={{ padding: '0.625rem 1.5rem' }}>
+            <p
+              style={{
+                fontSize: '0.625rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                margin: '0 0 4px',
+              }}
+            >
+              When
+            </p>
+            <span style={{ fontSize: '0.9375rem', color: 'var(--ink-3)' }}>Any time</span>
+          </div>
+          <button
+            onClick={handleSearch}
+            style={{
+              marginRight: '8px',
+              padding: '0.875rem 1.5rem',
+              borderRadius: '999px',
+              background: 'var(--accent)',
+              color: 'var(--bg)',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Search
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Stats strip */}
+        <div
+          className="anim-fade-up delay-4"
+          style={{
+            marginTop: '1.75rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '0.6875rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-3)',
+            paddingBottom: '0.5rem',
+          }}
+        >
+          <span>Verified pros across Jamaica</span>
+          <span>·</span>
+          <span>14 parishes</span>
+          <span>·</span>
+          <span>Book in under a minute</span>
+          <span>·</span>
+          <span>4.9 ★ average rating</span>
+        </div>
+
+        {/* Search bar — mobile pill */}
+        <div
+          className="search-bar-mobile anim-fade-up delay-3"
+          style={{
+            display: 'none',
+            marginTop: '1.5rem',
+            padding: '6px 6px 6px 16px',
+            borderRadius: '999px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--line-2)',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+          }}
+          onClick={handleSearch}
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ color: 'var(--ink-3)', flexShrink: 0 }}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span
+            style={{
+              flex: 1,
+              fontSize: '0.875rem',
+              color: 'var(--ink-3)',
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            Service · Kingston · Anytime
+          </span>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '99px',
+              background: 'var(--accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Featured artist card — mobile only */}
+        {featuredArtists.length > 0 && (
+          <div className="mobile-featured-card" style={{ display: 'none', marginTop: '1.5rem' }}>
+            <p
+              style={{
+                fontSize: '0.6rem',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                marginBottom: '0.625rem',
+              }}
+            >
+              —— Featured this week
+            </p>
+            <div
+              style={{
+                position: 'relative',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                height: '240px',
+                cursor: 'pointer',
+              }}
+              onClick={() =>
+                navigate(
+                  featuredArtists[0].slug ? `/artists/${featuredArtists[0].slug}` : '/artists',
+                )
+              }
+            >
+              <img
+                src={
+                  featuredArtists[0].photo_url ??
+                  'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80'
+                }
+                alt={featuredArtists[0].name}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.75) 100%)',
+                }}
+              />
+              <div style={{ position: 'absolute', left: 14, right: 14, bottom: 14, color: '#fff' }}>
+                <div
+                  className="font-editorial"
+                  style={{ fontSize: '1.625rem', lineHeight: 1, letterSpacing: '-0.01em' }}
+                >
+                  {featuredArtists[0].name.split(' ')[0]}{' '}
+                  <span style={{ fontStyle: 'italic' }}>
+                    {featuredArtists[0].name.split(' ').slice(1).join(' ')}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.6875rem',
+                    opacity: 0.85,
+                    marginTop: '4px',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {featuredArtists[0].specialties ??
+                    featuredArtists[0].industries[0]?.name ??
+                    'Artist'}{' '}
+                  · {featuredArtists[0].location ?? 'Jamaica'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ── Categories ─────────────────────────────────────────────────── */}
+      {industries.length > 0 && (
+        <section style={{ padding: '8rem 2rem 0', maxWidth: '1280px', margin: '0 auto' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: '2.5rem',
+            }}
+          >
+            <h2
+              className="font-editorial"
+              style={{
+                fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+                fontWeight: 400,
+                letterSpacing: '-0.02em',
+                color: 'var(--ink)',
+                margin: 0,
+              }}
+            >
+              What are you{' '}
+              <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>looking</span> for?
+            </h2>
+            <p
+              style={{
+                fontSize: '0.65rem',
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                margin: 0,
+              }}
+            >
+              Six trades · one island
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateRows: 'repeat(2, auto)',
+              gap: '1rem',
+            }}
+          >
+            {industries.slice(0, 6).map((ind, i) => (
+              <div
+                key={ind.id}
+                className="category-card anim-fade-up"
+                style={{ aspectRatio: '4/3', animationDelay: `${0.1 * i}s` }}
+                onClick={() => navigate(`/artists?industry=${ind.slug}`)}
+              >
+                <img
+                  src={getCategoryImage(ind.slug, ind.name)}
+                  alt={ind.name}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 1,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                    padding: '1.5rem',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div>
+                    <div
+                      className="font-editorial"
+                      style={{
+                        fontSize: 'clamp(2rem, 3.5vw, 2.75rem)',
+                        lineHeight: 1,
+                        letterSpacing: '-0.015em',
+                        fontStyle: i % 2 ? 'italic' : 'normal',
+                        color: '#fff',
+                      }}
+                    >
+                      {ind.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.6875rem',
+                        letterSpacing: '0.12em',
+                        textTransform: 'uppercase',
+                        color: 'rgba(255,255,255,0.8)',
+                        marginTop: '0.5rem',
+                      }}
+                    >
+                      {ind.artist_count ?? '—'} pros · all parishes
+                    </div>
+                  </div>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ opacity: 0.9, flexShrink: 0 }}
+                  >
+                    <line x1="7" y1="17" x2="17" y2="7" />
+                    <polyline points="7 7 17 7 17 17" />
+                  </svg>
+                </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    left: '1rem',
+                    zIndex: 1,
+                    fontSize: '0.625rem',
+                    color: 'rgba(255,255,255,0.65)',
+                    letterSpacing: '0.12em',
+                  }}
+                >
+                  0{i + 1} / 0{Math.min(industries.length, 6)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Featured Pros ──────────────────────────────────────────────── */}
+      {featuredArtists.length > 0 && (
+        <section style={{ padding: '7.5rem 2rem 0', maxWidth: '1280px', margin: '0 auto' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: '0.5rem',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.65rem',
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                margin: 0,
+              }}
+            >
+              —— On the books this week
+            </p>
+            <span
+              onClick={() => navigate('/artists')}
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--ink-2)',
+                textDecoration: 'underline',
+                textUnderlineOffset: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              See all →
+            </span>
+          </div>
+          <h2
+            className="font-editorial"
+            style={{
+              fontSize: 'clamp(2rem, 4.5vw, 4rem)',
+              fontWeight: 400,
+              letterSpacing: '-0.02em',
+              color: 'var(--ink)',
+              margin: '0.75rem 0 3rem',
+              maxWidth: '860px',
+            }}
+          >
+            The pros our community
+            <br />
+            <span style={{ fontStyle: 'italic' }}>can't stop talking about.</span>
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+            {featuredArtists.map((artist, i) => {
+              const nameParts = artist.name.split(' ');
+              const firstName = nameParts[0];
+              const lastName = nameParts.slice(1).join(' ');
+              const category = artist.industries[0]?.name ?? '';
+              return (
+                <div
+                  key={artist.id}
+                  className="editorial-card anim-fade-up"
+                  style={{ animationDelay: `${0.1 * i}s` }}
+                  onClick={() => navigate(`/artists/${artist.slug ?? artist.id}`)}
+                >
+                  <div
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '4/5',
+                      overflow: 'hidden',
+                      marginBottom: '1rem',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    {artist.photo_url ? (
+                      <img
+                        src={artist.photo_url}
+                        alt={artist.name}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          objectPosition: 'center top',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'var(--bg-card)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <span
+                          className="font-editorial"
+                          style={{
+                            fontSize: '4rem',
+                            color: 'var(--line-2)',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          {artist.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    {category && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '12px',
+                          left: '12px',
+                          fontSize: '0.625rem',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: '#fff',
+                          background: 'rgba(0,0,0,0.5)',
+                          backdropFilter: 'blur(8px)',
+                          padding: '5px 10px',
+                          borderRadius: '999px',
+                        }}
+                      >
+                        {category}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      gap: '1rem',
+                    }}
+                  >
+                    <div>
+                      <div
+                        className="font-editorial"
+                        style={{
+                          fontSize: '1.625rem',
+                          lineHeight: 1.1,
+                          letterSpacing: '-0.01em',
+                          color: 'var(--ink)',
+                        }}
+                      >
+                        {firstName} <span style={{ fontStyle: 'italic' }}>{lastName}</span>
+                      </div>
+                      {(artist.specialties || artist.bio) && (
+                        <div
+                          style={{
+                            fontSize: '0.8125rem',
+                            color: 'var(--ink-2)',
+                            marginTop: '4px',
+                          }}
+                        >
+                          {artist.specialties ?? (artist.bio ?? '').slice(0, 60)}
+                        </div>
+                      )}
+                    </div>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ color: 'var(--ink-2)', flexShrink: 0 }}
+                    >
+                      <line x1="7" y1="17" x2="17" y2="7" />
+                      <polyline points="7 7 17 7 17 17" />
+                    </svg>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginTop: '0.875rem',
+                      paddingTop: '0.875rem',
+                      borderTop: '1px solid var(--line-2)',
+                      fontSize: '0.75rem',
+                      color: 'var(--ink-2)',
+                    }}
+                  >
+                    {artist.location && <span>{artist.location}</span>}
+                    <span style={{ color: 'var(--accent)', fontWeight: 500 }}>View profile</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── Split panel ────────────────────────────────────────────────── */}
+      <section style={{ padding: '8rem 2rem 0', maxWidth: '1280px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          {/* For customers */}
+          <div
+            style={{
+              padding: '3.5rem 3rem',
+              background: 'var(--bg-card)',
+              borderRadius: '4px',
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              border: '1px solid var(--line-2)',
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-3)',
+                  margin: '0 0 1.25rem',
+                }}
+              >
+                —— For everyone
+              </p>
+              <h3
+                className="font-editorial"
+                style={{
+                  fontSize: 'clamp(1.75rem, 3vw, 3rem)',
+                  fontWeight: 400,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--ink)',
+                  margin: '0 0 2rem',
+                  maxWidth: '420px',
+                }}
+              >
+                Book the whole look in one place.
+              </h3>
+              <ul
+                style={{
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.875rem',
+                }}
+              >
+                {[
+                  'One profile per pro — work, prices, calendar',
+                  'Real reviews from real bookings',
+                  'Cancel or reschedule up to 24h before',
+                ].map((point) => (
+                  <li
+                    key={point}
+                    style={{
+                      fontSize: '0.9375rem',
+                      color: 'var(--ink-2)',
+                      display: 'flex',
+                      gap: '0.875rem',
+                      alignItems: 'baseline',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '18px',
+                        height: '1px',
+                        background: 'var(--ink-3)',
+                        flex: 'none',
+                        marginTop: '10px',
+                        display: 'inline-block',
+                      }}
+                    />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              className="btn-accent"
+              onClick={() => navigate('/artists')}
+              style={{ alignSelf: 'flex-start', marginTop: '2rem' }}
+            >
+              Find a pro
+            </button>
+          </div>
+
+          {/* For pros */}
+          <div
+            style={{
+              padding: '3.5rem 3rem',
+              background: 'var(--bg-card)',
+              borderRadius: '4px',
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              border: '1px solid var(--line-2)',
+              borderColor: 'var(--line-2)',
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--accent)',
+                  margin: '0 0 1.25rem',
+                }}
+              >
+                —— For pros
+              </p>
+              <h3
+                className="font-editorial"
+                style={{
+                  fontSize: 'clamp(1.75rem, 3vw, 3rem)',
+                  fontWeight: 400,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--ink)',
+                  margin: '0 0 2rem',
+                  maxWidth: '420px',
+                }}
+              >
+                Run your books like a studio.
+              </h3>
+              <ul
+                style={{
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.875rem',
+                }}
+              >
+                {[
+                  'Set hours, services, deposits — your rules',
+                  'Take payments in JMD or USD',
+                  'Keep 95% — we charge 5% per booking',
+                ].map((point) => (
+                  <li
+                    key={point}
+                    style={{
+                      fontSize: '0.9375rem',
+                      color: 'var(--ink-2)',
+                      display: 'flex',
+                      gap: '0.875rem',
+                      alignItems: 'baseline',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '18px',
+                        height: '1px',
+                        background: 'var(--ink-3)',
+                        flex: 'none',
+                        marginTop: '10px',
+                        display: 'inline-block',
+                      }}
+                    />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              className="btn-accent"
+              onClick={() => navigate('/login')}
+              style={{ alignSelf: 'flex-start', marginTop: '2rem' }}
+            >
+              List your work
+            </button>
+          </div>
         </div>
       </section>
 
+      {/* ── Testimonials ──────────────────────────────────────────────── */}
       <TestimonialsSection />
 
-      {/* ── Services CTA ──────────────────────────────────────────────── */}
-      <section
-        style={{
-          background: 'var(--tk-bg-raised)',
-          borderTop: '1px solid var(--tk-border)',
-          borderBottom: '1px solid var(--tk-border)',
-          padding: '5rem 2rem',
-          textAlign: 'center',
-          transition: 'background-color 0.35s ease, border-color 0.35s ease',
-        }}
-      >
-        <p
+      {/* ── Editorial footer mark ──────────────────────────────────────── */}
+      <section style={{ padding: '6rem 2rem 4rem', maxWidth: '1280px', margin: '0 auto' }}>
+        <div style={{ borderTop: '1px solid var(--line-2)', paddingTop: '2.5rem' }}>
+          <div
+            className="font-editorial"
+            style={{
+              fontSize: 'clamp(5rem, 15vw, 13rem)',
+              lineHeight: 0.85,
+              letterSpacing: '-0.04em',
+              color: 'var(--ink)',
+              fontStyle: 'italic',
+              opacity: 0.12,
+              userSelect: 'none',
+            }}
+          >
+            styleja.
+          </div>
+        </div>
+        <div
           style={{
-            fontSize: '0.65rem',
-            letterSpacing: '0.3em',
+            marginTop: '2rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '0.6875rem',
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: 'var(--tk-gold)',
-            marginBottom: '1.5rem',
+            color: 'var(--ink-3)',
           }}
         >
-          Six Disciplines
-        </p>
-        <h2
-          className="font-display"
-          style={{
-            fontSize: 'clamp(2rem, 5vw, 4rem)',
-            fontWeight: 300,
-            color: 'var(--tk-text)',
-            marginBottom: '1rem',
-          }}
-        >
-          Discover artists across six industries
-        </h2>
-        <p
-          style={{
-            fontSize: '0.9rem',
-            color: 'var(--tk-text-dim)',
-            maxWidth: '500px',
-            margin: '0 auto 2.5rem',
-            lineHeight: 1.7,
-          }}
-        >
-          Makeup, hair, nails, barber, personal styling, and tailoring — all on one platform.
-        </p>
-        <button className="btn-gold" onClick={() => navigate('/industries')}>
-          Explore Industries
-        </button>
+          <span>
+            © {new Date().getFullYear()} {BRAND.name}
+          </span>
+          <span>Kingston · Montego Bay · Ocho Rios</span>
+          <span>Jamaica</span>
+        </div>
       </section>
     </div>
   );

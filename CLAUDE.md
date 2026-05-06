@@ -33,7 +33,7 @@ wrangler d1 execute tonisha-kong-db --local --file=./migrations/010_artist_subpa
 
 ## Architecture
 
-Makeup-artist business website on **Cloudflare Pages** + **Cloudflare Worker** + **Cloudflare D1** (SQLite). Multi-artist: each artist has a public subpage at `/artists/<slug>` they customize via a dashboard.
+**StyleJA** — Multi-vendor marketplace for Jamaica's six beauty/style trades (Makeup, Nails, Hair, Barber, Stylist, Tailor) on **Cloudflare Pages** + **Cloudflare Worker** + **Cloudflare D1** (SQLite). Each artist has a public subpage at `/artists/<slug>` they customize via a dashboard. Geo-location features with parishes and map-based search.
 
 ### Build targets
 
@@ -45,7 +45,7 @@ Two TypeScript configs:
 
 All data access goes through the `DB` D1 binding. Routes are grouped (the file is long — search by prefix rather than scrolling):
 
-- **Public** — `GET /api/services`, `/api/classes`, `/api/artists`, `/api/artists/:idOrSlug`, `/api/artists/:id/{services,slots,portfolio,testimonials}`, `/api/service-catalog`, `/api/reviews`, `GET|POST /api/surveys/:token`. Plus `POST /api/bookings` and `POST /api/contact`.
+- **Public** — `GET /api/services`, `/api/classes`, `/api/parishes`, `/api/industries`, `/api/artists` (supports ?industry=slug, ?parish=slug), `/api/artists/:idOrSlug`, `/api/artists/:id/{services,slots,portfolio,testimonials}`, `/api/service-catalog`, `/api/reviews`, `GET|POST /api/surveys/:token`. Plus `POST /api/bookings` and `POST /api/contact`.
 - **User auth** — `POST /api/auth/{signup,login}`, Google OAuth at `GET /api/auth/google` + `/api/auth/google/callback`, `GET|PUT /api/user/profile`, `GET /api/bookings/mine`, cancel.
 - **Artist auth** — `POST /api/auth/artist-login`, plus `GET|PUT /api/artist/{profile,services,hours,blocks,portfolio,testimonials}` and `GET /api/artist/bookings`. Portfolio/testimonials also have `POST` and per-id `PUT|DELETE`.
 - **Admin** — `Authorization: Bearer ${ADMIN_SECRET}`. Full CRUD for artists, bookings, classes, users (incl. `POST /api/admin/users/:id/promote`), and the service catalog (`/api/admin/service-catalog/{categories,subcategories,services}`).

@@ -54,9 +54,13 @@ export default function CalendarView({
     <div className="w-full select-none">
       {/* Month nav */}
       <div className="flex items-center justify-between mb-3">
-        <button className="btn btn-ghost btn-sm text-lg" onClick={prev}>‹</button>
+        <button className="btn btn-ghost btn-sm text-lg" onClick={prev}>
+          ‹
+        </button>
         <span className="font-semibold">{monthLabel}</span>
-        <button className="btn btn-ghost btn-sm text-lg" onClick={next}>›</button>
+        <button className="btn btn-ghost btn-sm text-lg" onClick={next}>
+          ›
+        </button>
       </div>
 
       {/* Day headers */}

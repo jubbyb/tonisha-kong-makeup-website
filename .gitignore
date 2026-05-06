@@ -1,3 +1,5 @@
+#custom 
+tmp/
 # Dependencies
 /node_modules
 

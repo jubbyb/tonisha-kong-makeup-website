@@ -103,18 +103,36 @@ const Services: React.FC = () => {
   const groupKeys = Object.keys(grouped);
 
   return (
-    <div style={{ background: 'var(--tk-bg)', minHeight: '100vh', transition: 'background-color 0.35s ease' }}>
+    <div
+      style={{
+        background: 'var(--bg)',
+        minHeight: '100vh',
+        transition: 'background-color 0.35s ease',
+      }}
+    >
       {/* Header */}
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '5rem 2rem 2rem' }}>
         <p
           className="anim-slide-right"
-          style={{ fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: 'var(--tk-gold)', marginBottom: '1rem' }}
+          style={{
+            fontSize: '0.65rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--accent)',
+            marginBottom: '1rem',
+          }}
         >
           What We Offer
         </p>
         <h1
           className="anim-fade-up delay-1 font-display"
-          style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', fontWeight: 300, lineHeight: 1.05, color: 'var(--tk-text)', marginBottom: '2rem' }}
+          style={{
+            fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+            fontWeight: 300,
+            lineHeight: 1.05,
+            color: 'var(--ink)',
+            marginBottom: '2rem',
+          }}
         >
           Services
         </h1>
@@ -132,9 +150,9 @@ const Services: React.FC = () => {
                 fontSize: '0.65rem',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                border: `1px solid ${!activeIndustry ? 'var(--tk-gold)' : 'var(--tk-border)'}`,
-                background: !activeIndustry ? 'var(--tk-gold)' : 'transparent',
-                color: !activeIndustry ? 'var(--tk-bg)' : 'var(--tk-text-muted)',
+                border: `1px solid ${!activeIndustry ? 'var(--accent)' : 'var(--line-2)'}`,
+                background: !activeIndustry ? 'var(--accent)' : 'transparent',
+                color: !activeIndustry ? 'var(--bg)' : 'var(--ink-2)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
@@ -150,9 +168,9 @@ const Services: React.FC = () => {
                   fontSize: '0.65rem',
                   letterSpacing: '0.15em',
                   textTransform: 'uppercase',
-                  border: `1px solid ${activeIndustry === ind.slug ? 'var(--tk-gold)' : 'var(--tk-border)'}`,
-                  background: activeIndustry === ind.slug ? 'var(--tk-gold)' : 'transparent',
-                  color: activeIndustry === ind.slug ? 'var(--tk-bg)' : 'var(--tk-text-muted)',
+                  border: `1px solid ${activeIndustry === ind.slug ? 'var(--accent)' : 'var(--line-2)'}`,
+                  background: activeIndustry === ind.slug ? 'var(--accent)' : 'transparent',
+                  color: activeIndustry === ind.slug ? 'var(--bg)' : 'var(--ink-2)',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
@@ -174,17 +192,25 @@ const Services: React.FC = () => {
             fontSize: '0.75rem',
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
-            color: 'var(--tk-text-dim)',
+            color: 'var(--ink-2)',
           }}
         >
           Loading Services...
         </div>
       ) : error ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', color: 'var(--color-error)' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '40vh',
+            color: 'var(--color-error)',
+          }}
+        >
           {error}
         </div>
       ) : groupKeys.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--tk-text-dim)' }}>
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--ink-2)' }}>
           No services available{activeIndustry ? ` for ${activeIndustry}` : ''}.
         </div>
       ) : (
@@ -192,9 +218,24 @@ const Services: React.FC = () => {
           {groupKeys.map((category) => (
             <div key={category} style={{ marginBottom: '4rem' }}>
               {/* Category heading */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1.5rem',
+                  marginBottom: '1.5rem',
+                }}
+              >
                 <div className="divider-gold" />
-                <h2 style={{ fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: 'var(--tk-text-dim)', whiteSpace: 'nowrap' }}>
+                <h2
+                  style={{
+                    fontSize: '0.65rem',
+                    letterSpacing: '0.3em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {category}
                 </h2>
               </div>
@@ -204,37 +245,62 @@ const Services: React.FC = () => {
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                   gap: '1px',
-                  background: 'var(--tk-border)',
-                  border: '1px solid var(--tk-border)',
+                  background: 'var(--line-2)',
+                  border: '1px solid var(--line-2)',
                 }}
               >
                 {grouped[category].map((service, i) => (
                   <div
                     key={service.id}
-                    className={`anim-fade-up delay-${Math.min(i + 1, 8)} lux-card`}
-                    style={{ display: 'flex', flexDirection: 'column', background: 'var(--tk-bg)' }}
+                    className={`anim-fade-up delay-${Math.min(i + 1, 8)} editorial-card-base`}
+                    style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}
                   >
                     <div
-                      style={{ padding: '2rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+                      style={{
+                        padding: '2rem',
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem',
+                      }}
                     >
-                      <p style={{ fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--tk-gold)', margin: 0 }}>
+                      <p
+                        style={{
+                          fontSize: '0.6rem',
+                          letterSpacing: '0.25em',
+                          textTransform: 'uppercase',
+                          color: 'var(--accent)',
+                          margin: 0,
+                        }}
+                      >
                         {service.subcategory}
                       </p>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                        }}
+                      >
                         <h3
                           className="font-display"
-                          style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--tk-text)', lineHeight: 1.2 }}
+                          style={{
+                            fontSize: '1.4rem',
+                            fontWeight: 400,
+                            color: 'var(--ink)',
+                            lineHeight: 1.2,
+                          }}
                         >
                           {service.name}
                         </h3>
                         {service.price != null && (
                           <span
                             style={{
-                              fontFamily: "'Cormorant Garamond', serif",
+                              fontFamily: "'Instrument Serif', 'Cormorant Garamond', serif",
                               fontSize: '1.2rem',
                               fontWeight: 300,
-                              color: 'var(--tk-gold)',
+                              color: 'var(--accent)',
                               whiteSpace: 'nowrap',
                               marginLeft: '1rem',
                             }}
@@ -244,20 +310,27 @@ const Services: React.FC = () => {
                         )}
                       </div>
 
-                      <div style={{ width: '30px', height: '1px', background: 'var(--tk-border-soft)' }} />
+                      <div style={{ width: '30px', height: '1px', background: 'var(--line)' }} />
 
                       {service.description && (
-                        <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--tk-text-dim)', flex: 1 }}>
+                        <p
+                          style={{
+                            fontSize: '0.88rem',
+                            lineHeight: 1.7,
+                            color: 'var(--ink-2)',
+                            flex: 1,
+                          }}
+                        >
                           {service.description}
                         </p>
                       )}
 
-                      <p style={{ fontSize: '0.75rem', color: 'var(--tk-text-dim)', margin: 0 }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--ink-2)', margin: 0 }}>
                         {service.duration_min} min
                       </p>
 
                       <button
-                        className="btn-gold"
+                        className="btn-accent"
                         onClick={() => handleBookNow(service)}
                         style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
                       >
@@ -286,12 +359,14 @@ const Services: React.FC = () => {
             backdropFilter: 'blur(8px)',
             padding: '1rem',
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCloseModal();
+          }}
         >
           <div
             style={{
-              background: 'var(--tk-bg-raised)',
-              border: '1px solid var(--tk-border)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--line-2)',
               padding: '2.5rem',
               width: '100%',
               maxWidth: '560px',
@@ -310,21 +385,18 @@ const Services: React.FC = () => {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                color: 'var(--tk-text-faint)',
+                color: 'var(--ink-3)',
                 fontSize: '1.2rem',
                 lineHeight: 1,
                 transition: 'color 0.2s',
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text)')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--tk-text-faint)')}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--ink)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--ink-3)')}
             >
               ✕
             </button>
 
-            <BookingFlow
-              preselectedService={selectedService?.name}
-              onClose={handleCloseModal}
-            />
+            <BookingFlow preselectedService={selectedService?.name} onClose={handleCloseModal} />
           </div>
         </div>
       )}

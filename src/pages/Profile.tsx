@@ -10,9 +10,9 @@ interface UserProfile {
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '0.65rem 0.85rem',
-  background: 'var(--tk-surface)',
-  border: '1px solid var(--tk-border)',
-  color: 'var(--tk-text)',
+  background: 'var(--bg-elev)',
+  border: '1px solid var(--line-2)',
+  color: 'var(--ink)',
   fontSize: '0.85rem',
   outline: 'none',
   transition: 'border-color 0.2s',
@@ -23,7 +23,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: '0.65rem',
   letterSpacing: '0.15em',
   textTransform: 'uppercase',
-  color: 'var(--tk-text-dim)',
+  color: 'var(--ink-2)',
   marginBottom: '0.4rem',
 };
 
@@ -75,7 +75,14 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '60vh',
+        }}
+      >
         <span className="loading loading-spinner loading-lg" />
       </div>
     );
@@ -83,20 +90,25 @@ export default function Profile() {
 
   return (
     <div style={{ maxWidth: '480px', margin: '4rem auto', padding: '0 1.5rem' }}>
-      <h1 style={{
-        fontSize: '0.7rem',
-        letterSpacing: '0.3em',
-        textTransform: 'uppercase',
-        color: 'var(--tk-gold)',
-        marginBottom: '0.5rem',
-      }}>
+      <h1
+        style={{
+          fontSize: '0.7rem',
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: 'var(--accent)',
+          marginBottom: '0.5rem',
+        }}
+      >
         My Profile
       </h1>
-      <p style={{ fontSize: '0.82rem', color: 'var(--tk-text-dim)', marginBottom: '2.5rem' }}>
+      <p style={{ fontSize: '0.82rem', color: 'var(--ink-2)', marginBottom: '2.5rem' }}>
         Update your contact details. These are pre-filled when you book an appointment.
       </p>
 
-      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <form
+        onSubmit={handleSave}
+        style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+      >
         <div>
           <label style={labelStyle}>Name</label>
           <input
@@ -105,8 +117,8 @@ export default function Profile() {
             onChange={(e) => setName(e.target.value)}
             required
             style={inputStyle}
-            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--tk-gold)')}
-            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--tk-border)')}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line-2)')}
           />
         </div>
 
@@ -118,7 +130,7 @@ export default function Profile() {
             readOnly
             style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
           />
-          <p style={{ fontSize: '0.7rem', color: 'var(--tk-text-dim)', marginTop: '0.35rem' }}>
+          <p style={{ fontSize: '0.7rem', color: 'var(--ink-2)', marginTop: '0.35rem' }}>
             Email address cannot be changed.
           </p>
         </div>
@@ -131,23 +143,19 @@ export default function Profile() {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="e.g. +1 555 123 4567"
             style={inputStyle}
-            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--tk-gold)')}
-            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--tk-border)')}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line-2)')}
           />
         </div>
 
-        {error && (
-          <p style={{ fontSize: '0.78rem', color: 'var(--tk-error, #e53e3e)' }}>{error}</p>
-        )}
+        {error && <p style={{ fontSize: '0.78rem', color: 'oklch(55% 0.2 25)' }}>{error}</p>}
 
-        {saved && (
-          <p style={{ fontSize: '0.78rem', color: 'var(--tk-gold)' }}>Profile saved.</p>
-        )}
+        {saved && <p style={{ fontSize: '0.78rem', color: 'var(--accent)' }}>Profile saved.</p>}
 
         <button
           type="submit"
           disabled={saving || !name.trim()}
-          className="btn-gold"
+          className="btn-accent"
           style={{ padding: '0.65rem 2rem', fontSize: '0.65rem', alignSelf: 'flex-start' }}
         >
           {saving ? 'Saving…' : 'Save Changes'}
