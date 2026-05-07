@@ -1,21 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
+import { MapView } from '../../components/MapView';
 import type { ArtistProfile, IndustryOption } from './types';
+
+interface Parish {
+  id: number;
+  slug: string;
+  name: string;
+}
 
 // ─── Profile tab ──────────────────────────────────────────────────────────────
 
 export default function Profile() {
   const [profile, setProfile] = useState<ArtistProfile | null>(null);
   const [industries, setIndustries] = useState<IndustryOption[]>([]);
+  const [parishes, setParishes] = useState<Parish[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   useEffect(() => {
     fetch('/api/industries')
       .then((r) => r.json() as Promise<IndustryOption[]>)
       .then(setIndustries)
+      .catch(() => {});
+    fetch('/api/parishes')
+      .then((r) => r.json() as Promise<Parish[]>)
+      .then(setParishes)
       .catch(() => {});
     apiFetch<ArtistProfile>('/api/artist/profile')
       .then((d) => {
@@ -24,6 +37,25 @@ export default function Profile() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const handleUseMyLocation = () => {
+    if (!profile) return;
+    if (!('geolocation' in navigator)) {
+      setError('Geolocation is not supported by this browser');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setProfile((prev) =>
+          prev ? { ...prev, lat: pos.coords.latitude, lng: pos.coords.longitude } : prev,
+        );
+      },
+      (err) => {
+        setError(err.message || 'Could not get your location');
+      },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +80,9 @@ export default function Profile() {
           website_url: profile.website_url,
           whatsapp_number: profile.whatsapp_number,
           industry_ids: profile.industry_ids,
+          parish_id: profile.parish_id,
+          lat: profile.lat,
+          lng: profile.lng,
         }),
       });
       setSaved(true);
@@ -148,6 +183,98 @@ export default function Profile() {
             onChange={(e) => setProfile({ ...profile, location: e.target.value || null })}
           />
         </label>
+
+        <div className="divider text-sm" style={{ color: 'var(--ink-3)' }}>
+          Address &amp; Map
+        </div>
+
+        <label className="form-control">
+          <span className="label-text">Parish</span>
+          <select
+            className="select select-bordered"
+            value={profile.parish_id ?? ''}
+            onChange={(e) =>
+              setProfile({
+                ...profile,
+                parish_id: e.target.value ? Number(e.target.value) : null,
+              })
+            }
+          >
+            <option value="">— Select parish —</option>
+            {parishes.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">Map location</span>
+            <span className="label-text-alt text-xs">
+              {profile.lat && profile.lng
+                ? `${profile.lat.toFixed(4)}, ${profile.lng.toFixed(4)}`
+                : 'Not set'}
+            </span>
+          </label>
+          <p className="text-xs mb-2" style={{ color: 'var(--ink-3)' }}>
+            Click on the map to pin your exact location. This helps customers find you.
+          </p>
+          {!showMapPicker ? (
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => setShowMapPicker(true)}
+            >
+              Open map picker
+            </button>
+          ) : (
+            <div
+              style={{
+                height: '300px',
+                borderRadius: '6px',
+                overflow: 'hidden',
+                marginBottom: '1rem',
+              }}
+            >
+              <MapView
+                artists={
+                  profile.lat && profile.lng
+                    ? [
+                        {
+                          id: 0,
+                          name: profile.name,
+                          slug: profile.slug,
+                          lat: profile.lat,
+                          lng: profile.lng,
+                        },
+                      ]
+                    : []
+                }
+                editable={true}
+                onLocationChange={(lat, lng) => {
+                  setProfile({ ...profile, lat, lng });
+                }}
+              />
+            </div>
+          )}
+          {showMapPicker && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline"
+                onClick={handleUseMyLocation}
+              >
+                Use my location
+              </button>
+              <button type="button" className="btn btn-sm" onClick={() => setShowMapPicker(false)}>
+                Done
+              </button>
+            </div>
+          )}
+        </div>
+
         <label className="input input-bordered flex items-center gap-2">
           <span className="label w-32">Experience</span>
           <input
@@ -181,10 +308,7 @@ export default function Profile() {
           />
         </div>
 
-        <div
-          className="divider text-sm"
-          style={{ color: 'var(--ink-3)' }}
-        >
+        <div className="divider text-sm" style={{ color: 'var(--ink-3)' }}>
           Booking &amp; Industries
         </div>
         <label className="input input-bordered flex items-center gap-2">

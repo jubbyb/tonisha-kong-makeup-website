@@ -44,6 +44,9 @@ export interface ArtistProfile {
   website_url: string | null;
   whatsapp_number: string | null;
   industry_ids: number[];
+  parish_id: number | null;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface IndustryOption {
