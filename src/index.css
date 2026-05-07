@@ -417,6 +417,37 @@ body {
   grid-column: span 2;
 }
 
+/* ─── Map markers ───────────────────────────────────────────────────── */
+.sj-map-marker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-elev);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.sj-map-marker:hover,
+.sj-map-marker[data-highlighted='1'] {
+  transform: scale(1.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+.sj-map-marker[data-highlighted='1'] {
+  border-color: white;
+  border-width: 3px;
+}
+
 /* ─── Mobile-only utilities ─────────────────────────────────────────── */
 @media (max-width: 767px) {
   body {

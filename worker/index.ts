@@ -1442,7 +1442,8 @@ export default {
       if (pathname === '/api/artist/profile' && method === 'GET') {
         const artist = await env.DB.prepare(
           `SELECT id, slug, name, email, bio, specialties, photo_url, about, location, experience,
-                  instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number
+                  instagram_url, tiktok_url, facebook_url, website_url, whatsapp_number,
+                  parish_id, lat, lng
            FROM artists WHERE id = ?`,
         )
           .bind(artistId)

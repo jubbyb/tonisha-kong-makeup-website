@@ -34,6 +34,19 @@ interface Artist {
 
 const SORT_OPTIONS = ['Most loved', 'Soonest', 'Price: low', 'Distance'];
 
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isDesktop;
+}
+
 function PinIcon() {
   return (
     <svg
@@ -131,7 +144,9 @@ function ArtistCompactCard({
         padding: '0.75rem',
         borderRadius: '8px',
         border: `1px solid ${highlighted ? 'var(--accent)' : 'var(--line)'}`,
-        background: highlighted ? 'color-mix(in srgb, var(--accent) 8%, var(--bg-card))' : 'var(--bg-card)',
+        background: highlighted
+          ? 'color-mix(in srgb, var(--accent) 8%, var(--bg-card))'
+          : 'var(--bg-card)',
         cursor: 'pointer',
         flexShrink: 0,
         width: '240px',
@@ -206,6 +221,7 @@ export default function Artists() {
   const activeIndustry = searchParams.get('industry') ?? '';
   const activeParish = searchParams.get('parish') ?? '';
   const viewMode = searchParams.get('view') === 'map' ? 'map' : 'list';
+  const isDesktop = useIsDesktop();
 
   // ── Fetch industries ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -297,7 +313,9 @@ export default function Artists() {
           return (
             <div
               key={artist.id}
-              ref={(el) => { cardRefs.current[artist.id] = el; }}
+              ref={(el) => {
+                cardRefs.current[artist.id] = el;
+              }}
               style={{
                 cursor: 'pointer',
                 borderRadius: viewMode === 'map' ? '8px' : undefined,
@@ -546,7 +564,11 @@ export default function Artists() {
 
       {/* ── Category + Parish pills ──────────────────────────────────── */}
       <div
-        style={{ borderBottom: '1px solid var(--line)', padding: '0.875rem 2rem', overflow: 'auto' }}
+        style={{
+          borderBottom: '1px solid var(--line)',
+          padding: '0.875rem 2rem',
+          overflow: 'auto',
+        }}
       >
         {/* Row 1: Industry filters + view toggle */}
         <div
@@ -673,11 +695,7 @@ export default function Artists() {
               All
             </Pill>
             {parishes.map((p) => (
-              <Pill
-                key={p.slug}
-                active={activeParish === p.slug}
-                onClick={() => setParish(p.slug)}
-              >
+              <Pill key={p.slug} active={activeParish === p.slug} onClick={() => setParish(p.slug)}>
                 {p.name}
               </Pill>
             ))}
@@ -733,15 +751,10 @@ export default function Artists() {
       {/* ── Results body ────────────────────────────────────────────── */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <span
-            className="loading loading-spinner loading-lg"
-            style={{ color: 'var(--accent)' }}
-          />
+          <span className="loading loading-spinner loading-lg" style={{ color: 'var(--accent)' }} />
         </div>
       ) : error ? (
-        <div style={{ color: 'var(--accent)', textAlign: 'center', padding: '4rem' }}>
-          {error}
-        </div>
+        <div style={{ color: 'var(--accent)', textAlign: 'center', padding: '4rem' }}>{error}</div>
       ) : artists.length === 0 ? (
         <div
           style={{
@@ -758,108 +771,87 @@ export default function Artists() {
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 2rem 6rem' }}>
           {artistGrid}
         </div>
-      ) : (
-        /* ── MAP view ──────────────────────────────────────────────── */
-        <>
-          {/* Desktop split: list left (40%) + map right (60%) */}
+      ) : /* ── MAP view ──────────────────────────────────────────────── */
+      isDesktop ? (
+        /* Desktop split: list left (40%) + map right (60%) */
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 0,
+          }}
+        >
+          {/* Left: scrollable card list */}
           <div
-            className="artists-map-desktop"
+            ref={listRef}
             style={{
-              display: 'none', // overridden below via media-query class
+              width: '40%',
+              overflowY: 'auto',
+              height: 'calc(100vh - var(--navbar-h, 64px) - var(--filter-h, 130px))',
+              padding: '0 1.25rem 4rem 2rem',
+              paddingTop: '0',
             }}
           >
-            {/* Left: scrollable card list */}
-            <div
-              ref={listRef}
-              style={{
-                width: '40%',
-                overflowY: 'auto',
-                height: 'calc(100vh - var(--navbar-h, 64px) - var(--filter-h, 130px))',
-                padding: '0 1.25rem 4rem 2rem',
-                paddingTop: '0',
-              }}
-            >
-              {artistGrid}
-            </div>
-            {/* Right: sticky map */}
-            <div
-              style={{
-                width: '60%',
-                position: 'sticky',
-                top: 0,
-                height: 'calc(100vh - var(--navbar-h, 64px) - var(--filter-h, 130px))',
-              }}
-            >
-              <MapView
-                artists={artists}
-                onArtistClick={handleArtistMapClick}
-              />
-            </div>
+            {artistGrid}
+          </div>
+          {/* Right: sticky map */}
+          <div
+            style={{
+              width: '60%',
+              position: 'sticky',
+              top: 0,
+              height: 'calc(100vh - var(--navbar-h, 64px) - var(--filter-h, 130px))',
+            }}
+          >
+            <MapView
+              artists={artists}
+              onArtistClick={handleArtistMapClick}
+              highlightedId={highlightedId}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Mobile: full-screen map + bottom sheet */
+        <div>
+          {/* Full map */}
+          <div style={{ height: '60vh', position: 'relative' }}>
+            <MapView
+              artists={artists}
+              onArtistClick={handleArtistMapClick}
+              highlightedId={highlightedId}
+            />
           </div>
 
-          {/* Mobile: full-screen map + bottom sheet */}
-          <div className="artists-map-mobile">
-            {/* Full map */}
-            <div style={{ height: '60vh', position: 'relative' }}>
-              <MapView
-                artists={artists}
-                onArtistClick={handleArtistMapClick}
-              />
-            </div>
-
-            {/* Bottom sheet: horizontally scrollable compact cards */}
+          {/* Bottom sheet: horizontally scrollable compact cards */}
+          <div
+            style={{
+              height: '40vh',
+              background: 'var(--bg)',
+              borderTop: '1px solid var(--line)',
+              padding: '1rem',
+              overflowY: 'auto',
+            }}
+          >
             <div
               style={{
-                height: '40vh',
-                background: 'var(--bg)',
-                borderTop: '1px solid var(--line)',
-                padding: '1rem',
-                overflowY: 'auto',
+                display: 'flex',
+                gap: '0.75rem',
+                overflowX: 'auto',
+                paddingBottom: '0.5rem',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '0.75rem',
-                  overflowX: 'auto',
-                  paddingBottom: '0.5rem',
-                }}
-              >
-                {artists.map((artist) => (
-                  <ArtistCompactCard
-                    key={artist.id}
-                    artist={artist}
-                    highlighted={highlightedId === artist.id}
-                    onClick={() => navigate(`/artists/${artist.slug ?? artist.id}`)}
-                  />
-                ))}
-              </div>
+              {artists.map((artist) => (
+                <ArtistCompactCard
+                  key={artist.id}
+                  artist={artist}
+                  highlighted={highlightedId === artist.id}
+                  onClick={() => navigate(`/artists/${artist.slug ?? artist.id}`)}
+                />
+              ))}
             </div>
           </div>
-        </>
+        </div>
       )}
-
-      {/* ── Responsive styles for map view ──────────────────────────── */}
-      <style>{`
-        @media (min-width: 1024px) {
-          .artists-map-desktop {
-            display: flex !important;
-            align-items: flex-start;
-            gap: 0;
-          }
-          .artists-map-mobile {
-            display: none;
-          }
-        }
-        @media (max-width: 1023px) {
-          .artists-map-desktop {
-            display: none !important;
-          }
-          .artists-map-mobile {
-            display: block;
-          }
-        }
-      `}</style>
     </div>
   );
 }
