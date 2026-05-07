@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
+import { cfImage } from '../lib/cfImage';
 import CalendarView from '../components/CalendarView';
 import { buildWhatsAppUrl, defaultBookingMessage } from '../lib/whatsapp';
 
@@ -234,7 +235,7 @@ export default function ArtistProfile() {
       {/* ── Cover ──────────────────────────────────────────────────────── */}
       <div style={{ position: 'relative', height: '340px', overflow: 'hidden' }}>
         <img
-          src={artist.photo_url ?? coverImg}
+          src={artist.photo_url ? cfImage(artist.photo_url, 1600) : coverImg}
           alt=""
           style={{
             position: 'absolute',
@@ -397,7 +398,7 @@ export default function ArtistProfile() {
           >
             {artist.photo_url ? (
               <img
-                src={artist.photo_url}
+                src={cfImage(artist.photo_url, 400)}
                 alt={artist.name}
                 style={{
                   width: '100%',
@@ -747,8 +748,9 @@ export default function ArtistProfile() {
                         className={`portfolio-item${i === 0 ? ' portfolio-item-first' : ''}`}
                       >
                         <img
-                          src={item.image_url}
+                          src={cfImage(item.image_url, 600)}
                           alt={item.caption ?? `Work ${i + 1}`}
+                          loading="lazy"
                           style={{
                             position: 'absolute',
                             inset: 0,
@@ -1469,7 +1471,7 @@ export default function ArtistProfile() {
               ✕
             </button>
             <img
-              src={portfolio[lightboxIndex].image_url}
+              src={cfImage(portfolio[lightboxIndex].image_url, 1600, 'contain')}
               alt={portfolio[lightboxIndex].caption ?? ''}
               className="w-full h-auto rounded-lg"
             />
@@ -1668,7 +1670,7 @@ export default function ArtistProfile() {
                         }}
                       >
                         <img
-                          src={artist.photo_url}
+                          src={cfImage(artist.photo_url, 120)}
                           alt={artist.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />

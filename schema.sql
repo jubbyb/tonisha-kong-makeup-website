@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS artists (
   bio              TEXT,
   specialties      TEXT,
   photo_url        TEXT,
+  photo_storage_key TEXT,
   is_active        INTEGER NOT NULL DEFAULT 1,
   created_at       TEXT NOT NULL DEFAULT (datetime('now')),
   user_id          INTEGER REFERENCES users(id),
@@ -88,6 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_artists_user_id ON artists(user_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_artists_slug ON artists(slug);
 CREATE INDEX IF NOT EXISTS idx_artists_parish ON artists(parish_id);
 CREATE INDEX IF NOT EXISTS idx_artists_geo ON artists(lat, lng);
+CREATE INDEX IF NOT EXISTS idx_artists_photo_storage_key ON artists(photo_storage_key);
 
 -- Artist weekly working hours (one row per working day; if no row, that day is unavailable)
 -- day_of_week: 0=Monday ... 6=Sunday
@@ -161,11 +163,13 @@ CREATE TABLE IF NOT EXISTS artist_portfolio (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   artist_id     INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
   image_url     TEXT NOT NULL,
+  storage_key   TEXT,
   caption       TEXT,
   display_order INTEGER NOT NULL DEFAULT 0,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_artist_portfolio_artist ON artist_portfolio(artist_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_artist_portfolio_storage_key ON artist_portfolio(storage_key);
 
 CREATE TABLE IF NOT EXISTS artist_testimonials (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
