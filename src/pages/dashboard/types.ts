@@ -100,6 +100,24 @@ export const DURATIONS = [
   { value: 120, label: '2 hours' },
 ];
 
+export interface ClientSummary {
+  email: string;
+  name: string;
+  phone: string | null;
+  contact_method: string;
+  booking_count: number;
+  completed_count: number;
+  last_booking_date: string;
+  notes: string | null;
+  tags: string | null;
+  is_vip: number;
+}
+
+export interface ClientDetail {
+  bookings: Booking[];
+  notes: { notes: string | null; tags: string | null; is_vip: number } | null;
+}
+
 export type TabId =
   | 'today'
   | 'calendar'
@@ -107,4 +125,5 @@ export type TabId =
   | 'hours'
   | 'portfolio'
   | 'testimonials'
-  | 'profile';
+  | 'profile'
+  | 'clients';

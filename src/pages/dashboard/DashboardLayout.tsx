@@ -14,6 +14,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: 'today', label: 'Today', eyebrow: 'Overview' },
   { id: 'calendar', label: 'Bookings', eyebrow: 'Calendar' },
+  { id: 'clients', label: 'Clients', eyebrow: 'CRM' },
   { id: 'services', label: 'Services', eyebrow: 'Catalog' },
   { id: 'hours', label: 'Hours', eyebrow: 'Availability' },
   { id: 'portfolio', label: 'Portfolio', eyebrow: 'Gallery' },

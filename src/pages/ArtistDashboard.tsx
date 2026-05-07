@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from './dashboard/DashboardLayout';
 import Today from './dashboard/Today';
 import Calendar from './dashboard/Calendar';
+import Clients from './dashboard/Clients';
 import Services from './dashboard/Services';
 import Hours from './dashboard/Hours';
 import Portfolio from './dashboard/Portfolio';
@@ -21,6 +22,7 @@ export default function ArtistDashboard() {
     <DashboardLayout>
       {tab === 'today' && <Today />}
       {tab === 'calendar' && <Calendar />}
+      {tab === 'clients' && <Clients />}
       {tab === 'services' && <Services />}
       {tab === 'hours' && <Hours />}
       {tab === 'portfolio' && <Portfolio />}
