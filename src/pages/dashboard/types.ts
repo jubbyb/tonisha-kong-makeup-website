@@ -35,6 +35,7 @@ export interface ArtistProfile {
   bio: string | null;
   specialties: string | null;
   photo_url: string | null;
+  photo_storage_key?: string | null;
   about: string | null;
   location: string | null;
   experience: string | null;
@@ -60,7 +61,10 @@ export interface PortfolioItem {
   image_url: string;
   caption: string | null;
   display_order: number;
+  storage_key?: string | null;
 }
+
+export const PORTFOLIO_LIMIT = 20;
 
 export interface TestimonialItem {
   id: number;

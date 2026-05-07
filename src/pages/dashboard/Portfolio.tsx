@@ -1,17 +1,26 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import imageCompression from 'browser-image-compression';
 import { apiFetch } from '../../lib/api';
-import type { PortfolioItem } from './types';
+import { cfImage } from '../../lib/cfImage';
+import { PORTFOLIO_LIMIT, type PortfolioItem } from './types';
 
-// ─── Portfolio tab ────────────────────────────────────────────────────────────
+const ACCEPT = 'image/jpeg,image/png,image/webp';
+const COMPRESSION_OPTS = { maxSizeMB: 0.5, maxWidthOrHeight: 1600, useWebWorker: true };
 
 export default function Portfolio() {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newUrl, setNewUrl] = useState('');
-  const [newCaption, setNewCaption] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingCaption, setPendingCaption] = useState('');
+  const [showUrlForm, setShowUrlForm] = useState(false);
+  const [newUrl, setNewUrl] = useState('');
+  const [newUrlCaption, setNewUrlCaption] = useState('');
+  const [adding, setAdding] = useState(false);
   const [editingCaption, setEditingCaption] = useState<Map<number, string>>(new Map());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const atLimit = items.length >= PORTFOLIO_LIMIT;
 
   const refresh = useCallback(() => {
     apiFetch<PortfolioItem[]>('/api/artist/portfolio')
@@ -26,18 +35,46 @@ export default function Portfolio() {
     refresh();
   }, [refresh]);
 
-  const addItem = async (e: React.FormEvent) => {
+  const handleFile = async (file: File) => {
+    if (atLimit) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const compressed = await imageCompression(file, COMPRESSION_OPTS);
+      const form = new FormData();
+      form.append('file', compressed, compressed.name || file.name);
+      if (pendingCaption.trim()) form.append('caption', pendingCaption.trim());
+      await apiFetch<PortfolioItem>('/api/artist/portfolio/upload', {
+        method: 'POST',
+        body: form,
+      });
+      setPendingCaption('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void handleFile(file);
+  };
+
+  const addByUrl = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUrl.trim()) return;
+    if (!newUrl.trim() || atLimit) return;
     setAdding(true);
     setError(null);
     try {
       await apiFetch('/api/artist/portfolio', {
         method: 'POST',
-        body: JSON.stringify({ image_url: newUrl.trim(), caption: newCaption.trim() || null }),
+        body: JSON.stringify({ image_url: newUrl.trim(), caption: newUrlCaption.trim() || null }),
       });
       setNewUrl('');
-      setNewCaption('');
+      setNewUrlCaption('');
       refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add image');
@@ -97,52 +134,104 @@ export default function Portfolio() {
   return (
     <div>
       {/* ── header ── */}
-      <p className="eyebrow mb-1" style={{ color: 'var(--ink-3)' }}>
-        Your Work
-      </p>
-      <h2 className="text-2xl font-display font-semibold mb-1" style={{ color: 'var(--ink)' }}>
-        Portfolio
-      </h2>
+      <div className="flex items-end justify-between mb-1">
+        <div>
+          <p className="eyebrow mb-1" style={{ color: 'var(--ink-3)' }}>
+            Your Work
+          </p>
+          <h2 className="text-2xl font-display font-semibold" style={{ color: 'var(--ink)' }}>
+            Portfolio
+          </h2>
+        </div>
+        <span className="text-sm" style={{ color: atLimit ? 'var(--error, #c33)' : 'var(--ink-3)' }}>
+          {items.length}/{PORTFOLIO_LIMIT} photos
+        </span>
+      </div>
       <p className="text-sm mb-5" style={{ color: 'var(--ink-3)' }}>
-        Showcase your best work. Paste an image URL — anything publicly hosted (R2, your own site,
-        etc.) will work.
+        Upload up to {PORTFOLIO_LIMIT} photos of your work. Images are compressed and resized in your
+        browser for fast uploads.
       </p>
 
-      {/* ── add form ── */}
-      <form
-        onSubmit={addItem}
-        className="border p-4 mb-6"
+      {/* ── upload card ── */}
+      <div
+        className="border p-4 mb-3"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
       >
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <input
-            type="url"
-            required
-            placeholder="https://..."
-            className="input input-bordered flex-1"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT}
+            onChange={onPickFile}
+            disabled={uploading || atLimit}
+            className="file-input file-input-bordered flex-1"
           />
           <input
             type="text"
             placeholder="Caption (optional)"
             className="input input-bordered flex-1"
-            value={newCaption}
-            onChange={(e) => setNewCaption(e.target.value)}
+            value={pendingCaption}
+            onChange={(e) => setPendingCaption(e.target.value)}
+            disabled={uploading || atLimit}
           />
-          <button type="submit" className="btn btn-primary" disabled={adding}>
-            {adding ? 'Adding...' : 'Add image'}
-          </button>
+          {uploading && (
+            <span className="loading loading-spinner loading-sm" aria-label="Uploading" />
+          )}
         </div>
+        {atLimit && (
+          <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
+            You've reached the {PORTFOLIO_LIMIT}-photo limit. Delete one to upload a new image.
+          </p>
+        )}
         {error && <div className="alert alert-error py-2 text-sm mt-2">{error}</div>}
-      </form>
+      </div>
+
+      {/* ── URL fallback ── */}
+      <button
+        type="button"
+        className="text-xs underline mb-6"
+        style={{ color: 'var(--ink-3)' }}
+        onClick={() => setShowUrlForm((v) => !v)}
+      >
+        {showUrlForm ? 'Hide URL option' : 'Or paste an image URL'}
+      </button>
+      {showUrlForm && (
+        <form
+          onSubmit={addByUrl}
+          className="border p-4 mb-6"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
+        >
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="url"
+              required
+              placeholder="https://..."
+              className="input input-bordered flex-1"
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              disabled={atLimit}
+            />
+            <input
+              type="text"
+              placeholder="Caption (optional)"
+              className="input input-bordered flex-1"
+              value={newUrlCaption}
+              onChange={(e) => setNewUrlCaption(e.target.value)}
+              disabled={atLimit}
+            />
+            <button type="submit" className="btn btn-primary" disabled={adding || atLimit}>
+              {adding ? 'Adding...' : 'Add image'}
+            </button>
+          </div>
+        </form>
+      )}
 
       {items.length === 0 ? (
         <div
           className="text-center text-sm py-12 border border-dashed"
           style={{ color: 'var(--ink-3)', borderColor: 'var(--line-2)' }}
         >
-          Your portfolio is empty. Add your first image above.
+          Your portfolio is empty. Upload your first image above.
         </div>
       ) : (
         <ul className="space-y-3">
@@ -156,8 +245,9 @@ export default function Portfolio() {
               >
                 <div className="w-24 h-24 flex-shrink-0 overflow-hidden bg-base-200">
                   <img
-                    src={item.image_url}
+                    src={cfImage(item.image_url, 200)}
                     alt={item.caption ?? ''}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 </div>

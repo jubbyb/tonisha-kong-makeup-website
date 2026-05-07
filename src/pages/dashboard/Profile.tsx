@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import imageCompression from 'browser-image-compression';
 import { apiFetch } from '../../lib/api';
+import { cfImage } from '../../lib/cfImage';
 import { MapView } from '../../components/MapView';
 import type { ArtistProfile, IndustryOption } from './types';
+
+const PHOTO_ACCEPT = 'image/jpeg,image/png,image/webp';
+const PHOTO_COMPRESSION_OPTS = { maxSizeMB: 0.5, maxWidthOrHeight: 1600, useWebWorker: true };
 
 interface Parish {
   id: number;
@@ -20,6 +25,10 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [removingPhoto, setRemovingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const photoFileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     fetch('/api/industries')
@@ -57,6 +66,53 @@ export default function Profile() {
     );
   };
 
+  const handlePhotoFile = async (file: File) => {
+    setPhotoError(null);
+    setUploadingPhoto(true);
+    try {
+      const compressed = await imageCompression(file, PHOTO_COMPRESSION_OPTS);
+      const form = new FormData();
+      form.append('file', compressed, compressed.name || file.name);
+      const res = await apiFetch<{ photo_url: string; photo_storage_key: string }>(
+        '/api/artist/profile/upload',
+        { method: 'POST', body: form },
+      );
+      setProfile((prev) =>
+        prev
+          ? { ...prev, photo_url: res.photo_url, photo_storage_key: res.photo_storage_key }
+          : prev,
+      );
+      if (photoFileInputRef.current) photoFileInputRef.current.value = '';
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const onPickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void handlePhotoFile(file);
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!profile?.photo_url) return;
+    if (!confirm('Remove your profile photo?')) return;
+    setPhotoError(null);
+    setRemovingPhoto(true);
+    try {
+      await apiFetch('/api/artist/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ photo_url: null }),
+      });
+      setProfile((prev) => (prev ? { ...prev, photo_url: null, photo_storage_key: null } : prev));
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : 'Remove failed');
+    } finally {
+      setRemovingPhoto(false);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -69,7 +125,6 @@ export default function Profile() {
           name: profile.name,
           bio: profile.bio,
           specialties: profile.specialties,
-          photo_url: profile.photo_url,
           slug: profile.slug,
           about: profile.about,
           location: profile.location,
@@ -154,15 +209,63 @@ export default function Profile() {
             onChange={(e) => setProfile({ ...profile, slug: e.target.value.toLowerCase() })}
           />
         </label>
-        <label className="input input-bordered flex items-center gap-2">
-          <span className="label w-32">Photo URL</span>
-          <input
-            type="url"
-            className="grow"
-            value={profile.photo_url ?? ''}
-            onChange={(e) => setProfile({ ...profile, photo_url: e.target.value || null })}
-          />
-        </label>
+        <div
+          className="border p-4"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
+        >
+          <p className="text-sm font-medium mb-3" style={{ color: 'var(--ink-2)' }}>
+            Profile photo
+          </p>
+          <div className="flex items-start gap-4">
+            <div
+              className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-full bg-base-200 flex items-center justify-center"
+              style={{ border: '1px solid var(--line)' }}
+            >
+              {profile.photo_url ? (
+                <img
+                  src={cfImage(profile.photo_url, 200)}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                  No photo
+                </span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                <input
+                  ref={photoFileInputRef}
+                  type="file"
+                  accept={PHOTO_ACCEPT}
+                  onChange={onPickPhoto}
+                  disabled={uploadingPhoto || removingPhoto}
+                  className="file-input file-input-bordered file-input-sm flex-1"
+                />
+                {uploadingPhoto && (
+                  <span className="loading loading-spinner loading-sm" aria-label="Uploading" />
+                )}
+                {profile.photo_url && !uploadingPhoto && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost text-error"
+                    onClick={handleRemovePhoto}
+                    disabled={removingPhoto}
+                  >
+                    {removingPhoto ? 'Removing...' : 'Remove'}
+                  </button>
+                )}
+              </div>
+              <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
+                JPEG, PNG, or WebP. Compressed automatically. Saves immediately.
+              </p>
+              {photoError && (
+                <div className="alert alert-error py-2 text-sm mt-2">{photoError}</div>
+              )}
+            </div>
+          </div>
+        </div>
         <label className="input input-bordered flex items-center gap-2">
           <span className="label w-32">Specialties</span>
           <input

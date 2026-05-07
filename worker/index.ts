@@ -12,7 +12,17 @@ interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_REDIRECT_URI: string;
+  PORTFOLIO_BUCKET: R2Bucket;
+  PORTFOLIO_PUBLIC_BASE: string;
 }
+
+const PORTFOLIO_MAX_IMAGES = 20;
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1497,12 +1507,30 @@ export default {
           body.slug = slug;
         }
 
+        // If caller explicitly touched photo_url (paste-URL or remove), clean
+        // up any prior R2-hosted photo. Storage_key is only ever set by the
+        // upload endpoint, so this won't delete anything for legacy URL photos.
+        const photoTouched = 'photo_url' in body;
+        if (photoTouched) {
+          const prev = await env.DB.prepare('SELECT photo_storage_key FROM artists WHERE id = ?')
+            .bind(artistId)
+            .first<{ photo_storage_key: string | null }>();
+          if (prev?.photo_storage_key) {
+            try {
+              await env.PORTFOLIO_BUCKET.delete(prev.photo_storage_key);
+            } catch (err) {
+              console.warn('R2 delete failed for', prev.photo_storage_key, err);
+            }
+          }
+        }
+
         await env.DB.prepare(
           `UPDATE artists SET
              name = COALESCE(?, name),
              bio = COALESCE(?, bio),
              specialties = COALESCE(?, specialties),
-             photo_url = COALESCE(?, photo_url),
+             photo_url = CASE WHEN ? IS NOT NULL THEN ? ELSE photo_url END,
+             photo_storage_key = CASE WHEN ? IS NOT NULL THEN NULL ELSE photo_storage_key END,
              slug = COALESCE(?, slug),
              about = COALESCE(?, about),
              location = COALESCE(?, location),
@@ -1523,7 +1551,9 @@ export default {
             body.name ?? null,
             body.bio ?? null,
             body.specialties ?? null,
+            photoTouched ? 1 : null,
             body.photo_url ?? null,
+            photoTouched ? 1 : null,
             body.slug ?? null,
             body.about ?? null,
             body.location ?? null,
@@ -1554,6 +1584,47 @@ export default {
         return json({ success: true });
       }
 
+      if (pathname === '/api/artist/profile/upload' && method === 'POST') {
+        let form: FormData;
+        try {
+          form = await request.formData();
+        } catch {
+          return json({ error: 'Expected multipart/form-data' }, 400);
+        }
+        const file = form.get('file');
+        if (!(file instanceof File)) return json({ error: 'file is required' }, 400);
+        const ext = ALLOWED_IMAGE_TYPES[file.type];
+        if (!ext) return json({ error: 'Unsupported image type (use JPEG, PNG, or WebP)' }, 400);
+        if (file.size === 0) return json({ error: 'Empty file' }, 400);
+        if (file.size > MAX_UPLOAD_BYTES)
+          return json({ error: `File too large (max ${MAX_UPLOAD_BYTES / 1024 / 1024} MB)` }, 400);
+
+        const prev = await env.DB.prepare('SELECT photo_storage_key FROM artists WHERE id = ?')
+          .bind(artistId)
+          .first<{ photo_storage_key: string | null }>();
+        const oldKey = prev?.photo_storage_key ?? null;
+
+        const storageKey = `artists/${artistId}/profile/${crypto.randomUUID()}.${ext}`;
+        await env.PORTFOLIO_BUCKET.put(storageKey, file.stream(), {
+          httpMetadata: { contentType: file.type },
+        });
+        const imageUrl = `${env.PORTFOLIO_PUBLIC_BASE.replace(/\/$/, '')}/${storageKey}`;
+
+        await env.DB.prepare('UPDATE artists SET photo_url = ?, photo_storage_key = ? WHERE id = ?')
+          .bind(imageUrl, storageKey, artistId)
+          .run();
+
+        if (oldKey && oldKey !== storageKey) {
+          try {
+            await env.PORTFOLIO_BUCKET.delete(oldKey);
+          } catch (err) {
+            console.warn('R2 delete failed for', oldKey, err);
+          }
+        }
+
+        return json({ photo_url: imageUrl, photo_storage_key: storageKey }, 201);
+      }
+
       // Portfolio (artist-owned CRUD)
       if (pathname === '/api/artist/portfolio' && method === 'GET') {
         const { results } = await env.DB.prepare(
@@ -1564,7 +1635,68 @@ export default {
         return json(results);
       }
 
+      if (pathname === '/api/artist/portfolio/upload' && method === 'POST') {
+        const countRow = await env.DB.prepare(
+          'SELECT COUNT(*) AS n FROM artist_portfolio WHERE artist_id = ?',
+        )
+          .bind(artistId)
+          .first<{ n: number }>();
+        if ((countRow?.n ?? 0) >= PORTFOLIO_MAX_IMAGES)
+          return json({ error: `Portfolio limit of ${PORTFOLIO_MAX_IMAGES} images reached` }, 409);
+
+        let form: FormData;
+        try {
+          form = await request.formData();
+        } catch {
+          return json({ error: 'Expected multipart/form-data' }, 400);
+        }
+        const file = form.get('file');
+        if (!(file instanceof File)) return json({ error: 'file is required' }, 400);
+        const ext = ALLOWED_IMAGE_TYPES[file.type];
+        if (!ext) return json({ error: 'Unsupported image type (use JPEG, PNG, or WebP)' }, 400);
+        if (file.size === 0) return json({ error: 'Empty file' }, 400);
+        if (file.size > MAX_UPLOAD_BYTES)
+          return json({ error: `File too large (max ${MAX_UPLOAD_BYTES / 1024 / 1024} MB)` }, 400);
+
+        const caption = (form.get('caption') as string | null)?.trim() || null;
+        const storageKey = `artists/${artistId}/${crypto.randomUUID()}.${ext}`;
+        await env.PORTFOLIO_BUCKET.put(storageKey, file.stream(), {
+          httpMetadata: { contentType: file.type },
+        });
+        const imageUrl = `${env.PORTFOLIO_PUBLIC_BASE.replace(/\/$/, '')}/${storageKey}`;
+
+        const maxRow = await env.DB.prepare(
+          'SELECT COALESCE(MAX(display_order), -1) AS max_order FROM artist_portfolio WHERE artist_id = ?',
+        )
+          .bind(artistId)
+          .first<{ max_order: number }>();
+        const nextOrder = (maxRow?.max_order ?? -1) + 1;
+        const inserted = await env.DB.prepare(
+          'INSERT INTO artist_portfolio (artist_id, image_url, storage_key, caption, display_order) VALUES (?, ?, ?, ?, ?)',
+        )
+          .bind(artistId, imageUrl, storageKey, caption, nextOrder)
+          .run();
+
+        return json(
+          {
+            id: inserted.meta.last_row_id,
+            image_url: imageUrl,
+            storage_key: storageKey,
+            caption,
+            display_order: nextOrder,
+          },
+          201,
+        );
+      }
+
       if (pathname === '/api/artist/portfolio' && method === 'POST') {
+        const countRow = await env.DB.prepare(
+          'SELECT COUNT(*) AS n FROM artist_portfolio WHERE artist_id = ?',
+        )
+          .bind(artistId)
+          .first<{ n: number }>();
+        if ((countRow?.n ?? 0) >= PORTFOLIO_MAX_IMAGES)
+          return json({ error: `Portfolio limit of ${PORTFOLIO_MAX_IMAGES} images reached` }, 409);
         const body = await request.json<{ image_url?: string; caption?: string }>();
         const imageUrl = body.image_url?.trim();
         if (!imageUrl) return json({ error: 'image_url is required' }, 400);
@@ -1603,12 +1735,23 @@ export default {
       }
 
       if (portfolioItem && method === 'DELETE') {
-        const result = await env.DB.prepare(
-          'DELETE FROM artist_portfolio WHERE id = ? AND artist_id = ?',
+        const itemId = Number(portfolioItem[1]);
+        const existing = await env.DB.prepare(
+          'SELECT storage_key FROM artist_portfolio WHERE id = ? AND artist_id = ?',
         )
-          .bind(Number(portfolioItem[1]), artistId)
+          .bind(itemId, artistId)
+          .first<{ storage_key: string | null }>();
+        if (!existing) return json({ error: 'Not found' }, 404);
+        if (existing.storage_key) {
+          try {
+            await env.PORTFOLIO_BUCKET.delete(existing.storage_key);
+          } catch (err) {
+            console.warn('R2 delete failed for', existing.storage_key, err);
+          }
+        }
+        await env.DB.prepare('DELETE FROM artist_portfolio WHERE id = ? AND artist_id = ?')
+          .bind(itemId, artistId)
           .run();
-        if (!result.meta.changes) return json({ error: 'Not found' }, 404);
         return json({ success: true });
       }
 

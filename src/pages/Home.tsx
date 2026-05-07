@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BRAND } from '../constants/brand';
 import { Eyebrow } from '../components/ui';
+import { cfImage } from '../lib/cfImage';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -579,8 +580,9 @@ const Home: React.FC = () => {
             >
               <img
                 src={
-                  featuredArtists[0].photo_url ??
-                  'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80'
+                  featuredArtists[0].photo_url
+                    ? cfImage(featuredArtists[0].photo_url, 1200)
+                    : 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80'
                 }
                 alt={featuredArtists[0].name}
                 style={{
@@ -837,7 +839,7 @@ const Home: React.FC = () => {
                   >
                     {artist.photo_url ? (
                       <img
-                        src={artist.photo_url}
+                        src={cfImage(artist.photo_url, 600)}
                         alt={artist.name}
                         style={{
                           position: 'absolute',

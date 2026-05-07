@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { cfImage } from '../lib/cfImage';
 
 interface Industry {
   id: number;
@@ -265,7 +266,7 @@ export default function IndustryHub() {
                 <div style={{ height: '200px', background: 'var(--bg-card)', overflow: 'hidden' }}>
                   {artist.photo_url ? (
                     <img
-                      src={artist.photo_url}
+                      src={cfImage(artist.photo_url, 400)}
                       alt={artist.name}
                       style={{
                         width: '100%',
