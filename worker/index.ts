@@ -1679,6 +1679,76 @@ export default {
         if (!result.meta.changes) return json({ error: 'Not found' }, 404);
         return json({ success: true });
       }
+
+      // Clients — derived from bookings, annotated via artist_client_notes
+
+      if (pathname === '/api/artist/clients' && method === 'GET') {
+        const { results } = await env.DB.prepare(
+          `SELECT
+             b.email,
+             b.name,
+             b.phone,
+             b.contact_method,
+             COUNT(*) AS booking_count,
+             SUM(CASE WHEN b.status = 'completed' THEN 1 ELSE 0 END) AS completed_count,
+             MAX(b.date) AS last_booking_date,
+             acn.notes,
+             acn.tags,
+             acn.is_vip
+           FROM bookings b
+           LEFT JOIN artist_client_notes acn
+             ON acn.artist_id = b.artist_id AND acn.client_email = b.email
+           WHERE b.artist_id = ?
+           GROUP BY b.email
+           ORDER BY last_booking_date DESC`,
+        )
+          .bind(artistId)
+          .all();
+        return json(results);
+      }
+
+      const clientEmail = pathname.match(/^\/api\/artist\/clients\/(.+)$/);
+
+      if (clientEmail && method === 'GET') {
+        const email = decodeURIComponent(clientEmail[1]);
+        const [bookingsRes, notesRow] = await Promise.all([
+          env.DB.prepare(
+            `SELECT id, name, email, phone, service, date, start_time, end_time, message, status, created_at
+             FROM bookings WHERE artist_id = ? AND email = ? ORDER BY date DESC`,
+          )
+            .bind(artistId, email)
+            .all(),
+          env.DB.prepare(
+            'SELECT notes, tags, is_vip FROM artist_client_notes WHERE artist_id = ? AND client_email = ?',
+          )
+            .bind(artistId, email)
+            .first<{ notes: string | null; tags: string | null; is_vip: number }>(),
+        ]);
+        return json({ bookings: bookingsRes.results, notes: notesRow ?? null });
+      }
+
+      if (clientEmail && method === 'PUT') {
+        const email = decodeURIComponent(clientEmail[1]);
+        const body = await request.json<{ notes?: string | null; tags?: string | null; is_vip?: number }>();
+        await env.DB.prepare(
+          `INSERT INTO artist_client_notes (artist_id, client_email, notes, tags, is_vip, updated_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))
+           ON CONFLICT(artist_id, client_email) DO UPDATE SET
+             notes      = excluded.notes,
+             tags       = excluded.tags,
+             is_vip     = excluded.is_vip,
+             updated_at = excluded.updated_at`,
+        )
+          .bind(
+            artistId,
+            email,
+            body.notes ?? null,
+            body.tags ?? null,
+            body.is_vip ?? 0,
+          )
+          .run();
+        return json({ success: true });
+      }
     }
 
     // ── Admin ─────────────────────────────────────────────────────────────────
