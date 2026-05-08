@@ -92,7 +92,8 @@ export default function Login() {
 
       setAuth(data.token!, data.user!);
       const isArtist = data.user?.role === 'artist';
-      navigate(isArtist ? '/artist-dashboard' : returnTo, { replace: true });
+      const userDest = returnTo === '/' ? '/my-bookings' : returnTo;
+      navigate(isArtist ? '/artist-dashboard' : userDest, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {

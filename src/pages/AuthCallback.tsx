@@ -43,7 +43,9 @@ export default function AuthCallback() {
     }
 
     setAuth(token, user);
-    navigate(returnTo, { replace: true });
+    const isArtist = user.role === 'artist';
+    const userDest = returnTo === '/' ? '/my-bookings' : returnTo;
+    navigate(isArtist ? '/artist-dashboard' : userDest, { replace: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

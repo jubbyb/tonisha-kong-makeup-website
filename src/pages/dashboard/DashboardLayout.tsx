@@ -11,11 +11,14 @@ interface TabDef {
   eyebrow: string;
 }
 
-const TABS: TabDef[] = [
+const PRIMARY_TABS: TabDef[] = [
   { id: 'today', label: 'Today', eyebrow: 'Overview' },
   { id: 'calendar', label: 'Bookings', eyebrow: 'Calendar' },
   { id: 'clients', label: 'Clients', eyebrow: 'CRM' },
   { id: 'services', label: 'Services', eyebrow: 'Catalog' },
+];
+
+const OVERFLOW_TABS: TabDef[] = [
   { id: 'hours', label: 'Hours', eyebrow: 'Availability' },
   { id: 'portfolio', label: 'Portfolio', eyebrow: 'Gallery' },
   { id: 'testimonials', label: 'Testimonials', eyebrow: 'Reviews' },
@@ -55,7 +58,7 @@ export default function DashboardLayout({ children }: Props) {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen overflow-x-hidden"
       style={{ background: 'var(--bg)', color: 'var(--ink)' }}
     >
       {/* ── Top bar ── */}
@@ -128,7 +131,7 @@ export default function DashboardLayout({ children }: Props) {
 
       {/* ── Tab navigation ── */}
       <nav
-        className="border-b overflow-x-auto"
+        className="sticky top-14 z-20 border-b"
         style={{
           background: 'var(--bg)',
           borderColor: 'var(--line)',
@@ -136,7 +139,7 @@ export default function DashboardLayout({ children }: Props) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <ul className="flex items-end gap-1">
-            {TABS.map((tab) => {
+            {PRIMARY_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <li key={tab.id}>
@@ -170,6 +173,82 @@ export default function DashboardLayout({ children }: Props) {
                 </li>
               );
             })}
+
+            {/* ── Overflow "More" dropdown ── */}
+            <li className="ml-auto">
+              {(() => {
+                const activeOverflow = OVERFLOW_TABS.find((t) => t.id === activeTab);
+                const isActive = !!activeOverflow;
+                return (
+                  <div className="dropdown dropdown-end">
+                    <button
+                      tabIndex={0}
+                      aria-haspopup="menu"
+                      className="relative flex flex-col items-center px-4 py-3 transition-colors focus-visible:outline-none"
+                      style={{
+                        color: isActive ? 'var(--ink)' : 'var(--ink-3)',
+                      }}
+                    >
+                      <span
+                        className="eyebrow mb-0.5 hidden sm:block"
+                        style={{ color: isActive ? 'var(--accent)' : 'var(--ink-3)' }}
+                      >
+                        {activeOverflow?.eyebrow ?? 'More'}
+                      </span>
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: isActive ? 'var(--ink)' : 'var(--ink-2)' }}
+                      >
+                        {activeOverflow ? `${activeOverflow.label} ▾` : 'More ▾'}
+                      </span>
+                      {isActive && (
+                        <span
+                          className="absolute bottom-0 left-0 right-0 h-0.5"
+                          style={{ background: 'var(--accent)' }}
+                        />
+                      )}
+                    </button>
+                    <ul
+                      tabIndex={0}
+                      role="menu"
+                      className="dropdown-content z-30 mt-1 min-w-[12rem] border shadow-lg"
+                      style={{
+                        background: 'var(--bg-elev)',
+                        borderColor: 'var(--line)',
+                      }}
+                    >
+                      {OVERFLOW_TABS.map((tab) => {
+                        const itemActive = activeTab === tab.id;
+                        return (
+                          <li key={tab.id}>
+                            <button
+                              role="menuitem"
+                              onClick={() => {
+                                setTab(tab.id);
+                                (document.activeElement as HTMLElement | null)?.blur();
+                              }}
+                              className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:opacity-80 focus-visible:outline-none"
+                              style={{
+                                color: itemActive ? 'var(--ink)' : 'var(--ink-2)',
+                                background: itemActive ? 'var(--bg-card)' : 'transparent',
+                              }}
+                            >
+                              <span className="text-sm font-medium">{tab.label}</span>
+                              <span
+                                className="eyebrow"
+                                style={{ color: itemActive ? 'var(--accent)' : 'var(--ink-3)' }}
+                              >
+                                {tab.eyebrow}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })()}
+            </li>
           </ul>
         </div>
       </nav>
