@@ -213,6 +213,7 @@ export default function Artists() {
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState('Most loved');
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -562,145 +563,128 @@ export default function Artists() {
         </div>
       </div>
 
-      {/* ── Category + Parish pills ──────────────────────────────────── */}
+      {/* ── Category pills + Filters trigger ─────────────────────────── */}
       <div
         style={{
           borderBottom: '1px solid var(--line)',
-          padding: '0.875rem 2rem',
-          overflow: 'auto',
+          padding: '0.875rem 1rem',
         }}
       >
-        {/* Row 1: Industry filters + view toggle */}
         <div
           style={{
             maxWidth: '1280px',
             margin: '0 auto',
             display: 'flex',
+            flexWrap: 'wrap',
             gap: '0.5rem',
             alignItems: 'center',
           }}
         >
-          <Pill active={!activeIndustry} onClick={() => setIndustry('')}>
-            All ({artists.length || '—'})
-          </Pill>
-          {industries.map((ind) => (
-            <Pill
-              key={ind.slug}
-              active={activeIndustry === ind.slug}
-              onClick={() => setIndustry(ind.slug)}
-            >
-              {ind.name}
-            </Pill>
-          ))}
-
-          <div style={{ flex: 1 }} />
-
-          {/* View toggle: List / Map */}
+          {/* Industry pills (wrap on narrow screens, never overflow) */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '2px',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--line)',
-              borderRadius: '999px',
-              padding: '3px',
-            }}
-          >
-            <button
-              onClick={() => setView('list')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '5px 12px',
-                borderRadius: '999px',
-                border: 'none',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                background: viewMode === 'list' ? 'var(--ink)' : 'transparent',
-                color: viewMode === 'list' ? 'var(--bg)' : 'var(--ink-2)',
-                transition: 'background 0.18s, color 0.18s',
-              }}
-            >
-              <ListIcon /> List
-            </button>
-            <button
-              onClick={() => setView('map')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '5px 12px',
-                borderRadius: '999px',
-                border: 'none',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                background: viewMode === 'map' ? 'var(--ink)' : 'transparent',
-                color: viewMode === 'map' ? 'var(--bg)' : 'var(--ink-2)',
-                transition: 'background 0.18s, color 0.18s',
-              }}
-            >
-              <MapIcon /> Map
-            </button>
-          </div>
-
-          <Pill>
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ marginRight: '4px' }}
-            >
-              <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-              <line x1="10" y1="18" x2="14" y2="18" />
-            </svg>
-            Filters
-          </Pill>
-        </div>
-
-        {/* Row 2: Parish filters (only shown when parishes are loaded) */}
-        {parishes.length > 0 && (
-          <div
-            style={{
-              maxWidth: '1280px',
-              margin: '0.625rem auto 0',
-              display: 'flex',
-              gap: '0.5rem',
-              alignItems: 'center',
               flexWrap: 'wrap',
+              gap: '0.5rem',
+              flex: '1 1 auto',
+              minWidth: 0,
             }}
           >
-            <span
-              style={{
-                fontSize: '0.6875rem',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: 'var(--ink-3)',
-                marginRight: '0.25rem',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Parish
-            </span>
-            <Pill active={!activeParish} onClick={() => setParish('')}>
-              All
+            <Pill active={!activeIndustry} onClick={() => setIndustry('')}>
+              All ({artists.length || '—'})
             </Pill>
-            {parishes.map((p) => (
-              <Pill key={p.slug} active={activeParish === p.slug} onClick={() => setParish(p.slug)}>
-                {p.name}
+            {industries.map((ind) => (
+              <Pill
+                key={ind.slug}
+                active={activeIndustry === ind.slug}
+                onClick={() => setIndustry(ind.slug)}
+              >
+                {ind.name}
               </Pill>
             ))}
           </div>
-        )}
+
+          {/* Right cluster: view toggle + Filters trigger */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              flexShrink: 0,
+              marginLeft: 'auto',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--line)',
+                borderRadius: '999px',
+                padding: '3px',
+              }}
+            >
+              <button
+                onClick={() => setView('list')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '5px 12px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  background: viewMode === 'list' ? 'var(--ink)' : 'transparent',
+                  color: viewMode === 'list' ? 'var(--bg)' : 'var(--ink-2)',
+                  transition: 'background 0.18s, color 0.18s',
+                }}
+              >
+                <ListIcon /> List
+              </button>
+              <button
+                onClick={() => setView('map')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '5px 12px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  background: viewMode === 'map' ? 'var(--ink)' : 'transparent',
+                  color: viewMode === 'map' ? 'var(--bg)' : 'var(--ink-2)',
+                  transition: 'background 0.18s, color 0.18s',
+                }}
+              >
+                <MapIcon /> Map
+              </button>
+            </div>
+
+            <Pill onClick={() => setFilterDialogOpen(true)} active={!!activeParish}>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginRight: '4px', verticalAlign: 'middle' }}
+              >
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+                <line x1="10" y1="18" x2="14" y2="18" />
+              </svg>
+              Filters{activeParish ? ' · 1' : ''}
+            </Pill>
+          </div>
+        </div>
       </div>
 
       {/* ── Results header ──────────────────────────────────────────── */}
@@ -848,6 +832,140 @@ export default function Artists() {
                   onClick={() => navigate(`/artists/${artist.slug ?? artist.id}`)}
                 />
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Filters dialog (parish selection) ─────────────────────────── */}
+      {filterDialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Filter artists"
+          onClick={() => setFilterDialogOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-elev)',
+              border: '1px solid var(--line)',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '480px',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '1rem 1.25rem',
+                borderBottom: '1px solid var(--line)',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontSize: '1.25rem',
+                  color: 'var(--ink)',
+                }}
+              >
+                Filter by parish
+              </div>
+              <button
+                onClick={() => setFilterDialogOpen(false)}
+                aria-label="Close"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--ink-2)',
+                  cursor: 'pointer',
+                  fontSize: '1.25rem',
+                  lineHeight: 1,
+                  padding: '0.25rem 0.5rem',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              style={{
+                padding: '1rem 1.25rem',
+                overflowY: 'auto',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+              }}
+            >
+              <Pill
+                active={!activeParish}
+                onClick={() => {
+                  setParish('');
+                  setFilterDialogOpen(false);
+                }}
+              >
+                All parishes
+              </Pill>
+              {parishes.map((p) => (
+                <Pill
+                  key={p.slug}
+                  active={activeParish === p.slug}
+                  onClick={() => {
+                    setParish(p.slug);
+                    setFilterDialogOpen(false);
+                  }}
+                >
+                  {p.name}
+                </Pill>
+              ))}
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.875rem 1.25rem',
+                borderTop: '1px solid var(--line)',
+              }}
+            >
+              <button
+                onClick={() => {
+                  setParish('');
+                  setFilterDialogOpen(false);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--ink-2)',
+                  cursor: 'pointer',
+                  fontSize: '0.8125rem',
+                  textDecoration: 'underline',
+                  padding: 0,
+                }}
+              >
+                Clear
+              </button>
+              <Btn variant="solid" size="sm" onClick={() => setFilterDialogOpen(false)}>
+                Done
+              </Btn>
             </div>
           </div>
         </div>
