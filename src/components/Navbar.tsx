@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -44,10 +45,77 @@ function MoonIcon() {
   );
 }
 
-function BottomTabBar({ user }: { user: { role: string } | null }) {
+function HamburgerIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    >
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    >
+      <line x1="6" y1="6" x2="18" y2="18" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function BottomTabBar({ user, onLogout }: { user: { role: string } | null; onLogout: () => void }) {
   const location = useLocation();
+  const [sheetOpen, setSheetOpen] = useState(false);
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
+
+  useEffect(() => {
+    setSheetOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSheetOpen(false);
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [sheetOpen]);
 
   const tabs = [
     {
@@ -151,74 +219,152 @@ function BottomTabBar({ user }: { user: { role: string } | null }) {
         </svg>
       ),
     },
-    {
-      to: user ? '/profile' : '/login',
-      label: user ? 'Profile' : 'Login',
-      icon: (
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      ),
-    },
   ];
 
+  const tabItemStyle = (active: boolean) => ({
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '3px',
+    textDecoration: 'none',
+    flex: 1,
+    padding: '0.5rem 0',
+    color: active ? 'var(--accent)' : 'var(--ink-3)',
+    transition: 'color 0.15s',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  });
+
+  const tabLabelStyle = {
+    fontSize: '0.5rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase' as const,
+    lineHeight: 1,
+  };
+
   return (
-    <div className="mobile-tab-bar">
-      {tabs.map(({ to, label, icon }) => {
-        const active = isActive(to);
-        return (
-          <Link
-            key={to}
-            to={to}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '3px',
-              textDecoration: 'none',
-              flex: 1,
-              padding: '0.5rem 0',
-              color: active ? 'var(--accent)' : 'var(--ink-3)',
-              transition: 'color 0.15s',
-            }}
+    <>
+      <div className="mobile-tab-bar">
+        {tabs.map(({ to, label, icon }) => {
+          const active = isActive(to);
+          return (
+            <Link key={to} to={to} style={tabItemStyle(active)}>
+              {icon}
+              <span style={tabLabelStyle}>{label}</span>
+            </Link>
+          );
+        })}
+        {user ? (
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            aria-label="Open account menu"
+            aria-expanded={sheetOpen}
+            style={tabItemStyle(sheetOpen || location.pathname.startsWith('/profile'))}
           >
-            {icon}
-            <span
-              style={{
-                fontSize: '0.5rem',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                lineHeight: 1,
-              }}
-            >
-              {label}
-            </span>
+            <ProfileIcon />
+            <span style={tabLabelStyle}>Profile</span>
+          </button>
+        ) : (
+          <Link to="/login" style={tabItemStyle(location.pathname.startsWith('/login'))}>
+            <ProfileIcon />
+            <span style={tabLabelStyle}>Login</span>
           </Link>
-        );
-      })}
-    </div>
+        )}
+      </div>
+
+      {sheetOpen && user && (
+        <>
+          <div
+            className="mobile-sheet-backdrop"
+            onClick={() => setSheetOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="mobile-sheet" role="dialog" aria-modal="true" aria-label="Account menu">
+            <div className="mobile-sheet-header">
+              <span className="mobile-sheet-title">Account</span>
+              <button
+                type="button"
+                onClick={() => setSheetOpen(false)}
+                aria-label="Close menu"
+                className="mobile-sheet-close"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <Link to="/profile" onClick={() => setSheetOpen(false)} className="mobile-sheet-item">
+              View Profile
+            </Link>
+            <Link
+              to="/my-bookings"
+              onClick={() => setSheetOpen(false)}
+              className="mobile-sheet-item"
+            >
+              My Bookings
+            </Link>
+            {user.role === 'artist' && (
+              <Link
+                to="/artist-dashboard"
+                onClick={() => setSheetOpen(false)}
+                className="mobile-sheet-item"
+              >
+                Dashboard
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setSheetOpen(false);
+                onLogout();
+              }}
+              className="mobile-sheet-item mobile-sheet-signout"
+            >
+              Sign Out
+            </button>
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
     logout();
+    setMenuOpen(false);
     navigate('/');
   };
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
 
   const navLinks = [
     { to: '/artists', label: 'Browse' },
@@ -281,7 +427,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Desktop right: theme toggle + auth */}
+        {/* Desktop right: theme toggle + auth (≥1024px) */}
         <div
           style={{ display: 'none', gap: '1.5rem', alignItems: 'center' }}
           className="desktop-auth"
@@ -343,7 +489,122 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile right: theme toggle only (hamburger replaced by bottom tab bar) */}
+        {/* Tablet/small-laptop hamburger (768–1023px): theme toggle + hamburger */}
+        <div
+          ref={menuRef}
+          style={{ display: 'none', gap: '0.5rem', alignItems: 'center', position: 'relative' }}
+          className="desktop-hamburger"
+        >
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--accent)',
+              padding: '0.3rem',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {theme === 'styleja' ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--ink)',
+              padding: '0.4rem',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
+          </button>
+
+          {menuOpen && (
+            <div className="desktop-dropdown" role="menu">
+              {navLinks.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="desktop-dropdown-item"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {label}
+                </Link>
+              ))}
+              <div className="desktop-dropdown-divider" />
+              {user ? (
+                <>
+                  {user.role === 'artist' && (
+                    <Link
+                      to="/artist-dashboard"
+                      className="desktop-dropdown-item"
+                      role="menuitem"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                  )}
+                  <Link
+                    to="/my-bookings"
+                    className="desktop-dropdown-item"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    My Bookings
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="desktop-dropdown-item"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="desktop-dropdown-item desktop-dropdown-signout"
+                    role="menuitem"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="desktop-dropdown-item"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/login?mode=signup"
+                    className="desktop-dropdown-item desktop-dropdown-signup"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile right: theme toggle only (≤767px) */}
         <div
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           className="mobile-controls"
@@ -366,13 +627,133 @@ export default function Navbar() {
         </div>
       </div>
 
-      <BottomTabBar user={user} />
+      <BottomTabBar user={user} onLogout={handleLogout} />
 
       <style>{`
-        @media (min-width: 768px) {
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .desktop-hamburger { display: flex !important; }
+          .mobile-controls { display: none !important; }
+        }
+        @media (min-width: 1024px) {
           .desktop-nav { display: flex !important; }
           .desktop-auth { display: flex !important; }
           .mobile-controls { display: none !important; }
+        }
+
+        .desktop-dropdown {
+          position: absolute;
+          top: calc(100% + 0.5rem);
+          right: 0;
+          min-width: 220px;
+          background: var(--bg);
+          border: 1px solid var(--line);
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+          padding: 0.5rem 0;
+          z-index: 60;
+          animation: tk-dropdown-in 0.15s ease-out;
+        }
+        @keyframes tk-dropdown-in {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .desktop-dropdown-item {
+          display: block;
+          width: 100%;
+          text-align: left;
+          padding: 0.7rem 1.1rem;
+          font-size: 0.72rem;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--ink-2);
+          text-decoration: none;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
+          transition: background 0.15s, color 0.15s;
+        }
+        .desktop-dropdown-item:hover {
+          background: color-mix(in srgb, var(--ink) 6%, transparent);
+          color: var(--ink);
+        }
+        .desktop-dropdown-divider {
+          height: 1px;
+          background: var(--line);
+          margin: 0.4rem 0;
+        }
+        .desktop-dropdown-signout,
+        .desktop-dropdown-signup {
+          color: var(--accent);
+        }
+
+        .mobile-sheet-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          z-index: 70;
+          animation: tk-fade-in 0.15s ease-out;
+        }
+        .mobile-sheet {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: var(--bg);
+          border-top: 1px solid var(--line);
+          padding: 0.5rem 0 calc(72px + env(safe-area-inset-bottom, 0)) 0;
+          z-index: 71;
+          animation: tk-sheet-in 0.2s ease-out;
+        }
+        @keyframes tk-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes tk-sheet-in {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .mobile-sheet-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.85rem 1.25rem;
+          border-bottom: 1px solid var(--line);
+        }
+        .mobile-sheet-title {
+          font-size: 0.7rem;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: var(--ink-3);
+        }
+        .mobile-sheet-close {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--ink-2);
+          padding: 0.3rem;
+          display: flex;
+          align-items: center;
+        }
+        .mobile-sheet-item {
+          display: block;
+          width: 100%;
+          text-align: left;
+          padding: 1rem 1.25rem;
+          font-size: 0.78rem;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--ink);
+          text-decoration: none;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
+        }
+        .mobile-sheet-item + .mobile-sheet-item {
+          border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+        }
+        .mobile-sheet-signout {
+          color: var(--accent);
         }
       `}</style>
     </nav>
