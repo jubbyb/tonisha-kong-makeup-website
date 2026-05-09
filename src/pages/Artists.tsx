@@ -494,7 +494,7 @@ export default function Artists() {
       }}
     >
       {/* ── Top nav ─────────────────────────────────────────────────── */}
-      <div style={{ borderBottom: '1px solid var(--line)', padding: '1.25rem 2rem' }}>
+      <div style={{ borderBottom: '1px solid var(--line)', padding: '1.25rem 1rem' }}>
         <div
           style={{
             maxWidth: '1280px',
@@ -563,7 +563,7 @@ export default function Artists() {
         </div>
       </div>
 
-      {/* ── Category pills + Filters trigger ─────────────────────────── */}
+      {/* ── View toggle + Filters trigger ──────────────────────────── */}
       <div
         style={{
           borderBottom: '1px solid var(--line)',
@@ -575,115 +575,80 @@ export default function Artists() {
             maxWidth: '1280px',
             margin: '0 auto',
             display: 'flex',
-            flexWrap: 'wrap',
             gap: '0.5rem',
             alignItems: 'center',
+            justifyContent: 'flex-end',
           }}
         >
-          {/* Industry pills (wrap on narrow screens, never overflow) */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
-              flex: '1 1 auto',
-              minWidth: 0,
-            }}
-          >
-            <Pill active={!activeIndustry} onClick={() => setIndustry('')}>
-              All ({artists.length || '—'})
-            </Pill>
-            {industries.map((ind) => (
-              <Pill
-                key={ind.slug}
-                active={activeIndustry === ind.slug}
-                onClick={() => setIndustry(ind.slug)}
-              >
-                {ind.name}
-              </Pill>
-            ))}
-          </div>
-
-          {/* Right cluster: view toggle + Filters trigger */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              flexShrink: 0,
-              marginLeft: 'auto',
+              gap: '2px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--line)',
+              borderRadius: '999px',
+              padding: '3px',
             }}
           >
-            <div
+            <button
+              onClick={() => setView('list')}
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '2px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--line)',
+                gap: '5px',
+                padding: '5px 12px',
                 borderRadius: '999px',
-                padding: '3px',
+                border: 'none',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                background: viewMode === 'list' ? 'var(--ink)' : 'transparent',
+                color: viewMode === 'list' ? 'var(--bg)' : 'var(--ink-2)',
+                transition: 'background 0.18s, color 0.18s',
               }}
             >
-              <button
-                onClick={() => setView('list')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '5px 12px',
-                  borderRadius: '999px',
-                  border: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  background: viewMode === 'list' ? 'var(--ink)' : 'transparent',
-                  color: viewMode === 'list' ? 'var(--bg)' : 'var(--ink-2)',
-                  transition: 'background 0.18s, color 0.18s',
-                }}
-              >
-                <ListIcon /> List
-              </button>
-              <button
-                onClick={() => setView('map')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '5px 12px',
-                  borderRadius: '999px',
-                  border: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  background: viewMode === 'map' ? 'var(--ink)' : 'transparent',
-                  color: viewMode === 'map' ? 'var(--bg)' : 'var(--ink-2)',
-                  transition: 'background 0.18s, color 0.18s',
-                }}
-              >
-                <MapIcon /> Map
-              </button>
-            </div>
-
-            <Pill onClick={() => setFilterDialogOpen(true)} active={!!activeParish}>
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ marginRight: '4px', verticalAlign: 'middle' }}
-              >
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-                <line x1="10" y1="18" x2="14" y2="18" />
-              </svg>
-              Filters{activeParish ? ' · 1' : ''}
-            </Pill>
+              <ListIcon /> List
+            </button>
+            <button
+              onClick={() => setView('map')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 12px',
+                borderRadius: '999px',
+                border: 'none',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                background: viewMode === 'map' ? 'var(--ink)' : 'transparent',
+                color: viewMode === 'map' ? 'var(--bg)' : 'var(--ink-2)',
+                transition: 'background 0.18s, color 0.18s',
+              }}
+            >
+              <MapIcon /> Map
+            </button>
           </div>
+
+          <Pill onClick={() => setFilterDialogOpen(true)} active={!!activeParish || !!activeIndustry || sort !== 'Most loved'}>
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ marginRight: '4px', verticalAlign: 'middle' }}
+            >
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+              <line x1="10" y1="18" x2="14" y2="18" />
+            </svg>
+            Filters
+          </Pill>
         </div>
       </div>
 
@@ -722,13 +687,6 @@ export default function Artists() {
           <p style={{ fontSize: '0.8125rem', color: 'var(--ink-2)', marginTop: '0.5rem' }}>
             Showing within 10 km · available this week · sorted by {sort.toLowerCase()}
           </p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {SORT_OPTIONS.map((s) => (
-            <Pill key={s} active={sort === s} onClick={() => setSort(s)}>
-              {s}
-            </Pill>
-          ))}
         </div>
       </div>
 
@@ -837,12 +795,12 @@ export default function Artists() {
         </div>
       )}
 
-      {/* ── Filters dialog (parish selection) ─────────────────────────── */}
+      {/* ── Filters dialog (sort, industry, parish) ──────────────────── */}
       {filterDialogOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Filter artists"
+          aria-label="Filters"
           onClick={() => setFilterDialogOpen(false)}
           style={{
             position: 'fixed',
@@ -869,6 +827,7 @@ export default function Artists() {
               overflow: 'hidden',
             }}
           >
+            {/* Header */}
             <div
               style={{
                 display: 'flex',
@@ -885,7 +844,7 @@ export default function Artists() {
                   color: 'var(--ink)',
                 }}
               >
-                Filter by parish
+                Filters
               </div>
               <button
                 onClick={() => setFilterDialogOpen(false)}
@@ -904,38 +863,151 @@ export default function Artists() {
               </button>
             </div>
 
+            {/* Content */}
             <div
               style={{
-                padding: '1rem 1.25rem',
+                padding: '1.25rem',
                 overflowY: 'auto',
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: '0.5rem',
+                flexDirection: 'column',
+                gap: '1.5rem',
               }}
             >
-              <Pill
-                active={!activeParish}
-                onClick={() => {
-                  setParish('');
-                  setFilterDialogOpen(false);
-                }}
-              >
-                All parishes
-              </Pill>
-              {parishes.map((p) => (
-                <Pill
-                  key={p.slug}
-                  active={activeParish === p.slug}
-                  onClick={() => {
-                    setParish(p.slug);
-                    setFilterDialogOpen(false);
+              {/* Sort dropdown */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                    marginBottom: '0.5rem',
                   }}
                 >
-                  {p.name}
-                </Pill>
-              ))}
+                  Sort by
+                </label>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--line-2)',
+                    borderRadius: '6px',
+                    color: 'var(--ink)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {SORT_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Industry radio buttons */}
+              <div>
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                    marginBottom: '0.75rem',
+                  }}
+                >
+                  Industry
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      color: 'var(--ink)',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="industry"
+                      checked={!activeIndustry}
+                      onChange={() => setIndustry('')}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    All industries
+                  </label>
+                  {industries.map((ind) => (
+                    <label
+                      key={ind.slug}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        color: 'var(--ink)',
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="industry"
+                        checked={activeIndustry === ind.slug}
+                        onChange={() => setIndustry(ind.slug)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      {ind.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Parish dropdown */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                    marginBottom: '0.5rem',
+                  }}
+                >
+                  Parish
+                </label>
+                <select
+                  value={activeParish}
+                  onChange={(e) => setParish(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--line-2)',
+                    borderRadius: '6px',
+                    color: 'var(--ink)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="">All parishes</option>
+                  {parishes.map((p) => (
+                    <option key={p.slug} value={p.slug}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
+            {/* Footer */}
             <div
               style={{
                 display: 'flex',
@@ -948,8 +1020,9 @@ export default function Artists() {
             >
               <button
                 onClick={() => {
+                  setSort('Most loved');
+                  setIndustry('');
                   setParish('');
-                  setFilterDialogOpen(false);
                 }}
                 style={{
                   background: 'transparent',
@@ -961,7 +1034,7 @@ export default function Artists() {
                   padding: 0,
                 }}
               >
-                Clear
+                Clear all
               </button>
               <Btn variant="solid" size="sm" onClick={() => setFilterDialogOpen(false)}>
                 Done

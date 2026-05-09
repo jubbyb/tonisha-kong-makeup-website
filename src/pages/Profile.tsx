@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface UserProfile {
   name: string;
@@ -28,6 +31,9 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function Profile() {
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -35,6 +41,11 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const handleSignOut = () => {
+    logout();
+    navigate('/login');
+  };
 
   useEffect(() => {
     apiFetch<UserProfile>('/api/user/profile')
@@ -105,6 +116,40 @@ export default function Profile() {
         Update your contact details. These are pre-filled when you book an appointment.
       </p>
 
+      {/* ── quick nav ── */}
+      <div
+        style={{
+          marginBottom: '2.5rem',
+          paddingBottom: '2rem',
+          borderBottom: '1px solid var(--line)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.85rem',
+        }}
+      >
+        <Link to="/my-bookings" style={profileLinkStyle}>
+          My Bookings
+        </Link>
+        {user?.role === 'artist' && (
+          <Link to="/artist-dashboard" style={profileLinkStyle}>
+            Dashboard
+          </Link>
+        )}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          style={{
+            ...profileLinkStyle,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          {theme === 'styleja' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        </button>
+      </div>
+
       <form
         onSubmit={handleSave}
         style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
@@ -161,6 +206,43 @@ export default function Profile() {
           {saving ? 'Saving…' : 'Save Changes'}
         </button>
       </form>
+
+      {/* ── sign out ── */}
+      <div
+        style={{
+          marginTop: '3rem',
+          paddingTop: '2rem',
+          borderTop: '1px solid var(--line)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleSignOut}
+          style={{
+            padding: '0.65rem 0',
+            fontSize: '0.7rem',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--accent)',
+            background: 'none',
+            border: '1px solid var(--accent)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            transition: 'background 0.2s, color 0.2s',
+          }}
+        >
+          Sign Out
+        </button>
+      </div>
     </div>
   );
 }
+
+const profileLinkStyle: React.CSSProperties = {
+  fontSize: '0.78rem',
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-2)',
+  textDecoration: 'none',
+  padding: '0.35rem 0',
+};

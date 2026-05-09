@@ -463,8 +463,10 @@ const Home: React.FC = () => {
           style={{
             marginTop: '1.75rem',
             display: 'flex',
-            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
             alignItems: 'center',
+            gap: '0.5rem 0.75rem',
             fontSize: '0.6875rem',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',

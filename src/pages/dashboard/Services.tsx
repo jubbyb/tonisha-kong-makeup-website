@@ -8,6 +8,7 @@ export default function Services() {
   const [catalog, setCatalog] = useState<CatalogCategory[]>([]);
   const [selected, setSelected] = useState<Map<number, number | null>>(new Map());
   const [overrideText, setOverrideText] = useState<Map<number, string>>(new Map());
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -86,6 +87,8 @@ export default function Services() {
       </div>
     );
 
+  const visible = activeCategory === null ? catalog : catalog.filter((c) => c.id === activeCategory);
+
   return (
     <div>
       {/* ── header ── */}
@@ -121,8 +124,54 @@ export default function Services() {
           No services in the catalog yet. Ask an admin to add some.
         </div>
       ) : (
-        <div className="space-y-5">
-          {catalog.map((cat) => (
+        <>
+          {/* ── category filter pills ── */}
+          <div
+            className="mb-5 flex gap-2 overflow-x-auto pb-2"
+            style={{ scrollBehavior: 'smooth' }}
+          >
+            <button
+              onClick={() => setActiveCategory(null)}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.85rem',
+                fontWeight: activeCategory === null ? 600 : 400,
+                color: activeCategory === null ? 'var(--accent)' : 'var(--ink-3)',
+                border: `1px solid ${activeCategory === null ? 'var(--accent)' : 'var(--line-2)'}`,
+                background: 'transparent',
+                cursor: 'pointer',
+                borderRadius: '99px',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s',
+              }}
+            >
+              All
+            </button>
+            {catalog.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.85rem',
+                  fontWeight: activeCategory === cat.id ? 600 : 400,
+                  color: activeCategory === cat.id ? 'var(--accent)' : 'var(--ink-3)',
+                  border: `1px solid ${activeCategory === cat.id ? 'var(--accent)' : 'var(--line-2)'}`,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  borderRadius: '99px',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+
+          {/* ── catalog ── */}
+          <div className="space-y-5">
+            {visible.map((cat) => (
             <div
               key={cat.id}
               className="border p-5"
@@ -213,7 +262,8 @@ export default function Services() {
               ))}
             </div>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

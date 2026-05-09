@@ -98,24 +98,10 @@ function ProfileIcon() {
   );
 }
 
-function BottomTabBar({ user, onLogout }: { user: { role: string } | null; onLogout: () => void }) {
+function BottomTabBar({ user }: { user: { role: string } | null }) {
   const location = useLocation();
-  const [sheetOpen, setSheetOpen] = useState(false);
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
-
-  useEffect(() => {
-    setSheetOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (!sheetOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSheetOpen(false);
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [sheetOpen]);
 
   const tabs = [
     {
@@ -257,16 +243,10 @@ function BottomTabBar({ user, onLogout }: { user: { role: string } | null; onLog
           );
         })}
         {user ? (
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            aria-label="Open account menu"
-            aria-expanded={sheetOpen}
-            style={tabItemStyle(sheetOpen || location.pathname.startsWith('/profile'))}
-          >
+          <Link to="/profile" style={tabItemStyle(location.pathname.startsWith('/profile'))}>
             <ProfileIcon />
             <span style={tabLabelStyle}>Profile</span>
-          </button>
+          </Link>
         ) : (
           <Link to="/login" style={tabItemStyle(location.pathname.startsWith('/login'))}>
             <ProfileIcon />
@@ -274,58 +254,6 @@ function BottomTabBar({ user, onLogout }: { user: { role: string } | null; onLog
           </Link>
         )}
       </div>
-
-      {sheetOpen && user && (
-        <>
-          <div
-            className="mobile-sheet-backdrop"
-            onClick={() => setSheetOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="mobile-sheet" role="dialog" aria-modal="true" aria-label="Account menu">
-            <div className="mobile-sheet-header">
-              <span className="mobile-sheet-title">Account</span>
-              <button
-                type="button"
-                onClick={() => setSheetOpen(false)}
-                aria-label="Close menu"
-                className="mobile-sheet-close"
-              >
-                <CloseIcon />
-              </button>
-            </div>
-            <Link to="/profile" onClick={() => setSheetOpen(false)} className="mobile-sheet-item">
-              View Profile
-            </Link>
-            <Link
-              to="/my-bookings"
-              onClick={() => setSheetOpen(false)}
-              className="mobile-sheet-item"
-            >
-              My Bookings
-            </Link>
-            {user.role === 'artist' && (
-              <Link
-                to="/artist-dashboard"
-                onClick={() => setSheetOpen(false)}
-                className="mobile-sheet-item"
-              >
-                Dashboard
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setSheetOpen(false);
-                onLogout();
-              }}
-              className="mobile-sheet-item mobile-sheet-signout"
-            >
-              Sign Out
-            </button>
-          </div>
-        </>
-      )}
     </>
   );
 }
@@ -627,7 +555,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <BottomTabBar user={user} onLogout={handleLogout} />
+      <BottomTabBar user={user} />
 
       <style>{`
         @media (min-width: 768px) and (max-width: 1023px) {
