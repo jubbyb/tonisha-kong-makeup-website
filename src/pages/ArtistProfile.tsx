@@ -148,7 +148,7 @@ export default function ArtistProfile() {
     setBookingSuccess(false);
   };
 
-  const handleBook = async (e: React.FormEvent) => {
+  const handleBook = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!bookingSlot || !artist) return;
     setBookingLoading(true);
@@ -531,7 +531,7 @@ export default function ArtistProfile() {
             }}
           >
             <button
-              onClick={handleBookCTA}
+              onClick={() => handleBookCTA()}
               style={{
                 padding: '0.875rem 2rem',
                 borderRadius: '999px',
@@ -740,7 +740,7 @@ export default function ArtistProfile() {
           </div>
         </div>
         <button
-          onClick={handleBookCTA}
+          onClick={() => handleBookCTA()}
           style={{
             width: 44,
             height: 44,
@@ -1407,7 +1407,7 @@ export default function ArtistProfile() {
               ))}
             </div>
             <button
-              onClick={handleBookCTA}
+              onClick={() => handleBookCTA()}
               style={{
                 width: '100%',
                 padding: '0.9375rem',
