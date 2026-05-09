@@ -148,7 +148,7 @@ export default function ArtistProfile() {
     setBookingSuccess(false);
   };
 
-  const handleBook = async (e: React.FormEvent) => {
+  const handleBook = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!bookingSlot || !artist) return;
     setBookingLoading(true);
@@ -214,12 +214,15 @@ export default function ArtistProfile() {
   const whatsappUrl = buildWhatsAppUrl(artist.whatsapp_number, defaultBookingMessage(artist.name));
   const startingPrice = services.find((s) => s.price != null)?.price;
 
-  const handleBookCTA = () => {
+  const handleBookCTA = (serviceName?: string) => {
     if (!user) {
       navigate(`/login?returnTo=/artists/${slug}`);
       return;
     }
     if (availableDates.length > 0) setSelectedDate(availableDates[0]);
+    if (serviceName) {
+      setSelectedService(serviceName);
+    }
     setActiveTab('Portfolio');
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -528,7 +531,7 @@ export default function ArtistProfile() {
             }}
           >
             <button
-              onClick={handleBookCTA}
+              onClick={() => handleBookCTA()}
               style={{
                 padding: '0.875rem 2rem',
                 borderRadius: '999px',
@@ -737,7 +740,7 @@ export default function ArtistProfile() {
           </div>
         </div>
         <button
-          onClick={handleBookCTA}
+          onClick={() => handleBookCTA()}
           style={{
             width: 44,
             height: 44,
@@ -882,121 +885,94 @@ export default function ArtistProfile() {
                     overflow: 'hidden',
                   }}
                 >
-                  {services.map((s, i) => {
-                    const waUrl = buildWhatsAppUrl(
-                      artist.whatsapp_number,
-                      defaultBookingMessage(artist.name, s.name),
-                    );
-                    return (
-                      <div
-                        key={s.id}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr auto auto auto',
-                          gap: '1.5rem',
-                          alignItems: 'center',
-                          padding: '1.25rem 1.5rem',
-                          borderTop: i === 0 ? 'none' : '1px solid var(--line-2)',
-                          background: i % 2 ? 'transparent' : 'var(--bg-card)',
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="font-editorial"
-                            style={{
-                              fontSize: '1.25rem',
-                              letterSpacing: '-0.01em',
-                              color: 'var(--ink)',
-                            }}
-                          >
-                            {s.name}
-                          </div>
-                          {s.description && (
-                            <div
-                              style={{
-                                fontSize: '0.8rem',
-                                color: 'var(--ink-3)',
-                                marginTop: '3px',
-                              }}
-                            >
-                              {s.description}
-                            </div>
-                          )}
-                        </div>
+                  {services.map((s, i) => (
+                    <div
+                      key={s.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr auto auto auto',
+                        gap: '1.5rem',
+                        alignItems: 'center',
+                        padding: '1.25rem 1.5rem',
+                        borderTop: i === 0 ? 'none' : '1px solid var(--line-2)',
+                        background: i % 2 ? 'transparent' : 'var(--bg-card)',
+                      }}
+                    >
+                      <div>
                         <div
+                          className="font-editorial"
                           style={{
-                            fontSize: '0.8125rem',
-                            color: 'var(--ink-2)',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {s.duration_min} min
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: "'Inter', sans-serif",
-                            fontSize: '1rem',
+                            fontSize: '1.25rem',
+                            letterSpacing: '-0.01em',
                             color: 'var(--ink)',
-                            fontWeight: 500,
-                            whiteSpace: 'nowrap',
                           }}
                         >
-                          {s.price != null
-                            ? `$${s.price}`
-                            : s.catalog_price != null
-                              ? `$${s.catalog_price}`
-                              : '—'}
+                          {s.name}
                         </div>
-                        {waUrl ? (
-                          <a
-                            href={waUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {s.description && (
+                          <div
                             style={{
-                              fontSize: '0.7rem',
-                              letterSpacing: '0.12em',
-                              textTransform: 'uppercase',
-                              color: '#25d366',
-                              border: '1px solid #25d366',
-                              padding: '0.3rem 0.75rem',
-                              borderRadius: '999px',
-                              textDecoration: 'none',
-                              whiteSpace: 'nowrap',
-                              transition: 'background 0.15s, color 0.15s',
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLElement).style.background = '#25d366';
-                              (e.currentTarget as HTMLElement).style.color = '#fff';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLElement).style.background = 'transparent';
-                              (e.currentTarget as HTMLElement).style.color = '#25d366';
+                              fontSize: '0.8rem',
+                              color: 'var(--ink-3)',
+                              marginTop: '3px',
                             }}
                           >
-                            Book
-                          </a>
-                        ) : (
-                          <button
-                            onClick={handleBookCTA}
-                            style={{
-                              fontSize: '0.7rem',
-                              letterSpacing: '0.12em',
-                              textTransform: 'uppercase',
-                              color: 'var(--ink-2)',
-                              border: '1px solid var(--line-2)',
-                              padding: '0.3rem 0.75rem',
-                              borderRadius: '999px',
-                              background: 'transparent',
-                              cursor: 'pointer',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            Book
-                          </button>
+                            {s.description}
+                          </div>
                         )}
                       </div>
-                    );
-                  })}
+                      <div
+                        style={{
+                          fontSize: '0.8125rem',
+                          color: 'var(--ink-2)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {s.duration_min} min
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: '1rem',
+                          color: 'var(--ink)',
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {s.price != null
+                          ? `$${s.price}`
+                          : s.catalog_price != null
+                            ? `$${s.catalog_price}`
+                            : '—'}
+                      </div>
+                      <button
+                        onClick={() => handleBookCTA(s.name)}
+                        style={{
+                          fontSize: '0.7rem',
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          color: 'var(--ink-2)',
+                          border: '1px solid var(--line-2)',
+                          padding: '0.3rem 0.75rem',
+                          borderRadius: '999px',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          transition: 'border-color 0.15s, color 0.15s',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.borderColor = 'var(--ink)';
+                          (e.currentTarget as HTMLElement).style.color = 'var(--ink)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-2)';
+                          (e.currentTarget as HTMLElement).style.color = 'var(--ink-2)';
+                        }}
+                      >
+                        Book
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div style={{ color: 'var(--ink-3)', padding: '2rem 0', fontSize: '0.9rem' }}>
@@ -1239,7 +1215,7 @@ export default function ArtistProfile() {
             >
               Book an appointment
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div className="booking-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
               <div
                 style={{
                   background: 'var(--bg-card)',
@@ -1431,7 +1407,7 @@ export default function ArtistProfile() {
               ))}
             </div>
             <button
-              onClick={handleBookCTA}
+              onClick={() => handleBookCTA()}
               style={{
                 width: '100%',
                 padding: '0.9375rem',
