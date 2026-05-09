@@ -512,6 +512,9 @@ body {
   .home-hero-portrait {
     display: none !important;
   }
+  .booking-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* ─── Desktop-only utilities ────────────────────────────────────────── */
