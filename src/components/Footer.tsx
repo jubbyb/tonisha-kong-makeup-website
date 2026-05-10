@@ -191,7 +191,7 @@ const Footer = () => {
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {[
               { to: '/contact', label: 'Contact Us' },
-              { to: '/bookings', label: 'Book a Session' },
+              { to: '/artists', label: 'Book a Session' },
             ].map(({ to, label }) => (
               <Link
                 key={to}
