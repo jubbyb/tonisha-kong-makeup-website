@@ -187,24 +187,6 @@ function BottomTabBar({ user }: { user: { role: string } | null }) {
             </svg>
           ),
         },
-    {
-      to: '/contact',
-      label: 'Contact',
-      icon: (
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      ),
-    },
   ];
 
   const tabItemStyle = (active: boolean) => ({
@@ -264,6 +246,7 @@ export default function Navbar() {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
@@ -274,6 +257,7 @@ export default function Navbar() {
 
   useEffect(() => {
     setMenuOpen(false);
+    setMobileMenuOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -298,7 +282,7 @@ export default function Navbar() {
     { to: '/artists', label: 'Browse' },
     { to: '/about', label: 'How it works' },
     { to: '/industries', label: 'For pros' },
-    { to: '/classes', label: 'Stories' },
+    { to: '/classes', label: 'Classes' },
   ];
 
   const linkStyle = {
@@ -320,6 +304,7 @@ export default function Navbar() {
   };
 
   return (
+    <>
     <nav className="editorial-nav">
       <div
         style={{
@@ -377,7 +362,7 @@ export default function Navbar() {
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.65')}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
           >
-            {theme === 'styleja' ? <SunIcon /> : <MoonIcon />}
+            {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
           </button>
 
           {user ? (
@@ -436,7 +421,7 @@ export default function Navbar() {
               alignItems: 'center',
             }}
           >
-            {theme === 'styleja' ? <SunIcon /> : <MoonIcon />}
+            {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
           </button>
           <button
             type="button"
@@ -532,7 +517,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile right: theme toggle only (≤767px) */}
+        {/* Mobile right: theme toggle + hamburger (≤767px) */}
         <div
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           className="mobile-controls"
@@ -550,12 +535,28 @@ export default function Navbar() {
               alignItems: 'center',
             }}
           >
-            {theme === 'styleja' ? <SunIcon /> : <MoonIcon />}
+            {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-haspopup="menu"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--ink)',
+              padding: '0.4rem',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {mobileMenuOpen ? <CloseIcon /> : <HamburgerIcon />}
           </button>
         </div>
       </div>
-
-      <BottomTabBar user={user} />
 
       <style>{`
         @media (min-width: 768px) and (max-width: 1023px) {
@@ -623,12 +624,12 @@ export default function Navbar() {
         }
         .mobile-sheet {
           position: fixed;
+          top: 64px;
           left: 0;
           right: 0;
-          bottom: 0;
           background: var(--bg);
-          border-top: 1px solid var(--line);
-          padding: 0.5rem 0 calc(72px + env(safe-area-inset-bottom, 0)) 0;
+          border-bottom: 1px solid var(--line);
+          padding: 0.5rem 0;
           z-index: 71;
           animation: tk-sheet-in 0.2s ease-out;
         }
@@ -637,8 +638,21 @@ export default function Navbar() {
           to { opacity: 1; }
         }
         @keyframes tk-sheet-in {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .mobile-only {
+          display: none;
+        }
+        @media (max-width: 767px) {
+          .mobile-only {
+            display: block;
+          }
+        }
+        .mobile-sheet-divider {
+          height: 1px;
+          background: var(--line);
+          margin: 0.4rem 0;
         }
         .mobile-sheet-header {
           display: flex;
@@ -685,5 +699,97 @@ export default function Navbar() {
         }
       `}</style>
     </nav>
+    {mobileMenuOpen && (
+      <>
+        <div
+          className="mobile-sheet-backdrop mobile-only"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+        <div className="mobile-sheet mobile-only" role="menu">
+          <div className="mobile-sheet-header">
+            <span className="mobile-sheet-title">Menu</span>
+            <button
+              type="button"
+              className="mobile-sheet-close"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+          {navLinks.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="mobile-sheet-item"
+              role="menuitem"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {label}
+            </Link>
+          ))}
+          <div className="mobile-sheet-divider" />
+          {user ? (
+            <>
+              {user.role === 'artist' && (
+                <Link
+                  to="/artist-dashboard"
+                  className="mobile-sheet-item"
+                  role="menuitem"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              )}
+              <Link
+                to="/my-bookings"
+                className="mobile-sheet-item"
+                role="menuitem"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                My Bookings
+              </Link>
+              <Link
+                to="/profile"
+                className="mobile-sheet-item"
+                role="menuitem"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Profile
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="mobile-sheet-item mobile-sheet-signout"
+                role="menuitem"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="mobile-sheet-item"
+                role="menuitem"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Login
+              </Link>
+              <Link
+                to="/login?mode=signup"
+                className="mobile-sheet-item mobile-sheet-signout"
+                role="menuitem"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
+      </>
+    )}
+    <BottomTabBar user={user} />
+    </>
   );
 }
