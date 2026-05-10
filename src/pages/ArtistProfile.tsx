@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { apiFetch } from '../lib/api';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { cfImage } from '../lib/cfImage';
-import CalendarView from '../components/CalendarView';
+import BookingFlow from '../components/BookingFlow';
 import { buildWhatsAppUrl, defaultBookingMessage } from '../lib/whatsapp';
 
 interface Artist {
@@ -22,12 +20,6 @@ interface Artist {
   website_url: string | null;
   whatsapp_number: string | null;
   industries: { slug: string; name: string }[];
-}
-
-interface Slot {
-  date: string;
-  start: string;
-  end: string;
 }
 
 interface Service {
@@ -67,28 +59,16 @@ type Tab = (typeof TABS)[number];
 export default function ArtistProfile() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const preselectedService = searchParams.get('service') ?? undefined;
 
   const [artist, setArtist] = useState<Artist | null>(null);
-  const [slots, setSlots] = useState<Slot[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('Portfolio');
-
-  const now = new Date();
-  const [calYear, setCalYear] = useState(now.getFullYear());
-  const [calMonth, setCalMonth] = useState(now.getMonth());
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-
-  const [bookingSlot, setBookingSlot] = useState<Slot | null>(null);
-  const [selectedService, setSelectedService] = useState('');
-  const [bookingMessage, setBookingMessage] = useState('');
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -113,66 +93,6 @@ export default function ArtistProfile() {
       .catch(() => setArtist(null))
       .finally(() => setLoading(false));
   }, [slug]);
-
-  const fetchSlots = useCallback(() => {
-    if (!artist) return;
-    const from = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`;
-    const lastDay = new Date(calYear, calMonth + 1, 0).getDate();
-    const to = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    fetch(`/api/artists/${artist.id}/slots?from=${from}&to=${to}`)
-      .then((r) => r.json() as Promise<Slot[]>)
-      .then(setSlots);
-  }, [artist, calYear, calMonth]);
-
-  useEffect(() => {
-    fetchSlots();
-  }, [fetchSlots]);
-
-  const slotsByDate: Record<string, Slot[]> = {};
-  for (const slot of slots) {
-    if (!slotsByDate[slot.date]) slotsByDate[slot.date] = [];
-    slotsByDate[slot.date].push(slot);
-  }
-  const availableDates = Object.keys(slotsByDate);
-  const slotsForDate = selectedDate ? (slotsByDate[selectedDate] ?? []) : [];
-
-  const openBooking = (slot: Slot) => {
-    if (!user) {
-      navigate(`/login?returnTo=/artists/${slug}`);
-      return;
-    }
-    setBookingSlot(slot);
-    setSelectedService(services[0]?.name ?? '');
-    setBookingMessage('');
-    setBookingError(null);
-    setBookingSuccess(false);
-  };
-
-  const handleBook = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!bookingSlot || !artist) return;
-    setBookingLoading(true);
-    setBookingError(null);
-    try {
-      await apiFetch('/api/bookings/new', {
-        method: 'POST',
-        body: JSON.stringify({
-          artist_id: artist.id,
-          date: bookingSlot.date,
-          start_time: bookingSlot.start,
-          end_time: bookingSlot.end,
-          service: selectedService,
-          message: bookingMessage,
-        }),
-      });
-      setBookingSuccess(true);
-      fetchSlots();
-    } catch (err) {
-      setBookingError(err instanceof Error ? err.message : 'Booking failed');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
 
   if (loading)
     return (
@@ -215,13 +135,10 @@ export default function ArtistProfile() {
   const startingPrice = services.find((s) => s.price != null)?.price;
 
   const handleBookCTA = (serviceName?: string) => {
-    if (!user) {
-      navigate(`/login?returnTo=/artists/${slug}`);
-      return;
-    }
-    if (availableDates.length > 0) setSelectedDate(availableDates[0]);
     if (serviceName) {
-      setSelectedService(serviceName);
+      const next = new URLSearchParams(searchParams);
+      next.set('service', serviceName);
+      setSearchParams(next, { replace: true });
     }
     setActiveTab('Portfolio');
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -1215,125 +1132,18 @@ export default function ArtistProfile() {
             >
               Book an appointment
             </h2>
-            <div className="booking-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-              <div
-                style={{
-                  background: 'var(--bg-card)',
-                  borderRadius: '6px',
-                  border: '1px solid var(--line-2)',
-                  padding: '1.25rem',
-                }}
-              >
-                <CalendarView
-                  year={calYear}
-                  month={calMonth}
-                  markedDates={availableDates}
-                  selectedDate={selectedDate}
-                  onDateSelect={setSelectedDate}
-                  onMonthChange={(y, m) => {
-                    setCalYear(y);
-                    setCalMonth(m);
-                    setSelectedDate(null);
-                  }}
-                />
-              </div>
-              <div>
-                {!selectedDate ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '100%',
-                      color: 'var(--ink-3)',
-                      textAlign: 'center',
-                      padding: '2rem 0',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    Select a highlighted date to see available times
-                  </div>
-                ) : slotsForDate.length === 0 ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '100%',
-                      color: 'var(--ink-3)',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    No slots on this date.
-                  </div>
-                ) : (
-                  <div>
-                    <h3
-                      style={{
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        color: 'var(--ink)',
-                        marginBottom: '1rem',
-                      }}
-                    >
-                      {new Date(selectedDate + 'T00:00').toLocaleDateString('default', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </h3>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '0.5rem',
-                      }}
-                    >
-                      {slotsForDate.map((slot) => (
-                        <button
-                          key={`${slot.date}-${slot.start}`}
-                          onClick={() => openBooking(slot)}
-                          style={{
-                            padding: '0.875rem 0',
-                            textAlign: 'center',
-                            border: '1px solid var(--line-2)',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            background: 'transparent',
-                            color: 'var(--ink)',
-                            fontSize: '0.9375rem',
-                            fontFamily: "'Inter', sans-serif",
-                            transition: 'border-color 0.15s, background 0.15s',
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--ink)';
-                            (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--line-2)';
-                            (e.currentTarget as HTMLElement).style.background = 'transparent';
-                          }}
-                        >
-                          {slot.start}
-                        </button>
-                      ))}
-                    </div>
-                    {!user && (
-                      <p
-                        style={{
-                          fontSize: '0.8rem',
-                          color: 'var(--ink-3)',
-                          marginTop: '1rem',
-                          textAlign: 'center',
-                        }}
-                      >
-                        You'll be asked to sign in before confirming.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--line-2)',
+                borderRadius: '6px',
+                padding: '2rem',
+              }}
+            >
+              <BookingFlow
+                preselectedArtistId={artist.id}
+                preselectedService={preselectedService}
+              />
             </div>
           </div>
         </div>
@@ -1567,326 +1377,6 @@ export default function ArtistProfile() {
                   Next →
                 </button>
               </div>
-            )}
-          </div>
-        </dialog>
-      )}
-
-      {/* ── Booking modal ──────────────────────────────────────────────── */}
-      {bookingSlot && (
-        <dialog open className="modal modal-open">
-          <div
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--line-2)',
-              borderRadius: '8px',
-              padding: '2rem',
-              maxWidth: '420px',
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            <button
-              type="button"
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--ink-3)',
-                fontSize: '1rem',
-              }}
-              onClick={() => setBookingSlot(null)}
-            >
-              ✕
-            </button>
-            <h3
-              className="font-editorial"
-              style={{
-                fontSize: '1.75rem',
-                fontWeight: 400,
-                letterSpacing: '-0.02em',
-                color: 'var(--ink)',
-                margin: '0 0 0.5rem',
-              }}
-            >
-              Confirm Booking
-            </h3>
-            <p
-              style={{
-                fontSize: '0.8125rem',
-                color: 'var(--ink-3)',
-                marginBottom: '1.5rem',
-              }}
-            >
-              {artist.name} ·{' '}
-              {new Date(bookingSlot.date + 'T00:00').toLocaleDateString('default', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}{' '}
-              · {bookingSlot.start}–{bookingSlot.end}
-            </p>
-
-            {bookingSuccess ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: '99px',
-                    background: 'var(--accent)',
-                    color: '#fff',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '1.5rem',
-                  }}
-                >
-                  <svg
-                    width="36"
-                    height="36"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <h2
-                  className="font-editorial"
-                  style={{
-                    fontSize: '2.75rem',
-                    fontWeight: 400,
-                    lineHeight: 1,
-                    letterSpacing: '-0.025em',
-                    margin: '0 0 0.75rem',
-                    color: 'var(--ink)',
-                  }}
-                >
-                  You're
-                  <br />
-                  <span style={{ fontStyle: 'italic', color: 'var(--accent)' }}>booked.</span>
-                </h2>
-                <p
-                  style={{
-                    fontSize: '0.875rem',
-                    lineHeight: 1.5,
-                    color: 'var(--ink-2)',
-                    margin: '0 0 1.5rem',
-                  }}
-                >
-                  {new Date(bookingSlot!.date + 'T00:00').toLocaleDateString('default', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                  })}{' '}
-                  · {bookingSlot!.start}
-                  <br />
-                  with {artist.name}
-                </p>
-                <div
-                  style={{
-                    padding: '1rem 1.25rem',
-                    border: '1px solid var(--line-2)',
-                    borderRadius: '10px',
-                    background: 'var(--bg)',
-                    textAlign: 'left',
-                    marginBottom: '1.5rem',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      paddingBottom: '0.875rem',
-                      borderBottom: '1px solid var(--line-2)',
-                    }}
-                  >
-                    {artist.photo_url && (
-                      <div
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: '99px',
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <img
-                          src={cfImage(artist.photo_url, 120)}
-                          alt={artist.name}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      </div>
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--ink)' }}>
-                        {artist.name}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--ink-3)' }}>
-                        {selectedService}
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      paddingTop: '0.875rem',
-                      fontSize: '0.8125rem',
-                      color: 'var(--ink-2)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Date</span>
-                      <span style={{ color: 'var(--ink)' }}>
-                        {new Date(bookingSlot!.date + 'T00:00').toLocaleDateString('default', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}{' '}
-                        · {bookingSlot!.start}
-                      </span>
-                    </div>
-                    {artist.location && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Location</span>
-                        <span style={{ color: 'var(--ink)' }}>{artist.location}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {user && (
-                    <button
-                      className="btn-accent"
-                      style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}
-                      onClick={() => {
-                        setBookingSlot(null);
-                        navigate('/my-bookings');
-                      }}
-                    >
-                      View my bookings
-                    </button>
-                  )}
-                  <button
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--ink-2)',
-                      fontSize: '0.875rem',
-                    }}
-                    onClick={() => setBookingSlot(null)}
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleBook}
-                style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
-              >
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.6875rem',
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
-                      color: 'var(--ink-3)',
-                      display: 'block',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    Service
-                  </label>
-                  <select
-                    className="select select-bordered w-full"
-                    style={{
-                      background: 'var(--bg)',
-                      color: 'var(--ink)',
-                      border: '1px solid var(--line-2)',
-                      borderRadius: '6px',
-                    }}
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                    required
-                  >
-                    {services.map((s) => (
-                      <option key={s.id} value={s.name}>
-                        {s.name}
-                        {s.price != null ? ` — $${s.price}` : ''}
-                      </option>
-                    ))}
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.6875rem',
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
-                      color: 'var(--ink-3)',
-                      display: 'block',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    Message (optional)
-                  </label>
-                  <textarea
-                    style={{
-                      width: '100%',
-                      background: 'var(--bg)',
-                      color: 'var(--ink)',
-                      border: '1px solid var(--line-2)',
-                      borderRadius: '6px',
-                      padding: '0.75rem',
-                      fontSize: '0.875rem',
-                      height: '80px',
-                      resize: 'vertical',
-                      outline: 'none',
-                      fontFamily: "'Inter', sans-serif",
-                    }}
-                    placeholder="Any special requests…"
-                    value={bookingMessage}
-                    onChange={(e) => setBookingMessage(e.target.value)}
-                  />
-                </div>
-                {bookingError && (
-                  <div style={{ color: 'var(--color-error)', fontSize: '0.875rem' }}>
-                    {bookingError}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--ink-3)',
-                      fontSize: '0.875rem',
-                    }}
-                    onClick={() => setBookingSlot(null)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-accent" disabled={bookingLoading}>
-                    {bookingLoading ? 'Booking…' : 'Confirm Booking'}
-                  </button>
-                </div>
-              </form>
             )}
           </div>
         </dialog>

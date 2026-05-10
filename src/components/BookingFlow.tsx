@@ -31,11 +31,11 @@ interface CatalogService {
   category_name: string;
 }
 
-type BookingStep = 'artist' | 'service' | 'schedule' | 'details' | 'success';
+type BookingStep = 'service' | 'schedule' | 'details' | 'success';
 
 interface BookingFlowProps {
+  preselectedArtistId: number;
   preselectedService?: string;
-  preselectedArtistId?: number;
   classDatetime?: string; // ISO datetime like "2025-08-10T14:00"
   classDuration?: number; // minutes, default 60
   onClose?: () => void;
@@ -117,14 +117,10 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
   const { user, token } = useAuth();
 
   // ── Step ────────────────────────────────────────────────────────────────────
-  const [step, setStep] = useState<BookingStep>('artist');
+  const [step, setStep] = useState<BookingStep>('service');
 
-  // ── Artist ──────────────────────────────────────────────────────────────────
-  const [artists, setArtists] = useState<Artist[]>([]);
-  const [artistsLoading, setArtistsLoading] = useState(true);
+  // ── Artist (preselected; fetched once for display info) ─────────────────────
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
-  const [artistIndustryFilter, setArtistIndustryFilter] = useState('');
-  const [bookingIndustries, setBookingIndustries] = useState<{ slug: string; name: string }[]>([]);
 
   // ── Service ──────────────────────────────────────────────────────────────────
   const [artistCatalog, setArtistCatalog] = useState<CatalogService[]>([]);
@@ -188,26 +184,13 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
     return errs;
   };
 
-  // ── Fetch artists + industries on mount ─────────────────────────────────────
+  // ── Fetch the preselected artist on mount ───────────────────────────────────
   useEffect(() => {
-    fetch('/api/industries')
-      .then((r) => r.json() as Promise<{ slug: string; name: string }[]>)
-      .then(setBookingIndustries)
+    fetch(`/api/artists/${preselectedArtistId}`)
+      .then((r) => r.json() as Promise<Artist>)
+      .then(setSelectedArtist)
       .catch(() => {});
-    fetch('/api/artists')
-      .then((r) => r.json() as Promise<Artist[]>)
-      .then((data) => {
-        setArtists(data);
-        setArtistsLoading(false);
-        // In class mode, the class mode effect handles artist selection and step
-        if (!preselectedArtistId && data.length === 1) {
-          setSelectedArtist(data[0]);
-          setStep('service');
-        }
-      })
-      .catch(() => setArtistsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [preselectedArtistId]);
 
   // ── Fetch artist's offered services when artist changes ──────────────────────
   useEffect(() => {
@@ -237,11 +220,9 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
     }
   }, [preselectedService, artistCatalog, catalogLoading, classDatetime]);
 
-  // ── Class mode: auto-select host artist + date/time, skip to details ─────────
+  // ── Class mode: auto-select date/time + synthetic service, skip to details ──
   useEffect(() => {
-    if (!preselectedArtistId || !classDatetime || artistsLoading || artists.length === 0) return;
-    const artist = artists.find((a) => a.id === preselectedArtistId);
-    if (!artist) return;
+    if (!classDatetime || !selectedArtist) return;
 
     const dateStr = classDatetime.split('T')[0];
     const startTime = classDatetime.split('T')[1]?.slice(0, 5) ?? '09:00';
@@ -250,7 +231,6 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
     const endMin = h * 60 + m + dur;
     const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
 
-    setSelectedArtist(artist);
     setSelectedDate(dateStr);
     setSelectedSlot({ date: dateStr, start: startTime, end: endTime });
     setSelectedService({
@@ -265,14 +245,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
       category_name: '',
     });
     setStep('details');
-  }, [
-    preselectedArtistId,
-    classDatetime,
-    classDuration,
-    artistsLoading,
-    artists,
-    preselectedService,
-  ]);
+  }, [classDatetime, classDuration, selectedArtist, preselectedService]);
 
   // ── Fetch slots when artist or month changes ─────────────────────────────────
   useEffect(() => {
@@ -406,11 +379,8 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
   // ── Step indicator ────────────────────────────────────────────────────────────
   const visibleSteps: BookingStep[] = classDatetime
     ? ['details']
-    : artists.length === 1
-      ? ['service', 'schedule', 'details']
-      : ['artist', 'service', 'schedule', 'details'];
+    : ['service', 'schedule', 'details'];
   const stepLabels: Record<BookingStep, string> = {
-    artist: 'Artist',
     service: 'Service',
     schedule: 'Schedule',
     details: 'Details',
@@ -497,180 +467,6 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
     );
   };
 
-  // ── STEP: Artist ──────────────────────────────────────────────────────────────
-  if (step === 'artist') {
-    return (
-      <div>
-        {renderStepIndicator()}
-        <p
-          style={{
-            fontSize: '0.6rem',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: 'var(--accent)',
-            marginBottom: '0.5rem',
-          }}
-        >
-          Step One
-        </p>
-        <h3
-          className="font-display"
-          style={{ fontSize: '1.6rem', fontWeight: 300, color: 'var(--ink)', marginBottom: '2rem' }}
-        >
-          Select Your Artist
-        </h3>
-
-        {/* Industry filter pills */}
-        {bookingIndustries.length > 0 && !artistsLoading && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            <button
-              onClick={() => setArtistIndustryFilter('')}
-              style={{
-                padding: '0.3rem 0.75rem',
-                fontSize: '0.6rem',
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                border: `1px solid ${!artistIndustryFilter ? 'var(--accent)' : 'var(--line-2)'}`,
-                background: !artistIndustryFilter ? 'var(--accent)' : 'transparent',
-                color: !artistIndustryFilter ? 'var(--bg)' : 'var(--ink-2)',
-                cursor: 'pointer',
-              }}
-            >
-              All
-            </button>
-            {bookingIndustries.map((ind) => (
-              <button
-                key={ind.slug}
-                onClick={() => setArtistIndustryFilter(ind.slug)}
-                style={{
-                  padding: '0.3rem 0.75rem',
-                  fontSize: '0.6rem',
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  border: `1px solid ${artistIndustryFilter === ind.slug ? 'var(--accent)' : 'var(--line-2)'}`,
-                  background: artistIndustryFilter === ind.slug ? 'var(--accent)' : 'transparent',
-                  color: artistIndustryFilter === ind.slug ? 'var(--bg)' : 'var(--ink-2)',
-                  cursor: 'pointer',
-                }}
-              >
-                {ind.name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {artistsLoading ? (
-          <p style={{ color: 'var(--ink-2)', fontSize: '0.82rem', letterSpacing: '0.08em' }}>
-            Loading artists...
-          </p>
-        ) : artists.length === 0 ? (
-          <p style={{ color: 'var(--ink-2)', fontSize: '0.88rem', lineHeight: 1.7 }}>
-            No artists are available at this time. Please{' '}
-            <a href="/contact" style={{ color: 'var(--accent)' }}>
-              contact us
-            </a>{' '}
-            directly.
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {artists
-              .filter(
-                (a) =>
-                  !artistIndustryFilter ||
-                  a.industries.some((i) => i.slug === artistIndustryFilter),
-              )
-              .map((artist) => (
-                <button
-                  key={artist.id}
-                  onClick={() => {
-                    setSelectedArtist(artist);
-                    setStep('service');
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1.25rem',
-                    padding: '1.25rem 1.5rem',
-                    background: 'transparent',
-                    border: '1px solid var(--line-2)',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'border-color 0.2s, background 0.2s',
-                    width: '100%',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = 'var(--accent)';
-                    el.style.background = 'var(--bg-card)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = 'var(--line-2)';
-                    el.style.background = 'transparent';
-                  }}
-                >
-                  {artist.photo_url ? (
-                    <img
-                      src={artist.photo_url}
-                      alt={artist.name}
-                      style={{ width: '52px', height: '52px', objectFit: 'cover', flexShrink: 0 }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: '52px',
-                        height: '52px',
-                        flexShrink: 0,
-                        border: '1px solid var(--line-2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'var(--bg-card)',
-                      }}
-                    >
-                      <span
-                        className="font-display"
-                        style={{ color: 'var(--accent)', fontSize: '1.3rem' }}
-                      >
-                        {artist.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <p
-                      className="font-display"
-                      style={{
-                        fontSize: '1.05rem',
-                        fontWeight: 400,
-                        color: 'var(--ink)',
-                        marginBottom: '0.2rem',
-                      }}
-                    >
-                      {artist.name}
-                    </p>
-                    {artist.specialties && (
-                      <p
-                        style={{
-                          fontSize: '0.72rem',
-                          color: 'var(--ink-2)',
-                          letterSpacing: '0.05em',
-                        }}
-                      >
-                        {artist.specialties}
-                      </p>
-                    )}
-                  </div>
-                  <div style={{ color: 'var(--accent)', flexShrink: 0 }}>
-                    <ChevronRight />
-                  </div>
-                </button>
-              ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   // ── STEP: Service ─────────────────────────────────────────────────────────────
   if (step === 'service') {
     // Group services by category > subcategory
@@ -685,7 +481,6 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
     return (
       <div>
         {renderStepIndicator()}
-        {artists.length > 1 && <BackButton onClick={() => setStep('artist')} />}
 
         <p
           style={{

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import BookingFlow from '../components/BookingFlow';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface CatalogService {
   id: number;
@@ -40,9 +39,7 @@ const Services: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const [showModal, setShowModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<CatalogService | null>(null);
+  const navigate = useNavigate();
 
   const activeIndustry = searchParams.get('industry') ?? '';
 
@@ -85,13 +82,10 @@ const Services: React.FC = () => {
   };
 
   const handleBookNow = (service: CatalogService) => {
-    setSelectedService(service);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedService(null);
+    const params = new URLSearchParams();
+    if (activeIndustry) params.set('industry', activeIndustry);
+    params.set('service', service.name);
+    navigate(`/artists?${params.toString()}`);
   };
 
   // Group services by category
@@ -342,62 +336,6 @@ const Services: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Booking Modal */}
-      {showModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'oklch(5% 0 0 / 0.85)',
-            backdropFilter: 'blur(8px)',
-            padding: '1rem',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) handleCloseModal();
-          }}
-        >
-          <div
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--line-2)',
-              padding: '2.5rem',
-              width: '100%',
-              maxWidth: '560px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              position: 'relative',
-            }}
-            className="anim-fade-up"
-          >
-            <button
-              onClick={handleCloseModal}
-              style={{
-                position: 'absolute',
-                top: '1.5rem',
-                right: '1.5rem',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--ink-3)',
-                fontSize: '1.2rem',
-                lineHeight: 1,
-                transition: 'color 0.2s',
-              }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--ink)')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--ink-3)')}
-            >
-              ✕
-            </button>
-
-            <BookingFlow preselectedService={selectedService?.name} onClose={handleCloseModal} />
-          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BookingFlow from '../components/BookingFlow';
 
 interface ClassItem {
@@ -22,6 +23,7 @@ const Classes: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch('/api/classes')
@@ -287,13 +289,20 @@ const Classes: React.FC = () => {
                 }}
                 disabled={classItem.slots_remaining !== null && classItem.slots_remaining <= 0}
                 onClick={() => {
-                  setSelectedClass(classItem);
-                  setShowModal(true);
+                  if (classItem.slots_remaining !== null && classItem.slots_remaining <= 0) return;
+                  if (classItem.host_artist_id) {
+                    setSelectedClass(classItem);
+                    setShowModal(true);
+                  } else {
+                    navigate('/contact');
+                  }
                 }}
               >
                 {classItem.slots_remaining !== null && classItem.slots_remaining <= 0
                   ? 'Fully Booked'
-                  : 'Book Class'}
+                  : classItem.host_artist_id
+                    ? 'Book Class'
+                    : 'Contact to Enroll'}
               </button>
             </div>
           );
@@ -350,13 +359,15 @@ const Classes: React.FC = () => {
             >
               ✕
             </button>
-            <BookingFlow
-              preselectedService={selectedClass?.name}
-              preselectedArtistId={selectedClass?.host_artist_id ?? undefined}
-              classDatetime={selectedClass?.host_artist_id ? selectedClass.date : undefined}
-              classDuration={selectedClass?.host_artist_id ? selectedClass.duration_min : undefined}
-              onClose={() => setShowModal(false)}
-            />
+            {selectedClass?.host_artist_id && (
+              <BookingFlow
+                preselectedService={selectedClass.name}
+                preselectedArtistId={selectedClass.host_artist_id}
+                classDatetime={selectedClass.date}
+                classDuration={selectedClass.duration_min}
+                onClose={() => setShowModal(false)}
+              />
+            )}
           </div>
         </div>
       )}
