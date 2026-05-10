@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Pill, Logo, SmartImg, Rating, Btn } from '../components/ui';
+import { SmartImg, Rating, Btn } from '../components/ui';
 import { MapView } from '../components/MapView';
 import type { MapArtist } from '../components/MapView';
 
@@ -493,23 +493,22 @@ export default function Artists() {
         transition: 'background-color 0.35s ease',
       }}
     >
-      {/* ── Top nav ─────────────────────────────────────────────────── */}
-      <div style={{ borderBottom: '1px solid var(--line)', padding: '1.25rem 1rem' }}>
+      {/* ── Search + View toggle + Filters — single bar ─────────────── */}
+      <div style={{ borderBottom: '1px solid var(--line)', padding: '0.875rem 1rem' }}>
         <div
           style={{
             maxWidth: '1280px',
             margin: '0 auto',
             display: 'flex',
             alignItems: 'center',
-            gap: '1.5rem',
+            gap: '0.75rem',
           }}
         >
-          <Logo size={22} />
-          {/* Inline search */}
+          {/* Search */}
           <div
             style={{
               flex: 1,
-              maxWidth: '720px',
+              minWidth: 0,
               display: 'flex',
               alignItems: 'center',
               background: 'var(--bg-card)',
@@ -549,106 +548,97 @@ export default function Artists() {
               Search
             </Btn>
           </div>
-          <div
-            style={{
-              marginLeft: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              color: 'var(--ink-2)',
-            }}
-          >
-            <HeartIcon />
-          </div>
-        </div>
-      </div>
 
-      {/* ── View toggle + Filters trigger ──────────────────────────── */}
-      <div
-        style={{
-          borderBottom: '1px solid var(--line)',
-          padding: '0.875rem 1rem',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1280px',
-            margin: '0 auto',
-            display: 'flex',
-            gap: '0.5rem',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--line)',
-              borderRadius: '999px',
-              padding: '3px',
-            }}
-          >
+          {/* View toggle */}
+          {isDesktop ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+              <button
+                onClick={() => setView('list')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '6px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  color: viewMode === 'list' ? 'var(--accent)' : 'var(--ink-3)',
+                  transition: 'color 0.18s',
+                  borderRadius: '6px',
+                }}
+              >
+                <ListIcon />
+              </button>
+              <button
+                onClick={() => setView('map')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '6px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  color: viewMode === 'map' ? 'var(--accent)' : 'var(--ink-3)',
+                  transition: 'color 0.18s',
+                  borderRadius: '6px',
+                }}
+              >
+                <MapIcon />
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={() => setView('list')}
+              onClick={() => setView(viewMode === 'list' ? 'map' : 'list')}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
-                padding: '5px 12px',
-                borderRadius: '999px',
+                padding: '6px',
                 border: 'none',
-                fontSize: '0.75rem',
-                fontWeight: 500,
+                background: 'transparent',
                 cursor: 'pointer',
-                background: viewMode === 'list' ? 'var(--ink)' : 'transparent',
-                color: viewMode === 'list' ? 'var(--bg)' : 'var(--ink-2)',
-                transition: 'background 0.18s, color 0.18s',
+                color: 'var(--ink-3)',
+                transition: 'color 0.18s',
+                borderRadius: '6px',
+                flexShrink: 0,
               }}
             >
-              <ListIcon /> List
+              {viewMode === 'list' ? <MapIcon /> : <ListIcon />}
             </button>
-            <button
-              onClick={() => setView('map')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '5px 12px',
-                borderRadius: '999px',
-                border: 'none',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                background: viewMode === 'map' ? 'var(--ink)' : 'transparent',
-                color: viewMode === 'map' ? 'var(--bg)' : 'var(--ink-2)',
-                transition: 'background 0.18s, color 0.18s',
-              }}
-            >
-              <MapIcon /> Map
-            </button>
-          </div>
+          )}
 
-          <Pill onClick={() => setFilterDialogOpen(true)} active={!!activeParish || !!activeIndustry || sort !== 'Most loved'}>
+          {/* Filters */}
+          <button
+            onClick={() => setFilterDialogOpen(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '6px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              color: (!!activeParish || !!activeIndustry || sort !== 'Most loved') ? 'var(--accent)' : 'var(--ink-3)',
+              transition: 'color 0.18s',
+              borderRadius: '6px',
+              flexShrink: 0,
+            }}
+          >
             <svg
-              width="13"
-              height="13"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ marginRight: '4px', verticalAlign: 'middle' }}
             >
               <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-              <line x1="10" y1="18" x2="14" y2="18" />
+              <circle cx="14" cy="6" r="2" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <circle cx="8" cy="12" r="2" />
+              <line x1="4" y1="18" x2="20" y2="18" />
+              <circle cx="16" cy="18" r="2" />
             </svg>
-            Filters
-          </Pill>
+          </button>
         </div>
       </div>
 

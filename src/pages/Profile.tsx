@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 
 interface UserProfile {
   name: string;
@@ -32,7 +31,6 @@ const labelStyle: React.CSSProperties = {
 
 export default function Profile() {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [name, setName] = useState('');
@@ -135,19 +133,6 @@ export default function Profile() {
             Dashboard
           </Link>
         )}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          style={{
-            ...profileLinkStyle,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            textAlign: 'left',
-          }}
-        >
-          {theme === 'styleja' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-        </button>
       </div>
 
       <form

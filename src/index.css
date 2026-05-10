@@ -461,7 +461,14 @@ body {
 /* ─── Mobile-only utilities ─────────────────────────────────────────── */
 @media (max-width: 767px) {
   body {
+    padding-top: 64px;
     padding-bottom: 68px;
+  }
+  .editorial-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
   }
   .mobile-tab-bar {
     display: flex;
@@ -488,6 +495,9 @@ body {
   }
   .portfolio-item {
     aspect-ratio: 4/5;
+  }
+  .split-panel-grid {
+    grid-template-columns: 1fr !important;
   }
   .search-bar-desktop {
     display: none !important;

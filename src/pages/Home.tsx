@@ -965,7 +965,7 @@ const Home: React.FC = () => {
 
       {/* ── Split panel ────────────────────────────────────────────────── */}
       <section style={{ padding: '8rem 2rem 0', maxWidth: '1280px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="split-panel-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {/* For customers */}
           <div
             style={{
