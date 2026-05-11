@@ -25,6 +25,7 @@ import ArtistDashboard from './pages/ArtistDashboard';
 import Survey from './pages/Survey';
 import AuthCallback from './pages/AuthCallback';
 import ResetPassword from './pages/ResetPassword';
+import MagicLink from './pages/MagicLink';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -72,6 +73,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="admin" element={<Admin />} />
               <Route path="survey/:token" element={<Survey />} />
               <Route path="auth/callback" element={<AuthCallback />} />
+              <Route path="auth/magic" element={<MagicLink />} />
               <Route path="reset-password" element={<ResetPassword />} />
             </Route>
             {/* Worker handles /api/* — this route prevents React Router from logging a warning

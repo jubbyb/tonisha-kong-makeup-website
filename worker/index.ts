@@ -102,15 +102,26 @@ function buildPasswordResetEmail(resetUrl: string): string {
 </div>`;
 }
 
-function buildBookingReceivedEmail(name: string, service: string, date: string, startTime: string, artistName?: string): string {
+function buildBookingReceivedEmail(name: string, service: string, date: string, startTime: string, artistName?: string, magicLinkUrl?: string): string {
   const withArtist = artistName ? ` with ${artistName}` : '';
   const atTime = startTime ? ` at ${startTime}` : '';
+  const magicCta = magicLinkUrl
+    ? `<div style="margin:28px 0 8px;padding:20px;border:1px solid #2a2520;background:#15110e;">
+    <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#c9a96e;margin-bottom:8px;">View &amp; manage your bookings</p>
+    <p style="color:#a09890;line-height:1.6;font-size:14px;margin-bottom:14px;">We've created an account for you so you can see this booking, cancel if needed, and rebook in one click.</p>
+    <a href="${magicLinkUrl}" style="display:inline-block;padding:12px 28px;border:1px solid #c9a96e;color:#c9a96e;text-decoration:none;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;">
+      Sign In Securely
+    </a>
+    <p style="font-size:11px;color:#4a4540;margin-top:14px;">This single-use link expires in 48 hours.</p>
+  </div>`
+    : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
   <p style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;">Styleja</p>
   <h1 style="font-size:28px;font-weight:300;font-style:italic;color:#f5f0e8;margin-bottom:16px;">Thank you, ${name}</h1>
   <p style="color:#a09890;line-height:1.7;">Your booking request for <em>${service}</em>${withArtist} on <strong style="color:#ede8e0;">${date}</strong>${atTime} has been received.</p>
   <p style="color:#a09890;line-height:1.7;margin-top:12px;">We'll be in touch shortly to confirm your appointment.</p>
+  ${magicCta}
   <p style="font-size:11px;color:#4a4540;margin-top:32px;">If you have any questions, simply reply to this email.</p>
 </div>`;
 }
@@ -703,7 +714,7 @@ export default {
         if (conflict)
           return json({ error: 'This slot was just taken — please choose another.' }, 409);
       }
-      await env.DB.prepare(
+      const insertResult = await env.DB.prepare(
         'INSERT INTO bookings (user_id, name, email, phone, service, date, start_time, end_time, artist_id, message, contact_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       )
         .bind(
@@ -720,6 +731,46 @@ export default {
           body.contact_method ?? 'email',
         )
         .run();
+      const newBookingId = insertResult.meta.last_row_id as number;
+
+      // Auto-account: link guest booking to existing user, or create a passwordless one + magic link
+      let magicLinkUrl: string | undefined;
+      if (!bookingUserId) {
+        const guestEmail = body.email.toLowerCase().trim();
+        // Don't auto-create a user row for an artist's email — login flow uses the artists table
+        const artistRow = await env.DB.prepare(
+          'SELECT 1 FROM artists WHERE LOWER(email) = ? AND is_active = 1',
+        )
+          .bind(guestEmail)
+          .first();
+        if (!artistRow) {
+          const existingUser = await env.DB.prepare('SELECT id FROM users WHERE LOWER(email) = ?')
+            .bind(guestEmail)
+            .first<{ id: number }>();
+          if (existingUser) {
+            await env.DB.prepare('UPDATE bookings SET user_id = ? WHERE id = ?')
+              .bind(existingUser.id, newBookingId).run();
+          } else {
+            const userInsert = await env.DB.prepare(
+              "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, '', 'user')",
+            )
+              .bind(body.name, guestEmail)
+              .run();
+            const newUserId = userInsert.meta.last_row_id as number;
+            await env.DB.prepare('UPDATE bookings SET user_id = ? WHERE id = ?')
+              .bind(newUserId, newBookingId).run();
+            const magicToken = generateToken();
+            const expiresAt = Math.floor(Date.now() / 1000) + 48 * 3600;
+            await env.DB.prepare(
+              'INSERT INTO magic_links (token, user_id, expires_at) VALUES (?, ?, ?)',
+            )
+              .bind(magicToken, newUserId, expiresAt)
+              .run();
+            magicLinkUrl = `${env.SITE_URL}/auth/magic?token=${magicToken}&returnTo=${encodeURIComponent('/my-bookings')}`;
+          }
+        }
+      }
+
       let anonArtistName: string | undefined;
       let anonArtistEmail: string | undefined;
       if (body.artist_id) {
@@ -731,7 +782,7 @@ export default {
       await sendEmail(
         env, body.email,
         'Booking Request Received — Styleja',
-        buildBookingReceivedEmail(body.name, body.service, body.date, body.start_time ?? '', anonArtistName),
+        buildBookingReceivedEmail(body.name, body.service, body.date, body.start_time ?? '', anonArtistName, magicLinkUrl),
       );
       if (anonArtistEmail) {
         await sendEmail(
@@ -894,6 +945,47 @@ export default {
       return json({
         token,
         user: { id: String(artist.id), name: artist.name, email: artist.email, role: 'artist' },
+      });
+    }
+
+    if (pathname === '/api/auth/magic' && method === 'GET') {
+      const magicTokenParam = new URL(request.url).searchParams.get('token');
+      const returnToParam = new URL(request.url).searchParams.get('returnTo') ?? '/my-bookings';
+      if (!magicTokenParam) return json({ error: 'Missing token' }, 400);
+      const link = await env.DB.prepare(
+        `SELECT user_id, expires_at, used_at FROM magic_links WHERE token = ?`,
+      ).bind(magicTokenParam).first<{ user_id: number; expires_at: number; used_at: number | null }>();
+      if (!link) return json({ error: 'Invalid or expired link' }, 400);
+      if (link.used_at != null) return json({ error: 'This link has already been used' }, 400);
+      if (link.expires_at < Math.floor(Date.now() / 1000)) {
+        return json({ error: 'This link has expired' }, 400);
+      }
+      const linkUser = await env.DB.prepare(
+        'SELECT id, name, email, role FROM users WHERE id = ?',
+      ).bind(link.user_id).first<{ id: number; name: string; email: string; role: string }>();
+      if (!linkUser) return json({ error: 'Account not found' }, 404);
+      const markRes = await env.DB.prepare(
+        'UPDATE magic_links SET used_at = unixepoch() WHERE token = ? AND used_at IS NULL',
+      ).bind(magicTokenParam).run();
+      if ((markRes.meta.changes ?? 0) === 0) {
+        return json({ error: 'This link has already been used' }, 400);
+      }
+      const role = linkUser.role === 'artist' ? 'artist' : 'user';
+      const issuedJwt = await signJWT(
+        {
+          sub: String(linkUser.id),
+          email: linkUser.email,
+          name: linkUser.name,
+          role,
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+        },
+        env.JWT_SECRET,
+      );
+      return json({
+        token: issuedJwt,
+        user: { id: String(linkUser.id), name: linkUser.name, email: linkUser.email, role },
+        returnTo: returnToParam,
       });
     }
 

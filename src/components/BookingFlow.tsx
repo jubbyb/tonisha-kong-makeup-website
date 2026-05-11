@@ -143,6 +143,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [conflictSlots, setConflictSlots] = useState<Slot[] | null>(null);
 
   // ── Pre-populate details from user profile ───────────────────────────────────
   useEffect(() => {
@@ -325,6 +326,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 
     setSubmitting(true);
     setSubmitError(null);
+    setConflictSlots(null);
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -348,6 +350,11 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
           message: notes,
         }),
       });
+      if (res.status === 409) {
+        await loadConflictAlternatives(selectedSlot, selectedService);
+        setSubmitting(false);
+        return;
+      }
       if (!res.ok) {
         const { error: err } = (await res.json()) as { error: string };
         throw new Error(err ?? 'Booking failed');
@@ -357,6 +364,38 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
       setSubmitError(err instanceof Error ? err.message : 'Failed to submit booking.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Refetch slots for the next week starting at the conflicted day; pick 3 alternatives
+  const loadConflictAlternatives = async (taken: Slot, svc: CatalogService) => {
+    if (!selectedArtist) return;
+    const from = taken.date;
+    const toDate = new Date(taken.date + 'T00:00:00');
+    toDate.setDate(toDate.getDate() + 7);
+    const to = toDate.toISOString().split('T')[0];
+    try {
+      const res = await fetch(
+        `/api/artists/${selectedArtist.id}/slots?from=${from}&to=${to}&duration=${svc.duration_min}`,
+      );
+      if (!res.ok) {
+        setSubmitError('That slot was just taken. Please pick another time.');
+        return;
+      }
+      const all = (await res.json()) as Slot[];
+      const others = all.filter((s) => !(s.date === taken.date && s.start === taken.start));
+      const sameDay = others.filter((s) => s.date === taken.date);
+      const otherDays = others.filter((s) => s.date !== taken.date);
+      const picks = [...sameDay, ...otherDays].slice(0, 3);
+      if (picks.length === 0) {
+        setSubmitError(
+          'That slot was just taken and nothing else is open this week. Try another date.',
+        );
+        return;
+      }
+      setConflictSlots(picks);
+    } catch {
+      setSubmitError('That slot was just taken. Please pick another time.');
     }
   };
 
@@ -950,6 +989,85 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
                 )}
               </p>
             )}
+          </div>
+        )}
+
+        {conflictSlots && conflictSlots.length > 0 && (
+          <div
+            role="alert"
+            style={{
+              padding: '1.1rem 1.4rem',
+              border: '1px solid var(--accent)',
+              background: 'var(--bg-card)',
+              marginBottom: '2rem',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.58rem',
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase',
+                color: 'var(--accent)',
+                marginBottom: '0.6rem',
+              }}
+            >
+              That slot was just taken
+            </p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--ink)', marginBottom: '0.9rem' }}>
+              Pick a new time — we've kept your details.
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                marginBottom: '0.9rem',
+              }}
+            >
+              {conflictSlots.map((slot) => (
+                <button
+                  key={`${slot.date}-${slot.start}`}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSlot(slot);
+                    setConflictSlots(null);
+                    setSubmitError(null);
+                  }}
+                  style={{
+                    padding: '0.55rem 0.9rem',
+                    border: '1px solid var(--accent)',
+                    background: 'transparent',
+                    color: 'var(--accent)',
+                    fontSize: '0.78rem',
+                    letterSpacing: '0.05em',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {fmtDate(slot.date).split(',')[0]} · {fmtTime(slot.start)}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setConflictSlots(null);
+                setSubmitError(null);
+                setStep('schedule');
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: 'var(--ink-2)',
+                fontSize: '0.72rem',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              Show full calendar →
+            </button>
           </div>
         )}
 

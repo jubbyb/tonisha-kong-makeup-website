@@ -202,6 +202,16 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_prt_token ON password_reset_tokens(token);
 
+-- Magic links issued to guest bookers so they can claim an auto-created account
+CREATE TABLE IF NOT EXISTS magic_links (
+  token      TEXT    PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at INTEGER NOT NULL,
+  used_at    INTEGER,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_magic_links_user ON magic_links(user_id);
+
 CREATE TABLE IF NOT EXISTS industries (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   slug       TEXT    NOT NULL UNIQUE,
