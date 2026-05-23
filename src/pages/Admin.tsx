@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { formatPrice } from '../lib/price';
 
 interface Booking {
   id: number;
@@ -1208,6 +1209,8 @@ interface CatalogServiceItem {
   name: string;
   description: string | null;
   price: number | null;
+  price_max: number | null;
+  currency: string;
   duration_min: number;
   sort_order: number;
 }
@@ -1265,6 +1268,8 @@ function ServicesTab({ token }: { token: string }) {
               name: '',
               description: '',
               price: '',
+              price_max: '',
+              currency: 'JMD',
               duration_min: 60,
               sort_order: 0,
               subcategory_id: subcategories[0]?.id ?? '',
@@ -1314,6 +1319,8 @@ function ServicesTab({ token }: { token: string }) {
       const body: Record<string, string | number | null> = { ...formData };
       if (type === 'service') {
         body.price = formData.price === '' ? null : Number(formData.price);
+        body.price_max = formData.price_max === '' ? null : Number(formData.price_max);
+        body.currency = formData.currency === 'USD' ? 'USD' : 'JMD';
         body.duration_min = Number(formData.duration_min) || 60;
         body.sort_order = Number(formData.sort_order) || 0;
         body.subcategory_id = Number(formData.subcategory_id);
@@ -1522,7 +1529,7 @@ function ServicesTab({ token }: { token: string }) {
                             </div>
                           )}
                         </td>
-                        <td>{sv.price != null ? `$${sv.price}` : '—'}</td>
+                        <td>{formatPrice(sv)}</td>
                         <td>{sv.duration_min} min</td>
                         <td>{sv.sort_order}</td>
                         <td className="space-x-2">
@@ -1628,15 +1635,38 @@ function ServicesTab({ token }: { token: string }) {
                     />
                   </label>
                   <label className="input input-bordered flex items-center gap-2">
-                    <span className="label w-24">Price ($)</span>
+                    <span className="label w-24">Currency</span>
+                    <select
+                      className="grow bg-transparent"
+                      value={String(formData.currency ?? 'JMD')}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                    >
+                      <option value="JMD">JMD (J$)</option>
+                      <option value="USD">USD (US$)</option>
+                    </select>
+                  </label>
+                  <label className="input input-bordered flex items-center gap-2">
+                    <span className="label w-24">Min price</span>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
                       className="grow"
-                      placeholder="Optional"
+                      placeholder="Blank = price on consult"
                       value={String(formData.price ?? '')}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    />
+                  </label>
+                  <label className="input input-bordered flex items-center gap-2">
+                    <span className="label w-24">Max price</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="grow"
+                      placeholder="Blank = 'from' price; equal to min = fixed"
+                      value={String(formData.price_max ?? '')}
+                      onChange={(e) => setFormData({ ...formData, price_max: e.target.value })}
                     />
                   </label>
                   <label className="input input-bordered flex items-center gap-2">

@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { cfImage } from '../lib/cfImage';
 import BookingFlow from '../components/BookingFlow';
 import { buildWhatsAppUrl, defaultBookingMessage } from '../lib/whatsapp';
+import { formatPrice, formatAmount } from '../lib/price';
 
 interface Artist {
   id: number;
@@ -27,7 +28,11 @@ interface Service {
   name: string;
   description: string | null;
   price: number | null;
+  price_max: number | null;
+  currency: string;
   catalog_price: number | null;
+  catalog_price_max: number | null;
+  catalog_currency: string;
   duration_min: number;
 }
 
@@ -132,7 +137,7 @@ export default function ArtistProfile() {
     ? (COVER_FALLBACKS[primaryIndustry.slug] ?? COVER_FALLBACKS.makeup)
     : COVER_FALLBACKS.makeup;
   const whatsappUrl = buildWhatsAppUrl(artist.whatsapp_number, defaultBookingMessage(artist.name));
-  const startingPrice = services.find((s) => s.price != null)?.price;
+  const startingService = services.find((s) => s.price != null);
 
   const handleBookCTA = (serviceName?: string) => {
     if (serviceName) {
@@ -650,7 +655,9 @@ export default function ArtistProfile() {
       >
         <div>
           <div style={{ fontSize: '11px', opacity: 0.65, letterSpacing: '0.05em' }}>
-            {startingPrice != null ? `From $${startingPrice}` : 'Book now'}
+            {startingService
+              ? `From ${formatAmount(startingService.price as number, startingService.currency)}`
+              : 'Book now'}
           </div>
           <div className="font-editorial" style={{ fontSize: '18px', lineHeight: 1.1 }}>
             Book a session
@@ -856,11 +863,7 @@ export default function ArtistProfile() {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {s.price != null
-                          ? `$${s.price}`
-                          : s.catalog_price != null
-                            ? `$${s.catalog_price}`
-                            : '—'}
+                        {formatPrice(s)}
                       </div>
                       <button
                         onClick={() => handleBookCTA(s.name)}
@@ -1171,7 +1174,7 @@ export default function ArtistProfile() {
             >
               —— Booking
             </p>
-            {startingPrice != null && (
+            {startingService && (
               <div
                 style={{
                   display: 'flex',
@@ -1184,7 +1187,7 @@ export default function ArtistProfile() {
                   className="font-editorial"
                   style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', color: 'var(--ink)' }}
                 >
-                  ${startingPrice}
+                  {formatAmount(startingService.price as number, startingService.currency)}
                 </span>
                 <span style={{ fontSize: '0.8125rem', color: 'var(--ink-3)' }}>starting</span>
               </div>

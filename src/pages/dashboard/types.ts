@@ -86,6 +86,8 @@ export interface CatalogCategory {
       name: string;
       description: string | null;
       price: number | null;
+      price_max: number | null;
+      currency: string;
       duration_min: number;
     }>;
   }>;

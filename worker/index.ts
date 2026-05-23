@@ -520,13 +520,15 @@ export default {
       ).all<{ id: number; category_id: number; name: string; sort_order: number }>();
 
       const { results: svcs } = await env.DB.prepare(
-        'SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name',
+        'SELECT id, subcategory_id, name, description, price, price_max, currency, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name',
       ).all<{
         id: number;
         subcategory_id: number;
         name: string;
         description: string | null;
         price: number | null;
+        price_max: number | null;
+        currency: string;
         duration_min: number;
         sort_order: number;
       }>();
@@ -553,8 +555,12 @@ export default {
         `
         SELECT cs.id, cs.name, cs.description,
                COALESCE(ar.price_override, cs.price) AS price,
-               ar.price_override,
+               COALESCE(ar.price_max_override, cs.price_max) AS price_max,
+               COALESCE(ar.currency_override, cs.currency) AS currency,
+               ar.price_override, ar.price_max_override, ar.currency_override,
                cs.price AS catalog_price,
+               cs.price_max AS catalog_price_max,
+               cs.currency AS catalog_currency,
                cs.duration_min,
                ss.id AS subcategory_id, ss.name AS subcategory_name,
                sc.id AS category_id, sc.name AS category_name
@@ -1418,31 +1424,54 @@ export default {
       // Artist's offered services
       if (pathname === '/api/artist/services' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT service_id, price_override FROM artist_services WHERE artist_id = ?',
+          'SELECT service_id, price_override, price_max_override, currency_override FROM artist_services WHERE artist_id = ?',
         )
           .bind(artistId)
-          .all<{ service_id: number; price_override: number | null }>();
+          .all<{
+            service_id: number;
+            price_override: number | null;
+            price_max_override: number | null;
+            currency_override: string | null;
+          }>();
         return json(results);
       }
 
       if (pathname === '/api/artist/services' && method === 'PUT') {
         const body = await request.json<{
-          services?: Array<{ service_id: number; price_override?: number | null }>;
+          services?: Array<{
+            service_id: number;
+            price_override?: number | null;
+            price_max_override?: number | null;
+            currency_override?: string | null;
+          }>;
           service_ids?: number[];
         }>();
+        // A finite number, or null for anything blank / non-numeric.
+        const num = (v: unknown): number | null =>
+          v == null || isNaN(Number(v)) ? null : Number(v);
+        // Only JMD/USD survive; anything else falls back to the catalog currency (null).
+        const cur = (v: unknown): string | null => (v === 'JMD' || v === 'USD' ? v : null);
         // Accept either the new {services: [...]} shape or legacy {service_ids: [...]}
-        const items: Array<{ service_id: number; price_override: number | null }> = Array.isArray(
-          body.services,
-        )
+        type Item = {
+          service_id: number;
+          price_override: number | null;
+          price_max_override: number | null;
+          currency_override: string | null;
+        };
+        const items: Item[] = Array.isArray(body.services)
           ? body.services.map((s) => ({
               service_id: Number(s.service_id),
-              price_override:
-                s.price_override == null || isNaN(Number(s.price_override))
-                  ? null
-                  : Number(s.price_override),
+              price_override: num(s.price_override),
+              price_max_override: num(s.price_max_override),
+              currency_override: cur(s.currency_override),
             }))
           : Array.isArray(body.service_ids)
-            ? body.service_ids.map((id) => ({ service_id: Number(id), price_override: null }))
+            ? body.service_ids.map((id) => ({
+                service_id: Number(id),
+                price_override: null,
+                price_max_override: null,
+                currency_override: null,
+              }))
             : [];
         if (!items.every((i) => Number.isInteger(i.service_id) && i.service_id > 0)) {
           return json({ error: 'Invalid services payload' }, 400);
@@ -1452,9 +1481,15 @@ export default {
           .run();
         for (const it of items) {
           await env.DB.prepare(
-            'INSERT OR IGNORE INTO artist_services (artist_id, service_id, price_override) VALUES (?, ?, ?)',
+            'INSERT OR IGNORE INTO artist_services (artist_id, service_id, price_override, price_max_override, currency_override) VALUES (?, ?, ?, ?, ?)',
           )
-            .bind(artistId, it.service_id, it.price_override)
+            .bind(
+              artistId,
+              it.service_id,
+              it.price_override,
+              it.price_max_override,
+              it.currency_override,
+            )
             .run();
         }
         return json({ success: true });
@@ -2309,12 +2344,12 @@ export default {
         const subId = url3.searchParams.get('subcategory_id');
         const { results } = subId
           ? await env.DB.prepare(
-              'SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services WHERE subcategory_id=? ORDER BY sort_order, name',
+              'SELECT id, subcategory_id, name, description, price, price_max, currency, duration_min, sort_order FROM catalog_services WHERE subcategory_id=? ORDER BY sort_order, name',
             )
               .bind(Number(subId))
               .all()
           : await env.DB.prepare(
-              'SELECT id, subcategory_id, name, description, price, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name',
+              'SELECT id, subcategory_id, name, description, price, price_max, currency, duration_min, sort_order FROM catalog_services ORDER BY sort_order, name',
             ).all();
         return json(results);
       }
@@ -2324,19 +2359,24 @@ export default {
           name?: string;
           description?: string;
           price?: number;
+          price_max?: number;
+          currency?: string;
           duration_min?: number;
           sort_order?: number;
         }>();
         if (!body.subcategory_id || !body.name)
           return json({ error: 'subcategory_id and name are required' }, 400);
+        const currency = body.currency === 'USD' ? 'USD' : 'JMD';
         const r = await env.DB.prepare(
-          'INSERT INTO catalog_services (subcategory_id, name, description, price, duration_min, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT INTO catalog_services (subcategory_id, name, description, price, price_max, currency, duration_min, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         )
           .bind(
             body.subcategory_id,
             body.name,
             body.description ?? null,
             body.price ?? null,
+            body.price_max ?? null,
+            currency,
             body.duration_min ?? 60,
             body.sort_order ?? 0,
           )
@@ -2349,18 +2389,23 @@ export default {
           name?: string;
           description?: string;
           price?: number;
+          price_max?: number;
+          currency?: string;
           duration_min?: number;
           sort_order?: number;
           subcategory_id?: number;
         }>();
         if (!body.name) return json({ error: 'name is required' }, 400);
+        const currency = body.currency === 'USD' ? 'USD' : 'JMD';
         await env.DB.prepare(
-          'UPDATE catalog_services SET name=?, description=?, price=?, duration_min=?, sort_order=?, subcategory_id=COALESCE(?,subcategory_id) WHERE id=?',
+          'UPDATE catalog_services SET name=?, description=?, price=?, price_max=?, currency=?, duration_min=?, sort_order=?, subcategory_id=COALESCE(?,subcategory_id) WHERE id=?',
         )
           .bind(
             body.name,
             body.description ?? null,
             body.price ?? null,
+            body.price_max ?? null,
+            currency,
             body.duration_min ?? 60,
             body.sort_order ?? 0,
             body.subcategory_id ?? null,
