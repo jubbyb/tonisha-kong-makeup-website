@@ -12,7 +12,15 @@ const mockCatalog = [
         id: 1,
         name: 'Bridal',
         services: [
-          { id: 1, name: 'Bridal Makeup', description: 'Full bridal look', price: 250, duration_min: 120 },
+          {
+            id: 1,
+            name: 'Bridal Makeup',
+            description: 'Full bridal look',
+            price: 250,
+            price_max: 250,
+            currency: 'USD',
+            duration_min: 120,
+          },
         ],
       },
     ],
@@ -60,7 +68,7 @@ describe('Services', () => {
     );
     await waitFor(() => {
       expect(screen.getByText('Bridal Makeup')).toBeInTheDocument();
-      expect(screen.getByText('$250')).toBeInTheDocument();
+      expect(screen.getByText('US$250')).toBeInTheDocument();
     });
   });
 

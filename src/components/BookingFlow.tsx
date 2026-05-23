@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
+import { formatPrice } from '../lib/price';
 import { buildWhatsAppUrl, defaultBookingMessage } from '../lib/whatsapp';
 
 interface Artist {
@@ -24,6 +25,8 @@ interface CatalogService {
   name: string;
   description: string | null;
   price: number | null;
+  price_max: number | null;
+  currency: string;
   duration_min: number;
   subcategory_id: number;
   subcategory_name: string;
@@ -239,6 +242,8 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
       name: preselectedService ?? '',
       description: null,
       price: null,
+      price_max: null,
+      currency: 'JMD',
       duration_min: dur,
       subcategory_id: -1,
       subcategory_name: '',
@@ -638,17 +643,15 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
                               )}
                             </div>
                             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                              {svc.price != null && (
-                                <p
-                                  style={{
-                                    fontSize: '0.88rem',
-                                    color: 'var(--ink)',
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  ${svc.price}
-                                </p>
-                              )}
+                              <p
+                                style={{
+                                  fontSize: '0.88rem',
+                                  color: 'var(--ink)',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {formatPrice(svc)}
+                              </p>
                               <p
                                 style={{
                                   fontSize: '0.68rem',
@@ -984,7 +987,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
                 {selectedService.name}
                 {selectedService.price != null && (
                   <span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>
-                    ${selectedService.price}
+                    {formatPrice(selectedService)}
                   </span>
                 )}
               </p>

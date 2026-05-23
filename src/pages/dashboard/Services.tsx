@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
+import { formatPrice } from '../../lib/price';
 import type { CatalogCategory } from './types';
 
-// ─── Services tab — catalog checkbox + price override ────────────────────────
+// ─── Services tab — catalog checkbox + price / currency overrides ─────────────
+
+// What an artist has set for one Offering. Empty strings mean "inherit catalog".
+interface Override {
+  price: string;
+  price_max: string;
+  currency: string; // '' | 'JMD' | 'USD'
+}
+
+const emptyOverride = (): Override => ({ price: '', price_max: '', currency: '' });
 
 export default function Services() {
   const [catalog, setCatalog] = useState<CatalogCategory[]>([]);
-  const [selected, setSelected] = useState<Map<number, number | null>>(new Map());
-  const [overrideText, setOverrideText] = useState<Map<number, string>>(new Map());
+  const [selected, setSelected] = useState<Map<number, Override>>(new Map());
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -17,18 +26,26 @@ export default function Services() {
   useEffect(() => {
     Promise.all([
       fetch('/api/service-catalog').then((r) => r.json() as Promise<CatalogCategory[]>),
-      apiFetch<Array<{ service_id: number; price_override: number | null }>>('/api/artist/services'),
+      apiFetch<
+        Array<{
+          service_id: number;
+          price_override: number | null;
+          price_max_override: number | null;
+          currency_override: string | null;
+        }>
+      >('/api/artist/services'),
     ])
       .then(([cat, rows]) => {
         setCatalog(cat);
-        const m = new Map<number, number | null>();
-        const t = new Map<number, string>();
+        const m = new Map<number, Override>();
         for (const r of rows) {
-          m.set(r.service_id, r.price_override);
-          if (r.price_override != null) t.set(r.service_id, String(r.price_override));
+          m.set(r.service_id, {
+            price: r.price_override != null ? String(r.price_override) : '',
+            price_max: r.price_max_override != null ? String(r.price_max_override) : '',
+            currency: r.currency_override ?? '',
+          });
         }
         setSelected(m);
-        setOverrideText(t);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -38,23 +55,16 @@ export default function Services() {
     setSelected((prev) => {
       const next = new Map(prev);
       if (next.has(id)) next.delete(id);
-      else next.set(id, null);
+      else next.set(id, emptyOverride());
       return next;
     });
   };
 
-  const updateOverride = (id: number, raw: string) => {
-    setOverrideText((prev) => {
-      const next = new Map(prev);
-      if (raw === '') next.delete(id);
-      else next.set(id, raw);
-      return next;
-    });
+  const updateField = (id: number, field: keyof Override, value: string) => {
     setSelected((prev) => {
       if (!prev.has(id)) return prev;
       const next = new Map(prev);
-      const num = parseFloat(raw);
-      next.set(id, raw === '' || isNaN(num) ? null : num);
+      next.set(id, { ...next.get(id)!, [field]: value });
       return next;
     });
   };
@@ -63,9 +73,11 @@ export default function Services() {
     setSaving(true);
     setError(null);
     try {
-      const services = Array.from(selected.entries()).map(([service_id, price_override]) => ({
+      const services = Array.from(selected.entries()).map(([service_id, o]) => ({
         service_id,
-        price_override,
+        price_override: o.price.trim() === '' ? null : parseFloat(o.price),
+        price_max_override: o.price_max.trim() === '' ? null : parseFloat(o.price_max),
+        currency_override: o.currency === '' ? null : o.currency,
       }));
       await apiFetch('/api/artist/services', {
         method: 'PUT',
@@ -101,8 +113,8 @@ export default function Services() {
             My Services
           </h2>
           <p className="text-sm mt-1" style={{ color: 'var(--ink-3)' }}>
-            Select the services you offer. Set a custom price if yours differs from the catalog —
-            leave blank to use the default.
+            Select the services you offer. Set your own price, currency, and an optional upper
+            price for a range — leave a field blank to use the catalog default.
           </p>
         </div>
         <button
@@ -190,7 +202,8 @@ export default function Services() {
                   </p>
                   <div className="space-y-2">
                     {sub.services.map((svc) => {
-                      const isSelected = selected.has(svc.id);
+                      const ov = selected.get(svc.id);
+                      const isSelected = ov !== undefined;
                       return (
                         <div
                           key={svc.id}
@@ -212,9 +225,7 @@ export default function Services() {
                                 className="text-right whitespace-nowrap text-xs"
                                 style={{ color: 'var(--ink-3)' }}
                               >
-                                {svc.price != null && (
-                                  <span className="mr-2">Catalog: ${svc.price}</span>
-                                )}
+                                <span className="mr-2">Catalog: {formatPrice(svc)}</span>
                                 <span>{svc.duration_min} min</span>
                               </div>
                             </div>
@@ -223,33 +234,52 @@ export default function Services() {
                                 {svc.description}
                               </p>
                             )}
-                            {isSelected && (
-                              <div className="mt-2 flex items-center gap-2">
-                                <label
-                                  className="text-xs"
-                                  style={{ color: 'var(--ink-3)' }}
-                                >
+                            {isSelected && ov && (
+                              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                <label className="text-xs" style={{ color: 'var(--ink-3)' }}>
                                   My price:
                                 </label>
-                                <div className="flex items-center gap-1">
-                                  <span
-                                    className="text-sm"
-                                    style={{ color: 'var(--ink-3)' }}
-                                  >
-                                    $
-                                  </span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    placeholder={svc.price != null ? String(svc.price) : 'Set price'}
-                                    className="input input-bordered input-xs w-24"
-                                    value={overrideText.get(svc.id) ?? ''}
-                                    onChange={(e) => updateOverride(svc.id, e.target.value)}
-                                  />
-                                </div>
+                                <select
+                                  className="select select-bordered select-xs w-28"
+                                  value={ov.currency}
+                                  onChange={(e) =>
+                                    updateField(svc.id, 'currency', e.target.value)
+                                  }
+                                  aria-label={`Currency for ${svc.name}`}
+                                >
+                                  <option value="">{svc.currency} (catalog)</option>
+                                  <option value="JMD">JMD</option>
+                                  <option value="USD">USD</option>
+                                </select>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder={svc.price != null ? String(svc.price) : 'Min'}
+                                  className="input input-bordered input-xs w-24"
+                                  value={ov.price}
+                                  onChange={(e) => updateField(svc.id, 'price', e.target.value)}
+                                  aria-label={`Minimum price for ${svc.name}`}
+                                />
                                 <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                                  (leave blank for catalog price)
+                                  to
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder={
+                                    svc.price_max != null ? String(svc.price_max) : 'Max (optional)'
+                                  }
+                                  className="input input-bordered input-xs w-32"
+                                  value={ov.price_max}
+                                  onChange={(e) =>
+                                    updateField(svc.id, 'price_max', e.target.value)
+                                  }
+                                  aria-label={`Maximum price for ${svc.name}`}
+                                />
+                                <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                                  (blank = catalog default; max blank = "from" price)
                                 </span>
                               </div>
                             )}

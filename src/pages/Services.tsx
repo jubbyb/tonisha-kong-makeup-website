@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { formatPrice } from '../lib/price';
 
 interface CatalogService {
   id: number;
   name: string;
   description: string | null;
   price: number | null;
+  price_max: number | null;
+  currency: string;
   duration_min: number;
   category: string;
   subcategory: string;
@@ -22,6 +25,8 @@ interface CatalogResponse {
       name: string;
       description: string | null;
       price: number | null;
+      price_max: number | null;
+      currency: string;
       duration_min: number;
     }[];
   }[];
@@ -288,20 +293,18 @@ const Services: React.FC = () => {
                         >
                           {service.name}
                         </h3>
-                        {service.price != null && (
-                          <span
-                            style={{
-                              fontFamily: "'Instrument Serif', 'Cormorant Garamond', serif",
-                              fontSize: '1.2rem',
-                              fontWeight: 300,
-                              color: 'var(--accent)',
-                              whiteSpace: 'nowrap',
-                              marginLeft: '1rem',
-                            }}
-                          >
-                            ${service.price}
-                          </span>
-                        )}
+                        <span
+                          style={{
+                            fontFamily: "'Instrument Serif', 'Cormorant Garamond', serif",
+                            fontSize: '1.2rem',
+                            fontWeight: 300,
+                            color: 'var(--accent)',
+                            whiteSpace: 'nowrap',
+                            marginLeft: '1rem',
+                          }}
+                        >
+                          {formatPrice(service)}
+                        </span>
                       </div>
 
                       <div style={{ width: '30px', height: '1px', background: 'var(--line)' }} />
