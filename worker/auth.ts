@@ -42,7 +42,9 @@ export interface JWTPayload {
 }
 
 export async function signJWT(payload: JWTPayload, secret: string): Promise<string> {
-  const header = toBase64URL(new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));
+  const header = toBase64URL(
+    new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })),
+  );
   const body = toBase64URL(new TextEncoder().encode(JSON.stringify(payload)));
   const key = await crypto.subtle.importKey(
     'raw',

@@ -99,7 +99,8 @@ export default function Services() {
       </div>
     );
 
-  const visible = activeCategory === null ? catalog : catalog.filter((c) => c.id === activeCategory);
+  const visible =
+    activeCategory === null ? catalog : catalog.filter((c) => c.id === activeCategory);
 
   return (
     <div>
@@ -113,8 +114,8 @@ export default function Services() {
             My Services
           </h2>
           <p className="text-sm mt-1" style={{ color: 'var(--ink-3)' }}>
-            Select the services you offer. Set your own price, currency, and an optional upper
-            price for a range — leave a field blank to use the catalog default.
+            Select the services you offer. Set your own price, currency, and an optional upper price
+            for a range — leave a field blank to use the catalog default.
           </p>
         </div>
         <button
@@ -184,114 +185,116 @@ export default function Services() {
           {/* ── catalog ── */}
           <div className="space-y-5">
             {visible.map((cat) => (
-            <div
-              key={cat.id}
-              className="border p-5"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
-            >
-              <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
-                {cat.name}
-              </h3>
-              {cat.subcategories.map((sub) => (
-                <div key={sub.id} className="mb-5 last:mb-0">
-                  <p
-                    className="eyebrow mb-2"
-                    style={{ color: 'var(--ink-3)' }}
-                  >
-                    {sub.name}
-                  </p>
-                  <div className="space-y-2">
-                    {sub.services.map((svc) => {
-                      const ov = selected.get(svc.id);
-                      const isSelected = ov !== undefined;
-                      return (
-                        <div
-                          key={svc.id}
-                          className="flex items-start gap-3 p-2 transition-colors hover:bg-base-200"
-                        >
-                          <input
-                            type="checkbox"
-                            className="checkbox checkbox-primary checkbox-sm mt-0.5"
-                            checked={isSelected}
-                            onChange={() => toggle(svc.id)}
-                            aria-label={`Offer ${svc.name}`}
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <span className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
-                                {svc.name}
-                              </span>
-                              <div
-                                className="text-right whitespace-nowrap text-xs"
-                                style={{ color: 'var(--ink-3)' }}
-                              >
-                                <span className="mr-2">Catalog: {formatPrice(svc)}</span>
-                                <span>{svc.duration_min} min</span>
-                              </div>
-                            </div>
-                            {svc.description && (
-                              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
-                                {svc.description}
-                              </p>
-                            )}
-                            {isSelected && ov && (
-                              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                                <label className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                                  My price:
-                                </label>
-                                <select
-                                  className="select select-bordered select-xs w-28"
-                                  value={ov.currency}
-                                  onChange={(e) =>
-                                    updateField(svc.id, 'currency', e.target.value)
-                                  }
-                                  aria-label={`Currency for ${svc.name}`}
+              <div
+                key={cat.id}
+                className="border p-5"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
+              >
+                <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
+                  {cat.name}
+                </h3>
+                {cat.subcategories.map((sub) => (
+                  <div key={sub.id} className="mb-5 last:mb-0">
+                    <p className="eyebrow mb-2" style={{ color: 'var(--ink-3)' }}>
+                      {sub.name}
+                    </p>
+                    <div className="space-y-2">
+                      {sub.services.map((svc) => {
+                        const ov = selected.get(svc.id);
+                        const isSelected = ov !== undefined;
+                        return (
+                          <div
+                            key={svc.id}
+                            className="flex items-start gap-3 p-2 transition-colors hover:bg-base-200"
+                          >
+                            <input
+                              type="checkbox"
+                              className="checkbox checkbox-primary checkbox-sm mt-0.5"
+                              checked={isSelected}
+                              onChange={() => toggle(svc.id)}
+                              aria-label={`Offer ${svc.name}`}
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span
+                                  className="font-medium text-sm"
+                                  style={{ color: 'var(--ink)' }}
                                 >
-                                  <option value="">{svc.currency} (catalog)</option>
-                                  <option value="JMD">JMD</option>
-                                  <option value="USD">USD</option>
-                                </select>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  placeholder={svc.price != null ? String(svc.price) : 'Min'}
-                                  className="input input-bordered input-xs w-24"
-                                  value={ov.price}
-                                  onChange={(e) => updateField(svc.id, 'price', e.target.value)}
-                                  aria-label={`Minimum price for ${svc.name}`}
-                                />
-                                <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                                  to
+                                  {svc.name}
                                 </span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  placeholder={
-                                    svc.price_max != null ? String(svc.price_max) : 'Max (optional)'
-                                  }
-                                  className="input input-bordered input-xs w-32"
-                                  value={ov.price_max}
-                                  onChange={(e) =>
-                                    updateField(svc.id, 'price_max', e.target.value)
-                                  }
-                                  aria-label={`Maximum price for ${svc.name}`}
-                                />
-                                <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
-                                  (blank = catalog default; max blank = "from" price)
-                                </span>
+                                <div
+                                  className="text-right whitespace-nowrap text-xs"
+                                  style={{ color: 'var(--ink-3)' }}
+                                >
+                                  <span className="mr-2">Catalog: {formatPrice(svc)}</span>
+                                  <span>{svc.duration_min} min</span>
+                                </div>
                               </div>
-                            )}
+                              {svc.description && (
+                                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
+                                  {svc.description}
+                                </p>
+                              )}
+                              {isSelected && ov && (
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                  <label className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                                    My price:
+                                  </label>
+                                  <select
+                                    className="select select-bordered select-xs w-28"
+                                    value={ov.currency}
+                                    onChange={(e) =>
+                                      updateField(svc.id, 'currency', e.target.value)
+                                    }
+                                    aria-label={`Currency for ${svc.name}`}
+                                  >
+                                    <option value="">{svc.currency} (catalog)</option>
+                                    <option value="JMD">JMD</option>
+                                    <option value="USD">USD</option>
+                                  </select>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder={svc.price != null ? String(svc.price) : 'Min'}
+                                    className="input input-bordered input-xs w-24"
+                                    value={ov.price}
+                                    onChange={(e) => updateField(svc.id, 'price', e.target.value)}
+                                    aria-label={`Minimum price for ${svc.name}`}
+                                  />
+                                  <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                                    to
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder={
+                                      svc.price_max != null
+                                        ? String(svc.price_max)
+                                        : 'Max (optional)'
+                                    }
+                                    className="input input-bordered input-xs w-32"
+                                    value={ov.price_max}
+                                    onChange={(e) =>
+                                      updateField(svc.id, 'price_max', e.target.value)
+                                    }
+                                    aria-label={`Maximum price for ${svc.name}`}
+                                  />
+                                  <span className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                                    (blank = catalog default; max blank = "from" price)
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ))}
+                ))}
+              </div>
+            ))}
           </div>
         </>
       )}

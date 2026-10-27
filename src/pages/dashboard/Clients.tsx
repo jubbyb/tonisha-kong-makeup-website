@@ -33,13 +33,7 @@ function parseTags(raw: string | null): string[] {
 
 // ─── Inline drawer for one expanded client ────────────────────────────────────
 
-function ClientDrawer({
-  client,
-  onClose,
-}: {
-  client: ClientSummary;
-  onClose: () => void;
-}) {
+function ClientDrawer({ client, onClose }: { client: ClientSummary; onClose: () => void }) {
   const [detail, setDetail] = useState<ClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
@@ -192,7 +186,8 @@ function ClientDrawer({
                     key={tag}
                     className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
                     style={{
-                      background: 'var(--accent-muted, color-mix(in srgb, var(--accent) 15%, transparent))',
+                      background:
+                        'var(--accent-muted, color-mix(in srgb, var(--accent) 15%, transparent))',
                       color: 'var(--accent)',
                     }}
                   >
@@ -295,12 +290,14 @@ export default function Clients() {
   const filtered = clients
     .filter((c) => {
       if (vipOnly && !c.is_vip) return false;
-      if (q && !c.name.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
+      if (q && !c.name.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q))
+        return false;
       return true;
     })
     .sort((a, b) => {
       if (sortBy === 'bookings') return b.booking_count - a.booking_count;
-      if (sortBy === 'vip') return (b.is_vip ?? 0) - (a.is_vip ?? 0) || b.booking_count - a.booking_count;
+      if (sortBy === 'vip')
+        return (b.is_vip ?? 0) - (a.is_vip ?? 0) || b.booking_count - a.booking_count;
       // recent
       return b.last_booking_date.localeCompare(a.last_booking_date);
     });
@@ -398,9 +395,7 @@ export default function Clients() {
                       <span className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
                         {c.name}
                       </span>
-                      {c.is_vip ? (
-                        <span className="badge badge-sm badge-warning">VIP</span>
-                      ) : null}
+                      {c.is_vip ? <span className="badge badge-sm badge-warning">VIP</span> : null}
                       {isReturning ? (
                         <span className="badge badge-sm badge-info">Returning</span>
                       ) : null}
@@ -411,8 +406,13 @@ export default function Clients() {
                   </div>
 
                   {/* Chips */}
-                  <div className="hidden sm:flex flex-col items-end gap-1 shrink-0 text-xs" style={{ color: 'var(--ink-3)' }}>
-                    <span>{c.booking_count} booking{c.booking_count !== 1 ? 's' : ''}</span>
+                  <div
+                    className="hidden sm:flex flex-col items-end gap-1 shrink-0 text-xs"
+                    style={{ color: 'var(--ink-3)' }}
+                  >
+                    <span>
+                      {c.booking_count} booking{c.booking_count !== 1 ? 's' : ''}
+                    </span>
                     <span>Last: {fmt(c.last_booking_date)}</span>
                   </div>
 
@@ -437,9 +437,7 @@ export default function Clients() {
                   </svg>
                 </div>
 
-                {isOpen && (
-                  <ClientDrawer client={c} onClose={() => setExpanded(null)} />
-                )}
+                {isOpen && <ClientDrawer client={c} onClose={() => setExpanded(null)} />}
               </li>
             );
           })}

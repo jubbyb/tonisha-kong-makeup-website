@@ -1270,12 +1270,10 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
             defaultBookingMessage(selectedArtist.name, selectedService?.name),
           ) && (
             <a
-              href={
-                buildWhatsAppUrl(
-                  selectedArtist.whatsapp_number,
-                  defaultBookingMessage(selectedArtist.name, selectedService?.name),
-                )!
-              }
+              href={buildWhatsAppUrl(
+                selectedArtist.whatsapp_number,
+                defaultBookingMessage(selectedArtist.name, selectedService?.name),
+              )!}
               target="_blank"
               rel="noopener noreferrer"
               style={{

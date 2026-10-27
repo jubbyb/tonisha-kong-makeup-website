@@ -100,7 +100,15 @@ export const STATUS_BADGE: Record<string, string> = {
   completed: 'badge-info',
 };
 
-export const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+export const DAY_NAMES = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
 
 export const DURATIONS = [
   { value: 30, label: '30 min' },
