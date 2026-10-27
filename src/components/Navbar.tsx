@@ -305,260 +305,260 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className="editorial-nav">
-      <div
-        style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '0 2rem',
-          height: '64px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        {/* Logo */}
-        <Link to="/" style={{ textDecoration: 'none' }}>
-          <Logo size={22} />
-        </Link>
-
-        {/* Desktop links */}
+      <nav className="editorial-nav">
         <div
-          style={{ display: 'none', gap: '2.5rem', alignItems: 'center' }}
-          className="desktop-nav"
+          style={{
+            maxWidth: '1280px',
+            margin: '0 auto',
+            padding: '0 2rem',
+            height: '64px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
         >
-          {navLinks.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              style={linkStyle}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--ink)')}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--ink-2)')}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+          {/* Logo */}
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <Logo size={22} />
+          </Link>
 
-        {/* Desktop right: theme toggle + auth (≥1024px) */}
-        <div
-          style={{ display: 'none', gap: '1.5rem', alignItems: 'center' }}
-          className="desktop-auth"
-        >
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--accent)',
-              padding: '0.3rem',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.65')}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+          {/* Desktop links */}
+          <div
+            style={{ display: 'none', gap: '2.5rem', alignItems: 'center' }}
+            className="desktop-nav"
           >
-            {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
-          </button>
-
-          {user ? (
-            <>
-              {user.role === 'artist' && (
-                <Link to="/artist-dashboard" style={authLinkStyle}>
-                  Dashboard
-                </Link>
-              )}
-              <Link to="/my-bookings" style={authLinkStyle}>
-                My Bookings
-              </Link>
-              <Link to="/profile" style={authLinkStyle}>
-                Profile
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="btn-accent"
-                style={{ padding: '0.45rem 1.25rem', fontSize: '0.65rem' }}
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" style={authLinkStyle}>
-                Login
-              </Link>
+            {navLinks.map(({ to, label }) => (
               <Link
-                to="/login?mode=signup"
-                className="btn-accent"
-                style={{ padding: '0.45rem 1.25rem', fontSize: '0.65rem' }}
+                key={to}
+                to={to}
+                style={linkStyle}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--ink)')}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--ink-2)')}
               >
-                Sign Up
+                {label}
               </Link>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* Tablet/small-laptop hamburger (768–1023px): theme toggle + hamburger */}
-        <div
-          ref={menuRef}
-          style={{ display: 'none', gap: '0.5rem', alignItems: 'center', position: 'relative' }}
-          className="desktop-hamburger"
-        >
-          <button
-            onClick={toggleTheme}
-            aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--accent)',
-              padding: '0.3rem',
-              display: 'flex',
-              alignItems: 'center',
-            }}
+          {/* Desktop right: theme toggle + auth (≥1024px) */}
+          <div
+            style={{ display: 'none', gap: '1.5rem', alignItems: 'center' }}
+            className="desktop-auth"
           >
-            {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--ink)',
-              padding: '0.4rem',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
-          </button>
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--accent)',
+                padding: '0.3rem',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.65')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+            >
+              {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
+            </button>
 
-          {menuOpen && (
-            <div className="desktop-dropdown" role="menu">
-              {navLinks.map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="desktop-dropdown-item"
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {label}
+            {user ? (
+              <>
+                {user.role === 'artist' && (
+                  <Link to="/artist-dashboard" style={authLinkStyle}>
+                    Dashboard
+                  </Link>
+                )}
+                <Link to="/my-bookings" style={authLinkStyle}>
+                  My Bookings
                 </Link>
-              ))}
-              <div className="desktop-dropdown-divider" />
-              {user ? (
-                <>
-                  {user.role === 'artist' && (
+                <Link to="/profile" style={authLinkStyle}>
+                  Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="btn-accent"
+                  style={{ padding: '0.45rem 1.25rem', fontSize: '0.65rem' }}
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" style={authLinkStyle}>
+                  Login
+                </Link>
+                <Link
+                  to="/login?mode=signup"
+                  className="btn-accent"
+                  style={{ padding: '0.45rem 1.25rem', fontSize: '0.65rem' }}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Tablet/small-laptop hamburger (768–1023px): theme toggle + hamburger */}
+          <div
+            ref={menuRef}
+            style={{ display: 'none', gap: '0.5rem', alignItems: 'center', position: 'relative' }}
+            className="desktop-hamburger"
+          >
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--accent)',
+                padding: '0.3rem',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--ink)',
+                padding: '0.4rem',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
+            </button>
+
+            {menuOpen && (
+              <div className="desktop-dropdown" role="menu">
+                {navLinks.map(({ to, label }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    className="desktop-dropdown-item"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {label}
+                  </Link>
+                ))}
+                <div className="desktop-dropdown-divider" />
+                {user ? (
+                  <>
+                    {user.role === 'artist' && (
+                      <Link
+                        to="/artist-dashboard"
+                        className="desktop-dropdown-item"
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                    )}
                     <Link
-                      to="/artist-dashboard"
+                      to="/my-bookings"
                       className="desktop-dropdown-item"
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
                     >
-                      Dashboard
+                      My Bookings
                     </Link>
-                  )}
-                  <Link
-                    to="/my-bookings"
-                    className="desktop-dropdown-item"
-                    role="menuitem"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    My Bookings
-                  </Link>
-                  <Link
-                    to="/profile"
-                    className="desktop-dropdown-item"
-                    role="menuitem"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="desktop-dropdown-item desktop-dropdown-signout"
-                    role="menuitem"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="desktop-dropdown-item"
-                    role="menuitem"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/login?mode=signup"
-                    className="desktop-dropdown-item desktop-dropdown-signup"
-                    role="menuitem"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-          )}
+                    <Link
+                      to="/profile"
+                      className="desktop-dropdown-item"
+                      role="menuitem"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="desktop-dropdown-item desktop-dropdown-signout"
+                      role="menuitem"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="desktop-dropdown-item"
+                      role="menuitem"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/login?mode=signup"
+                      className="desktop-dropdown-item desktop-dropdown-signup"
+                      role="menuitem"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile right: theme toggle + hamburger (≤767px) */}
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            className="mobile-controls"
+          >
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--accent)',
+                padding: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-haspopup="menu"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--ink)',
+                padding: '0.4rem',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {mobileMenuOpen ? <CloseIcon /> : <HamburgerIcon />}
+            </button>
+          </div>
         </div>
 
-        {/* Mobile right: theme toggle + hamburger (≤767px) */}
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          className="mobile-controls"
-        >
-          <button
-            onClick={toggleTheme}
-            aria-label={theme === 'styleja' ? 'Switch to light mode' : 'Switch to dark mode'}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--accent)',
-              padding: '0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            {theme === 'styleja' ? <MoonIcon /> : <SunIcon />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-            aria-haspopup="menu"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--ink)',
-              padding: '0.4rem',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            {mobileMenuOpen ? <CloseIcon /> : <HamburgerIcon />}
-          </button>
-        </div>
-      </div>
-
-      <style>{`
+        <style>{`
         @media (min-width: 768px) and (max-width: 1023px) {
           .desktop-hamburger { display: flex !important; }
           .mobile-controls { display: none !important; }
@@ -698,98 +698,98 @@ export default function Navbar() {
           color: var(--accent);
         }
       `}</style>
-    </nav>
-    {mobileMenuOpen && (
-      <>
-        <div
-          className="mobile-sheet-backdrop mobile-only"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-        <div className="mobile-sheet mobile-only" role="menu">
-          <div className="mobile-sheet-header">
-            <span className="mobile-sheet-title">Menu</span>
-            <button
-              type="button"
-              className="mobile-sheet-close"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label="Close menu"
-            >
-              <CloseIcon />
-            </button>
-          </div>
-          {navLinks.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className="mobile-sheet-item"
-              role="menuitem"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {label}
-            </Link>
-          ))}
-          <div className="mobile-sheet-divider" />
-          {user ? (
-            <>
-              {user.role === 'artist' && (
+      </nav>
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="mobile-sheet-backdrop mobile-only"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="mobile-sheet mobile-only" role="menu">
+            <div className="mobile-sheet-header">
+              <span className="mobile-sheet-title">Menu</span>
+              <button
+                type="button"
+                className="mobile-sheet-close"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className="mobile-sheet-item"
+                role="menuitem"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+            <div className="mobile-sheet-divider" />
+            {user ? (
+              <>
+                {user.role === 'artist' && (
+                  <Link
+                    to="/artist-dashboard"
+                    className="mobile-sheet-item"
+                    role="menuitem"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <Link
-                  to="/artist-dashboard"
+                  to="/my-bookings"
                   className="mobile-sheet-item"
                   role="menuitem"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Dashboard
+                  My Bookings
                 </Link>
-              )}
-              <Link
-                to="/my-bookings"
-                className="mobile-sheet-item"
-                role="menuitem"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Bookings
-              </Link>
-              <Link
-                to="/profile"
-                className="mobile-sheet-item"
-                role="menuitem"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Profile
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="mobile-sheet-item mobile-sheet-signout"
-                role="menuitem"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="mobile-sheet-item"
-                role="menuitem"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                to="/login?mode=signup"
-                className="mobile-sheet-item mobile-sheet-signout"
-                role="menuitem"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign Up
-              </Link>
-            </>
-          )}
-        </div>
-      </>
-    )}
-    <BottomTabBar user={user} />
+                <Link
+                  to="/profile"
+                  className="mobile-sheet-item"
+                  role="menuitem"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="mobile-sheet-item mobile-sheet-signout"
+                  role="menuitem"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="mobile-sheet-item"
+                  role="menuitem"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/login?mode=signup"
+                  className="mobile-sheet-item mobile-sheet-signout"
+                  role="menuitem"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+        </>
+      )}
+      <BottomTabBar user={user} />
     </>
   );
 }

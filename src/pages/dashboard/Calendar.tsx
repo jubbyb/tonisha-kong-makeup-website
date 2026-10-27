@@ -245,7 +245,9 @@ export default function Calendar() {
     return (
       <div>
         {untimed.length > 0 && (
-          <div style={{ marginBottom: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+          <div
+            style={{ marginBottom: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}
+          >
             {untimed.map((b) => (
               <button
                 key={b.id}
@@ -353,7 +355,9 @@ export default function Calendar() {
                   style={{
                     padding: '8px 4px',
                     textAlign: 'center',
-                    background: isToday ? 'color-mix(in oklch, var(--accent) 8%, transparent)' : 'var(--bg-card)',
+                    background: isToday
+                      ? 'color-mix(in oklch, var(--accent) 8%, transparent)'
+                      : 'var(--bg-card)',
                     borderLeft: '1px solid var(--line)',
                   }}
                 >
@@ -507,7 +511,8 @@ export default function Calendar() {
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  if (!isToday) (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)';
+                  if (!isToday)
+                    (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)';
                 }}
                 onMouseLeave={(e) => {
                   if (!isToday) (e.currentTarget as HTMLElement).style.background = 'var(--bg)';
@@ -550,7 +555,9 @@ export default function Calendar() {
                     }}
                   >
                     {b.start_time && (
-                      <span style={{ opacity: 0.8, flexShrink: 0 }}>{formatTime(b.start_time)}</span>
+                      <span style={{ opacity: 0.8, flexShrink: 0 }}>
+                        {formatTime(b.start_time)}
+                      </span>
                     )}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</span>
                   </div>
@@ -570,8 +577,7 @@ export default function Calendar() {
 
   // ── List view (existing table) ────────────────────────────────────────────
   const renderList = () => {
-    const filtered =
-      filter === 'all' ? bookings : bookings.filter((b) => b.status === filter);
+    const filtered = filter === 'all' ? bookings : bookings.filter((b) => b.status === filter);
 
     return (
       <div className="space-y-4">
@@ -613,11 +619,7 @@ export default function Calendar() {
               </thead>
               <tbody>
                 {filtered.map((b) => (
-                  <tr
-                    key={b.id}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => openPanel(b)}
-                  >
+                  <tr key={b.id} style={{ cursor: 'pointer' }} onClick={() => openPanel(b)}>
                     <td>
                       <div className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
                         {b.name}
@@ -650,7 +652,9 @@ export default function Calendar() {
                       {b.message ?? '—'}
                     </td>
                     <td>
-                      <span className={`badge capitalize ${STATUS_BADGE[b.status] ?? 'badge-ghost'}`}>
+                      <span
+                        className={`badge capitalize ${STATUS_BADGE[b.status] ?? 'badge-ghost'}`}
+                      >
                         {b.status}
                       </span>
                     </td>
@@ -708,9 +712,7 @@ export default function Calendar() {
       </div>
     );
 
-  const views: CalView[] = isMobile
-    ? ['day', 'month', 'list']
-    : ['day', 'week', 'month', 'list'];
+  const views: CalView[] = isMobile ? ['day', 'month', 'list'] : ['day', 'week', 'month', 'list'];
 
   return (
     <div className="space-y-5">
@@ -882,7 +884,12 @@ export default function Calendar() {
                 </p>
                 <h3
                   className="font-display"
-                  style={{ fontSize: '1.5rem', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.1 }}
+                  style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 400,
+                    color: 'var(--ink)',
+                    lineHeight: 1.1,
+                  }}
                 >
                   {selected.name}
                 </h3>
@@ -900,7 +907,9 @@ export default function Calendar() {
                   transition: 'color 0.15s',
                 }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--ink)')}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--ink-3)')}
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.color = 'var(--ink-3)')
+                }
               >
                 ✕
               </button>
@@ -908,7 +917,9 @@ export default function Calendar() {
 
             {/* Status */}
             <div style={{ padding: '1rem 1.5rem 0' }}>
-              <span className={`badge capitalize ${STATUS_BADGE[selected.status] ?? 'badge-ghost'}`}>
+              <span
+                className={`badge capitalize ${STATUS_BADGE[selected.status] ?? 'badge-ghost'}`}
+              >
                 {selected.status}
               </span>
             </div>

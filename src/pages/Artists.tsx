@@ -615,7 +615,10 @@ export default function Artists() {
               border: 'none',
               background: 'transparent',
               cursor: 'pointer',
-              color: (!!activeParish || !!activeIndustry || sort !== 'Most loved') ? 'var(--accent)' : 'var(--ink-3)',
+              color:
+                !!activeParish || !!activeIndustry || sort !== 'Most loved'
+                  ? 'var(--accent)'
+                  : 'var(--ink-3)',
               transition: 'color 0.18s',
               borderRadius: '6px',
               flexShrink: 0,

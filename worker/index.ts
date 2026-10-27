@@ -1,4 +1,11 @@
-import { signJWT, verifyJWT, hashPassword, verifyPassword, type JWTPayload } from './auth';
+import {
+  signJWT,
+  verifyJWT,
+  hashPassword,
+  verifyPassword,
+  timingSafeEqual,
+  type JWTPayload,
+} from './auth';
 
 interface Env {
   DB: D1Database;
@@ -102,7 +109,14 @@ function buildPasswordResetEmail(resetUrl: string): string {
 </div>`;
 }
 
-function buildBookingReceivedEmail(name: string, service: string, date: string, startTime: string, artistName?: string, magicLinkUrl?: string): string {
+function buildBookingReceivedEmail(
+  name: string,
+  service: string,
+  date: string,
+  startTime: string,
+  artistName?: string,
+  magicLinkUrl?: string,
+): string {
   const withArtist = artistName ? ` with ${artistName}` : '';
   const atTime = startTime ? ` at ${startTime}` : '';
   const magicCta = magicLinkUrl
@@ -126,7 +140,13 @@ function buildBookingReceivedEmail(name: string, service: string, date: string, 
 </div>`;
 }
 
-function buildBookingConfirmedEmail(name: string, service: string, date: string, startTime: string, artistName?: string): string {
+function buildBookingConfirmedEmail(
+  name: string,
+  service: string,
+  date: string,
+  startTime: string,
+  artistName?: string,
+): string {
   const withArtist = artistName ? ` with ${artistName}` : '';
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
@@ -139,7 +159,12 @@ function buildBookingConfirmedEmail(name: string, service: string, date: string,
 </div>`;
 }
 
-function buildBookingCancelledEmail(name: string, service: string, date: string, startTime: string): string {
+function buildBookingCancelledEmail(
+  name: string,
+  service: string,
+  date: string,
+  startTime: string,
+): string {
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
@@ -151,7 +176,13 @@ function buildBookingCancelledEmail(name: string, service: string, date: string,
 </div>`;
 }
 
-function buildArtistNewBookingEmail(clientName: string, clientEmail: string, service: string, date: string, startTime: string): string {
+function buildArtistNewBookingEmail(
+  clientName: string,
+  clientEmail: string,
+  service: string,
+  date: string,
+  startTime: string,
+): string {
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
@@ -163,7 +194,12 @@ function buildArtistNewBookingEmail(clientName: string, clientEmail: string, ser
 </div>`;
 }
 
-function buildArtistClientCancelledEmail(clientName: string, service: string, date: string, startTime: string): string {
+function buildArtistClientCancelledEmail(
+  clientName: string,
+  service: string,
+  date: string,
+  startTime: string,
+): string {
   const atTime = startTime ? ` at ${startTime}` : '';
   return `
 <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0a08;color:#ede8e0;padding:40px 32px;">
@@ -180,9 +216,14 @@ async function getAuth(request: Request, env: Env): Promise<JWTPayload | null> {
   return verifyJWT(auth.slice(7), env.JWT_SECRET);
 }
 
-function isAdmin(request: Request, env: Env): boolean {
-  return request.headers.get('Authorization') === `Bearer ${env.ADMIN_SECRET}`;
+// Fails closed: an unset/empty ADMIN_SECRET must never match "Bearer undefined".
+async function isAdmin(request: Request, env: Env): Promise<boolean> {
+  if (!env.ADMIN_SECRET) return false;
+  return timingSafeEqual(request.headers.get('Authorization') ?? '', `Bearer ${env.ADMIN_SECRET}`);
 }
+
+const ADMIN_LOGIN_MAX_FAILURES = 5;
+const ADMIN_LOGIN_WINDOW_SECONDS = 15 * 60;
 
 // ─── Slug helpers ────────────────────────────────────────────────────────────
 
@@ -297,9 +338,11 @@ function datesInRange(from: string, to: string): string[] {
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -355,13 +398,24 @@ export default {
       const slug = industryBySlug[1];
       const industry = await env.DB.prepare(
         'SELECT id, slug, name, tagline, icon, sort_order FROM industries WHERE slug = ? AND is_active = 1',
-      ).bind(slug).first<{ id: number; slug: string; name: string; tagline: string | null; icon: string | null; sort_order: number }>();
+      )
+        .bind(slug)
+        .first<{
+          id: number;
+          slug: string;
+          name: string;
+          tagline: string | null;
+          icon: string | null;
+          sort_order: number;
+        }>();
       if (!industry) return json({ error: 'Industry not found' }, 404);
       const { results: countRows } = await env.DB.prepare(
         `SELECT
            (SELECT COUNT(*) FROM artist_industries WHERE industry_id = ?) AS artist_count,
            (SELECT COUNT(*) FROM category_industries WHERE industry_id = ?) AS category_count`,
-      ).bind(industry.id, industry.id).all<{ artist_count: number; category_count: number }>();
+      )
+        .bind(industry.id, industry.id)
+        .all<{ artist_count: number; category_count: number }>();
       return json({ ...industry, ...countRows[0] });
     }
 
@@ -384,7 +438,9 @@ export default {
            JOIN industries i ON i.id = ai.industry_id
            WHERE a.is_active = 1 AND i.slug = ?
            ORDER BY a.name`,
-        ).bind(industryFilter).all();
+        )
+          .bind(industryFilter)
+          .all();
         artistRows = results as Record<string, unknown>[];
       } else if (parishFilter) {
         const { results } = await env.DB.prepare(
@@ -393,7 +449,9 @@ export default {
            JOIN parishes p ON a.parish_id = p.id
            WHERE a.is_active = 1 AND p.slug = ?
            ORDER BY a.name`,
-        ).bind(parishFilter).all();
+        )
+          .bind(parishFilter)
+          .all();
         artistRows = results as Record<string, unknown>[];
       } else if (bboxParam) {
         const [minLng, minLat, maxLng, maxLat] = bboxParam.split(',').map(Number);
@@ -403,7 +461,9 @@ export default {
            WHERE a.is_active = 1 AND a.lat IS NOT NULL AND a.lng IS NOT NULL
              AND a.lat BETWEEN ? AND ? AND a.lng BETWEEN ? AND ?
            ORDER BY a.name`,
-        ).bind(minLat, maxLat, minLng, maxLng).all();
+        )
+          .bind(minLat, maxLat, minLng, maxLng)
+          .all();
         artistRows = results as Record<string, unknown>[];
       } else if (nearParam) {
         const [nearLat, nearLng] = nearParam.split(',').map(Number);
@@ -413,8 +473,8 @@ export default {
            WHERE a.is_active = 1 AND a.lat IS NOT NULL AND a.lng IS NOT NULL
            ORDER BY a.name`,
         ).all();
-        artistRows = (results as Record<string, unknown>[]).filter((a) =>
-          haversine(nearLat, nearLng, a.lat as number, a.lng as number) <= radiusKm,
+        artistRows = (results as Record<string, unknown>[]).filter(
+          (a) => haversine(nearLat, nearLng, a.lat as number, a.lng as number) <= radiusKm,
         );
       } else {
         const { results } = await env.DB.prepare(
@@ -431,7 +491,9 @@ export default {
         `SELECT ai.artist_id, i.slug, i.name FROM artist_industries ai
          JOIN industries i ON i.id = ai.industry_id
          WHERE ai.artist_id IN (${placeholders})`,
-      ).bind(...artistIds).all<{ artist_id: number; slug: string; name: string }>();
+      )
+        .bind(...artistIds)
+        .all<{ artist_id: number; slug: string; name: string }>();
       const indByArtist = new Map<number, { slug: string; name: string }[]>();
       for (const row of indRows) {
         const list = indByArtist.get(row.artist_id) ?? [];
@@ -470,7 +532,9 @@ export default {
       const { results: indRows } = await env.DB.prepare(
         `SELECT i.slug, i.name FROM artist_industries ai
          JOIN industries i ON i.id = ai.industry_id WHERE ai.artist_id = ?`,
-      ).bind(artist.id).all<{ slug: string; name: string }>();
+      )
+        .bind(artist.id)
+        .all<{ slug: string; name: string }>();
       return json({ ...artist, industries: indRows });
     }
 
@@ -506,7 +570,9 @@ export default {
            JOIN category_industries ci ON ci.category_id = sc.id
            JOIN industries i ON i.id = ci.industry_id
            WHERE i.slug = ? ORDER BY sc.sort_order, sc.name`,
-        ).bind(industrySlug).all<{ id: number; name: string; sort_order: number }>();
+        )
+          .bind(industrySlug)
+          .all<{ id: number; name: string; sort_order: number }>();
         cats = results;
       } else {
         const { results } = await env.DB.prepare(
@@ -689,7 +755,7 @@ export default {
 
     if (pathname === '/api/bookings' && method === 'POST') {
       const bookingAuth = await getAuth(request, env);
-      const bookingUserId = (bookingAuth && !bookingAuth.artist_id) ? Number(bookingAuth.sub) : null;
+      const bookingUserId = bookingAuth && !bookingAuth.artist_id ? Number(bookingAuth.sub) : null;
       const body = await request.json<{
         name?: string;
         email?: string;
@@ -755,7 +821,8 @@ export default {
             .first<{ id: number }>();
           if (existingUser) {
             await env.DB.prepare('UPDATE bookings SET user_id = ? WHERE id = ?')
-              .bind(existingUser.id, newBookingId).run();
+              .bind(existingUser.id, newBookingId)
+              .run();
           } else {
             const userInsert = await env.DB.prepare(
               "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, '', 'user')",
@@ -764,7 +831,8 @@ export default {
               .run();
             const newUserId = userInsert.meta.last_row_id as number;
             await env.DB.prepare('UPDATE bookings SET user_id = ? WHERE id = ?')
-              .bind(newUserId, newBookingId).run();
+              .bind(newUserId, newBookingId)
+              .run();
             const magicToken = generateToken();
             const expiresAt = Math.floor(Date.now() / 1000) + 48 * 3600;
             await env.DB.prepare(
@@ -781,20 +849,36 @@ export default {
       let anonArtistEmail: string | undefined;
       if (body.artist_id) {
         const a = await env.DB.prepare('SELECT name, email FROM artists WHERE id = ?')
-          .bind(body.artist_id).first<{ name: string; email: string }>();
+          .bind(body.artist_id)
+          .first<{ name: string; email: string }>();
         anonArtistName = a?.name;
         anonArtistEmail = a?.email;
       }
       await sendEmail(
-        env, body.email,
+        env,
+        body.email,
         'Booking Request Received — Styleja',
-        buildBookingReceivedEmail(body.name, body.service, body.date, body.start_time ?? '', anonArtistName, magicLinkUrl),
+        buildBookingReceivedEmail(
+          body.name,
+          body.service,
+          body.date,
+          body.start_time ?? '',
+          anonArtistName,
+          magicLinkUrl,
+        ),
       );
       if (anonArtistEmail) {
         await sendEmail(
-          env, anonArtistEmail,
+          env,
+          anonArtistEmail,
           'New Booking Request — Styleja',
-          buildArtistNewBookingEmail(body.name, body.email, body.service, body.date, body.start_time ?? ''),
+          buildArtistNewBookingEmail(
+            body.name,
+            body.email,
+            body.service,
+            body.date,
+            body.start_time ?? '',
+          ),
         );
       }
       return json({ success: true }, 201);
@@ -862,7 +946,11 @@ export default {
       const user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
         .bind(normalizedEmail)
         .first<{ id: number; name: string; email: string; password_hash: string; role: string }>();
-      if (user && user.password_hash && !(await verifyPassword(body.password, user.password_hash))) {
+      if (
+        user &&
+        user.password_hash &&
+        !(await verifyPassword(body.password, user.password_hash))
+      ) {
         return json({ error: 'Incorrect password. Forgot your password?' }, 401);
       }
       if (user && user.password_hash && (await verifyPassword(body.password, user.password_hash))) {
@@ -960,19 +1048,23 @@ export default {
       if (!magicTokenParam) return json({ error: 'Missing token' }, 400);
       const link = await env.DB.prepare(
         `SELECT user_id, expires_at, used_at FROM magic_links WHERE token = ?`,
-      ).bind(magicTokenParam).first<{ user_id: number; expires_at: number; used_at: number | null }>();
+      )
+        .bind(magicTokenParam)
+        .first<{ user_id: number; expires_at: number; used_at: number | null }>();
       if (!link) return json({ error: 'Invalid or expired link' }, 400);
       if (link.used_at != null) return json({ error: 'This link has already been used' }, 400);
       if (link.expires_at < Math.floor(Date.now() / 1000)) {
         return json({ error: 'This link has expired' }, 400);
       }
-      const linkUser = await env.DB.prepare(
-        'SELECT id, name, email, role FROM users WHERE id = ?',
-      ).bind(link.user_id).first<{ id: number; name: string; email: string; role: string }>();
+      const linkUser = await env.DB.prepare('SELECT id, name, email, role FROM users WHERE id = ?')
+        .bind(link.user_id)
+        .first<{ id: number; name: string; email: string; role: string }>();
       if (!linkUser) return json({ error: 'Account not found' }, 404);
       const markRes = await env.DB.prepare(
         'UPDATE magic_links SET used_at = unixepoch() WHERE token = ? AND used_at IS NULL',
-      ).bind(magicTokenParam).run();
+      )
+        .bind(magicTokenParam)
+        .run();
       if ((markRes.meta.changes ?? 0) === 0) {
         return json({ error: 'This link has already been used' }, 400);
       }
@@ -1005,12 +1097,20 @@ export default {
         const resetToken = generateToken();
         const expiresAt = new Date(Date.now() + 3_600_000).toISOString();
         await env.DB.prepare('DELETE FROM password_reset_tokens WHERE user_id = ? AND used = 0')
-          .bind(user.id).run();
+          .bind(user.id)
+          .run();
         await env.DB.prepare(
           'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
-        ).bind(user.id, resetToken, expiresAt).run();
+        )
+          .bind(user.id, resetToken, expiresAt)
+          .run();
         const resetUrl = `${env.SITE_URL}/reset-password?token=${resetToken}`;
-        await sendEmail(env, normalizedEmail, 'Reset Your Password — Styleja', buildPasswordResetEmail(resetUrl));
+        await sendEmail(
+          env,
+          normalizedEmail,
+          'Reset Your Password — Styleja',
+          buildPasswordResetEmail(resetUrl),
+        );
       }
       return json({ success: true });
     }
@@ -1018,17 +1118,22 @@ export default {
     if (pathname === '/api/auth/reset-password' && method === 'POST') {
       const body = await request.json<{ token?: string; password?: string }>();
       if (!body.token || !body.password) return json({ error: 'Missing required fields' }, 400);
-      if (body.password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400);
+      if (body.password.length < 8)
+        return json({ error: 'Password must be at least 8 characters' }, 400);
       const row = await env.DB.prepare(
         `SELECT id, user_id FROM password_reset_tokens
          WHERE token = ? AND used = 0 AND expires_at > datetime('now')`,
-      ).bind(body.token).first<{ id: number; user_id: number }>();
+      )
+        .bind(body.token)
+        .first<{ id: number; user_id: number }>();
       if (!row) return json({ error: 'Invalid or expired reset link' }, 400);
       const newHash = await hashPassword(body.password);
       await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
-        .bind(newHash, row.user_id).run();
+        .bind(newHash, row.user_id)
+        .run();
       await env.DB.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?')
-        .bind(row.id).run();
+        .bind(row.id)
+        .run();
       return json({ success: true });
     }
 
@@ -1227,21 +1332,43 @@ export default {
       }
       const cancelled = await env.DB.prepare(
         'SELECT name, email, service, date, start_time, artist_id FROM bookings WHERE id = ?',
-      ).bind(Number(cancelMine[1])).first<{ name: string; email: string; service: string; date: string; start_time: string | null; artist_id: number | null }>();
+      )
+        .bind(Number(cancelMine[1]))
+        .first<{
+          name: string;
+          email: string;
+          service: string;
+          date: string;
+          start_time: string | null;
+          artist_id: number | null;
+        }>();
       if (cancelled) {
         await sendEmail(
-          env, cancelled.email,
+          env,
+          cancelled.email,
           'Booking Cancellation — Styleja',
-          buildBookingCancelledEmail(cancelled.name, cancelled.service, cancelled.date, cancelled.start_time ?? ''),
+          buildBookingCancelledEmail(
+            cancelled.name,
+            cancelled.service,
+            cancelled.date,
+            cancelled.start_time ?? '',
+          ),
         );
         if (cancelled.artist_id) {
           const artist = await env.DB.prepare('SELECT email FROM artists WHERE id = ?')
-            .bind(cancelled.artist_id).first<{ email: string }>();
+            .bind(cancelled.artist_id)
+            .first<{ email: string }>();
           if (artist?.email) {
             await sendEmail(
-              env, artist.email,
+              env,
+              artist.email,
               'Booking Cancelled by Client — Styleja',
-              buildArtistClientCancelledEmail(cancelled.name, cancelled.service, cancelled.date, cancelled.start_time ?? ''),
+              buildArtistClientCancelledEmail(
+                cancelled.name,
+                cancelled.service,
+                cancelled.date,
+                cancelled.start_time ?? '',
+              ),
             );
           }
         }
@@ -1315,7 +1442,16 @@ export default {
           `SELECT b.name, b.email, b.service, b.date, b.start_time, a.name as artist_name
            FROM bookings b LEFT JOIN artists a ON b.artist_id = a.id
            WHERE b.id = ? AND b.artist_id = ?`,
-        ).bind(Number(bookingId[1]), artistId).first<{ name: string; email: string; service: string; date: string; start_time: string | null; artist_name: string | null }>();
+        )
+          .bind(Number(bookingId[1]), artistId)
+          .first<{
+            name: string;
+            email: string;
+            service: string;
+            date: string;
+            start_time: string | null;
+            artist_name: string | null;
+          }>();
         await env.DB.prepare(
           'UPDATE bookings SET status = ?, completed_at = COALESCE(?, completed_at) WHERE id = ? AND artist_id = ?',
         )
@@ -1324,15 +1460,28 @@ export default {
         if (bookingForEmail) {
           if (body.status === 'confirmed') {
             await sendEmail(
-              env, bookingForEmail.email,
+              env,
+              bookingForEmail.email,
               'Your Booking is Confirmed — Styleja',
-              buildBookingConfirmedEmail(bookingForEmail.name, bookingForEmail.service, bookingForEmail.date, bookingForEmail.start_time ?? '', bookingForEmail.artist_name ?? undefined),
+              buildBookingConfirmedEmail(
+                bookingForEmail.name,
+                bookingForEmail.service,
+                bookingForEmail.date,
+                bookingForEmail.start_time ?? '',
+                bookingForEmail.artist_name ?? undefined,
+              ),
             );
           } else if (body.status === 'cancelled') {
             await sendEmail(
-              env, bookingForEmail.email,
+              env,
+              bookingForEmail.email,
               'Booking Cancellation — Styleja',
-              buildBookingCancelledEmail(bookingForEmail.name, bookingForEmail.service, bookingForEmail.date, bookingForEmail.start_time ?? ''),
+              buildBookingCancelledEmail(
+                bookingForEmail.name,
+                bookingForEmail.service,
+                bookingForEmail.date,
+                bookingForEmail.start_time ?? '',
+              ),
             );
           }
         }
@@ -1508,7 +1657,9 @@ export default {
         if (!artist) return json({ error: 'Artist not found' }, 404);
         const { results: indRows } = await env.DB.prepare(
           'SELECT industry_id FROM artist_industries WHERE artist_id = ?',
-        ).bind(artistId).all<{ industry_id: number }>();
+        )
+          .bind(artistId)
+          .all<{ industry_id: number }>();
         return json({ ...artist, industry_ids: indRows.map((r) => r.industry_id) });
       }
 
@@ -1621,9 +1772,13 @@ export default {
           .run();
 
         if (body.industry_ids !== undefined) {
-          const delStmt = env.DB.prepare('DELETE FROM artist_industries WHERE artist_id = ?').bind(artistId);
+          const delStmt = env.DB.prepare('DELETE FROM artist_industries WHERE artist_id = ?').bind(
+            artistId,
+          );
           const insStmts = body.industry_ids.map((iid) =>
-            env.DB.prepare('INSERT OR IGNORE INTO artist_industries (artist_id, industry_id) VALUES (?, ?)').bind(artistId, iid),
+            env.DB.prepare(
+              'INSERT OR IGNORE INTO artist_industries (artist_id, industry_id) VALUES (?, ?)',
+            ).bind(artistId, iid),
           );
           await env.DB.batch([delStmt, ...insStmts]);
         }
@@ -1920,7 +2075,11 @@ export default {
 
       if (clientEmail && method === 'PUT') {
         const email = decodeURIComponent(clientEmail[1]);
-        const body = await request.json<{ notes?: string | null; tags?: string | null; is_vip?: number }>();
+        const body = await request.json<{
+          notes?: string | null;
+          tags?: string | null;
+          is_vip?: number;
+        }>();
         await env.DB.prepare(
           `INSERT INTO artist_client_notes (artist_id, client_email, notes, tags, is_vip, updated_at)
            VALUES (?, ?, ?, ?, ?, datetime('now'))
@@ -1930,13 +2089,7 @@ export default {
              is_vip     = excluded.is_vip,
              updated_at = excluded.updated_at`,
         )
-          .bind(
-            artistId,
-            email,
-            body.notes ?? null,
-            body.tags ?? null,
-            body.is_vip ?? 0,
-          )
+          .bind(artistId, email, body.notes ?? null, body.tags ?? null, body.is_vip ?? 0)
           .run();
         return json({ success: true });
       }
@@ -1945,14 +2098,36 @@ export default {
     // ── Admin ─────────────────────────────────────────────────────────────────
 
     if (pathname === '/api/admin/login' && method === 'POST') {
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+      const since = Math.floor(Date.now() / 1000) - ADMIN_LOGIN_WINDOW_SECONDS;
+      const recent = await env.DB.prepare(
+        'SELECT COUNT(*) AS n FROM admin_login_failures WHERE ip = ? AND attempted_at > ?',
+      )
+        .bind(ip, since)
+        .first<{ n: number }>();
+      if ((recent?.n ?? 0) >= ADMIN_LOGIN_MAX_FAILURES)
+        return json({ error: 'Too many attempts. Try again later.' }, 429);
+
       const body = await request.json<{ password?: string }>();
-      if (!body.password || body.password !== env.ADMIN_SECRET)
+      const ok =
+        !!env.ADMIN_SECRET &&
+        !!body.password &&
+        (await timingSafeEqual(body.password, env.ADMIN_SECRET));
+      if (!ok) {
+        await env.DB.batch([
+          env.DB.prepare('DELETE FROM admin_login_failures WHERE attempted_at <= ?').bind(since),
+          env.DB.prepare('INSERT INTO admin_login_failures (ip, attempted_at) VALUES (?, ?)').bind(
+            ip,
+            Math.floor(Date.now() / 1000),
+          ),
+        ]);
         return json({ error: 'Invalid password' }, 401);
+      }
       return json({ success: true });
     }
 
     if (pathname.startsWith('/api/admin/')) {
-      if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401);
+      if (!(await isAdmin(request, env))) return json({ error: 'Unauthorized' }, 401);
 
       if (pathname === '/api/admin/bookings' && method === 'GET') {
         const { results } = await env.DB.prepare(
@@ -2112,9 +2287,13 @@ export default {
           .run();
 
         if (body.industry_ids !== undefined) {
-          const delStmt = env.DB.prepare('DELETE FROM artist_industries WHERE artist_id = ?').bind(adminArtistId);
+          const delStmt = env.DB.prepare('DELETE FROM artist_industries WHERE artist_id = ?').bind(
+            adminArtistId,
+          );
           const insStmts = body.industry_ids.map((iid) =>
-            env.DB.prepare('INSERT OR IGNORE INTO artist_industries (artist_id, industry_id) VALUES (?, ?)').bind(adminArtistId, iid),
+            env.DB.prepare(
+              'INSERT OR IGNORE INTO artist_industries (artist_id, industry_id) VALUES (?, ?)',
+            ).bind(adminArtistId, iid),
           );
           await env.DB.batch([delStmt, ...insStmts]);
         }
@@ -2523,7 +2702,7 @@ export default {
     // ── Admin: reviews ────────────────────────────────────────────────────────
 
     if (pathname.startsWith('/api/admin/')) {
-      if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401);
+      if (!(await isAdmin(request, env))) return json({ error: 'Unauthorized' }, 401);
 
       if (pathname === '/api/admin/reviews' && method === 'GET') {
         const url = new URL(request.url);

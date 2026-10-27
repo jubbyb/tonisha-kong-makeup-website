@@ -243,7 +243,10 @@ export default function Hours() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Add block form */}
-          <div className="border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}>
+          <div
+            className="border p-5"
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
+          >
             <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Block time off
             </h3>
@@ -367,9 +370,7 @@ export default function Hours() {
                 </div>
               )}
 
-              {blockError && (
-                <div className="alert alert-error py-2 text-sm">{blockError}</div>
-              )}
+              {blockError && <div className="alert alert-error py-2 text-sm">{blockError}</div>}
 
               <button type="submit" className="btn btn-primary w-full" disabled={addingBlock}>
                 {addingBlock ? 'Adding...' : 'Block this time'}
@@ -378,7 +379,10 @@ export default function Hours() {
           </div>
 
           {/* Upcoming blocks list */}
-          <div className="border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}>
+          <div
+            className="border p-5"
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
+          >
             <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Upcoming blocks
             </h3>
@@ -403,9 +407,7 @@ export default function Hours() {
                         })}
                       </span>
                       <span className="text-sm ml-2" style={{ color: 'var(--ink-3)' }}>
-                        {b.start_time && b.end_time
-                          ? `${b.start_time}–${b.end_time}`
-                          : 'Full day'}
+                        {b.start_time && b.end_time ? `${b.start_time}–${b.end_time}` : 'Full day'}
                       </span>
                     </div>
                     <button

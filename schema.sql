@@ -567,3 +567,11 @@ INSERT INTO catalog_services (subcategory_id, name, description, price, price_ma
   SELECT ss.id, 'Treatment', 'Restorative hair treatment.', 3000, NULL, 'JMD', 45, 5
   FROM service_subcategories ss JOIN service_categories sc ON sc.id = ss.category_id
   WHERE sc.name = 'Hair Services' AND ss.name = 'Add-Ons';
+
+-- Failed admin login attempts, used to throttle brute-forcing /api/admin/login.
+CREATE TABLE IF NOT EXISTS admin_login_failures (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ip TEXT NOT NULL,
+  attempted_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_admin_login_failures_ip ON admin_login_failures (ip, attempted_at);

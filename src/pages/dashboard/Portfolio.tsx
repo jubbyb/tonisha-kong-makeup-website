@@ -143,13 +143,16 @@ export default function Portfolio() {
             Portfolio
           </h2>
         </div>
-        <span className="text-sm" style={{ color: atLimit ? 'var(--error, #c33)' : 'var(--ink-3)' }}>
+        <span
+          className="text-sm"
+          style={{ color: atLimit ? 'var(--error, #c33)' : 'var(--ink-3)' }}
+        >
           {items.length}/{PORTFOLIO_LIMIT} photos
         </span>
       </div>
       <p className="text-sm mb-5" style={{ color: 'var(--ink-3)' }}>
-        Upload up to {PORTFOLIO_LIMIT} photos of your work. Images are compressed and resized in your
-        browser for fast uploads.
+        Upload up to {PORTFOLIO_LIMIT} photos of your work. Images are compressed and resized in
+        your browser for fast uploads.
       </p>
 
       {/* ── upload card ── */}

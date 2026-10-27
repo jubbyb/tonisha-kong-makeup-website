@@ -38,6 +38,8 @@ export default [
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // TypeScript already reports undefined names; this rule false-positives on Worker/DOM types.
+      'no-undef': 'off',
       'react-refresh/only-export-components': 'warn',
       'prettier/prettier': 'error',
     },

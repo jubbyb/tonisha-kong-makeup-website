@@ -118,10 +118,7 @@ export default function Today() {
                 className="flex items-center gap-4 p-4 border"
                 style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
               >
-                <div
-                  className="text-sm font-mono w-24 shrink-0"
-                  style={{ color: 'var(--ink-3)' }}
-                >
+                <div className="text-sm font-mono w-24 shrink-0" style={{ color: 'var(--ink-3)' }}>
                   {b.start_time ?? '—'}
                   {b.end_time ? ` – ${b.end_time}` : ''}
                 </div>
@@ -179,10 +176,7 @@ export default function Today() {
                   className="flex items-center gap-4 p-3 border text-sm"
                   style={{ background: 'var(--bg-card)', borderColor: 'var(--line)' }}
                 >
-                  <div
-                    className="w-20 shrink-0 font-mono"
-                    style={{ color: 'var(--ink-3)' }}
-                  >
+                  <div className="w-20 shrink-0 font-mono" style={{ color: 'var(--ink-3)' }}>
                     {new Date(b.date + 'T00:00').toLocaleDateString('default', {
                       month: 'short',
                       day: 'numeric',

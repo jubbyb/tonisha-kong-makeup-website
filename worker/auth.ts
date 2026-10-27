@@ -1,3 +1,19 @@
+// ─── Constant-time comparison ─────────────────────────────────────────────────
+
+/** Compare two strings without leaking where they differ (or their length). */
+export async function timingSafeEqual(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [da, db] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(a)),
+    crypto.subtle.digest('SHA-256', enc.encode(b)),
+  ]);
+  const x = new Uint8Array(da);
+  const y = new Uint8Array(db);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+
 // ─── Base64URL helpers ────────────────────────────────────────────────────────
 
 function toBase64URL(buffer: ArrayBuffer): string {
@@ -26,7 +42,9 @@ export interface JWTPayload {
 }
 
 export async function signJWT(payload: JWTPayload, secret: string): Promise<string> {
-  const header = toBase64URL(new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));
+  const header = toBase64URL(
+    new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })),
+  );
   const body = toBase64URL(new TextEncoder().encode(JSON.stringify(payload)));
   const key = await crypto.subtle.importKey(
     'raw',
@@ -102,5 +120,5 @@ export async function verifyPassword(password: string, stored: string): Promise<
     keyMaterial,
     256,
   );
-  return toBase64URL(bits) === hashB64;
+  return timingSafeEqual(toBase64URL(bits), hashB64);
 }
