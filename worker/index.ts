@@ -1,4 +1,11 @@
-import { signJWT, verifyJWT, hashPassword, verifyPassword, type JWTPayload } from './auth';
+import {
+  signJWT,
+  verifyJWT,
+  hashPassword,
+  verifyPassword,
+  timingSafeEqual,
+  type JWTPayload,
+} from './auth';
 
 interface Env {
   DB: D1Database;
@@ -180,9 +187,17 @@ async function getAuth(request: Request, env: Env): Promise<JWTPayload | null> {
   return verifyJWT(auth.slice(7), env.JWT_SECRET);
 }
 
-function isAdmin(request: Request, env: Env): boolean {
-  return request.headers.get('Authorization') === `Bearer ${env.ADMIN_SECRET}`;
+// Fails closed: an unset/empty ADMIN_SECRET must never match "Bearer undefined".
+async function isAdmin(request: Request, env: Env): Promise<boolean> {
+  if (!env.ADMIN_SECRET) return false;
+  return timingSafeEqual(
+    request.headers.get('Authorization') ?? '',
+    `Bearer ${env.ADMIN_SECRET}`,
+  );
 }
+
+const ADMIN_LOGIN_MAX_FAILURES = 5;
+const ADMIN_LOGIN_WINDOW_SECONDS = 15 * 60;
 
 // ─── Slug helpers ────────────────────────────────────────────────────────────
 
@@ -1945,14 +1960,36 @@ export default {
     // ── Admin ─────────────────────────────────────────────────────────────────
 
     if (pathname === '/api/admin/login' && method === 'POST') {
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+      const since = Math.floor(Date.now() / 1000) - ADMIN_LOGIN_WINDOW_SECONDS;
+      const recent = await env.DB.prepare(
+        'SELECT COUNT(*) AS n FROM admin_login_failures WHERE ip = ? AND attempted_at > ?',
+      )
+        .bind(ip, since)
+        .first<{ n: number }>();
+      if ((recent?.n ?? 0) >= ADMIN_LOGIN_MAX_FAILURES)
+        return json({ error: 'Too many attempts. Try again later.' }, 429);
+
       const body = await request.json<{ password?: string }>();
-      if (!body.password || body.password !== env.ADMIN_SECRET)
+      const ok =
+        !!env.ADMIN_SECRET &&
+        !!body.password &&
+        (await timingSafeEqual(body.password, env.ADMIN_SECRET));
+      if (!ok) {
+        await env.DB.batch([
+          env.DB.prepare('DELETE FROM admin_login_failures WHERE attempted_at <= ?').bind(since),
+          env.DB.prepare('INSERT INTO admin_login_failures (ip, attempted_at) VALUES (?, ?)').bind(
+            ip,
+            Math.floor(Date.now() / 1000),
+          ),
+        ]);
         return json({ error: 'Invalid password' }, 401);
+      }
       return json({ success: true });
     }
 
     if (pathname.startsWith('/api/admin/')) {
-      if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401);
+      if (!(await isAdmin(request, env))) return json({ error: 'Unauthorized' }, 401);
 
       if (pathname === '/api/admin/bookings' && method === 'GET') {
         const { results } = await env.DB.prepare(
@@ -2523,7 +2560,7 @@ export default {
     // ── Admin: reviews ────────────────────────────────────────────────────────
 
     if (pathname.startsWith('/api/admin/')) {
-      if (!isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401);
+      if (!(await isAdmin(request, env))) return json({ error: 'Unauthorized' }, 401);
 
       if (pathname === '/api/admin/reviews' && method === 'GET') {
         const url = new URL(request.url);
