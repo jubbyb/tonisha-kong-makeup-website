@@ -16,7 +16,7 @@ export async function timingSafeEqual(a: string, b: string): Promise<boolean> {
 
 // ─── Base64URL helpers ────────────────────────────────────────────────────────
 
-function toBase64URL(buffer: ArrayBuffer): string {
+function toBase64URL(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
