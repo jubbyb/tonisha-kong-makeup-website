@@ -6,8 +6,15 @@ import {
   NavigationControl,
   AttributionControl,
   LngLatBounds,
+  setWorkerUrl,
 } from 'maplibre-gl';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+// MapLibre derives its worker URL from its own module URL, which doesn't exist
+// once Vite bundles it (dev pre-bundling and production). Point it at the
+// worker file explicitly so Vite serves/emits it.
+setWorkerUrl(maplibreWorkerUrl);
 
 export interface MapArtist {
   id: number;
