@@ -105,9 +105,15 @@ export function MapView({
 
       let marker = markersRef.current.get(artist.id);
       if (!marker) {
+        // MapLibre positions the marker element with an inline transform, so the
+        // hover/highlight scale lives on an inner element to avoid overriding it.
         const el = document.createElement('div');
-        el.className = 'sj-map-marker';
-        el.textContent = artist.name.charAt(0).toUpperCase();
+        el.style.width = '40px';
+        el.style.height = '40px';
+        const pin = document.createElement('div');
+        pin.className = 'sj-map-marker';
+        pin.textContent = artist.name.charAt(0).toUpperCase();
+        el.appendChild(pin);
 
         const popup = new Popup({ offset: 25, closeButton: false }).setHTML(
           `<div style="padding:8px;font-family:Inter,sans-serif;font-size:13px;">
@@ -131,8 +137,8 @@ export function MapView({
         marker.setLngLat([artist.lng, artist.lat]);
       }
 
-      const el = marker.getElement();
-      el.dataset.highlighted = highlightedId === artist.id ? '1' : '0';
+      const pin = marker.getElement().firstElementChild as HTMLElement | null;
+      if (pin) pin.dataset.highlighted = highlightedId === artist.id ? '1' : '0';
     });
 
     markersRef.current.forEach((marker, id) => {
